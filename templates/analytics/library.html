@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Library Analytics{% endblock %}
+{% block topbar_title %}Library Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .chart-box { position: relative; height: 260px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block page_title %}Library Catalog & Circulation Analytics{% endblock %}
+
+{% block page_sub %}
+Resource circulation metrics, borrowing activity, and overdue return diagnostics &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Updated {{ scope.generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="/analytics/export/excel/?type=overall&{{ export_params }}">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg> Export Excel
+    </a>
+    <a class="btn btn-ghost" href="/analytics/export/pdf/?type=overall&{{ export_params }}" target="_blank">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> PDF Report
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "analytics/_nav_tabs.html" %}
+{% include "analytics/_filter_bar.html" %}
+
+{# Library KPI summary #}
+<div class="grid grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-book"/></svg></div>
+        <div>
+            <div class="stat-val">{{ library.total_titles }}</div>
+            <div class="stat-label">Catalog Titles ({{ library.total_copies }} Copies)</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div>
+            <div class="stat-val">{{ library.available_copies }}</div>
+            <div class="stat-label">Available on Shelf</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-clock"/></svg></div>
+        <div>
+            <div class="stat-val">{{ library.active_loans }}</div>
+            <div class="stat-label">Active Loans ({{ library.issued_copies }} Issued)</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico rose"><svg class="icon icon-lg"><use href="#i-shield"/></svg></div>
+        <div>
+            <div class="stat-val">{{ library.overdue_count }}</div>
+            <div class="stat-label">Overdue Loans (₹{{ library.total_fines|floatformat:0 }} Fines)</div>
+        </div>
+    </div>
+</div>
+
+{# Charts #}
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-book"/></svg> Catalog Categories</div>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="libCatChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-layers"/></svg> Shelf vs Circulation</div>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="libCircChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Most Issued Books & Top Borrowers #}
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-award"/></svg> Most Requested Books</div>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Book Title</th><th>Author</th><th class="num">Loans Count</th></tr></thead>
+                <tbody>
+                    {% for b in library.most_issued %}
+                    <tr>
+                        <td class="strong">{{ b.book__title }}</td>
+                        <td class="muted">{{ b.book__author }}</td>
+                        <td class="num"><b style="font-size: 14px;">{{ b.times_borrowed }}</b></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="muted" style="text-align: center; padding: 16px;">No loan records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-users"/></svg> Top Student Borrowers</div>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Student</th><th>Roll No</th><th class="num">Books Borrowed</th></tr></thead>
+                <tbody>
+                    {% for st in library.most_active_borrowers %}
+                    <tr>
+                        <td class="strong">{{ st.student__name }}</td>
+                        <td><code>{{ st.student__roll_no }}</code></td>
+                        <td class="num"><b style="font-size: 14px;">{{ st.total_loans }}</b></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="muted" style="text-align: center; padding: 16px;">No borrowing history yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# Overdue Loans Roster #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon" style="color: var(--danger);"><use href="#i-clock"/></svg>
+            <span>Overdue Book Loans & Fine Tracker</span>
+        </div>
+        <span class="badge {% if library.overdue_count > 0 %}red{% else %}green{% endif %}">
+            {{ library.overdue_count }} Overdue Loan(s)
+        </span>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Student Name</th>
+                        <th>Roll No</th>
+                        <th>Due Date</th>
+                        <th class="num">Days Overdue</th>
+                        <th class="num">Calculated Fine</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in library.overdue_list %}
+                    <tr>
+                        <td class="strong">{{ l.book_title }}</td>
+                        <td>{{ l.student_name }}</td>
+                        <td><code>{{ l.roll_no }}</code></td>
+                        <td>{{ l.due_date }}</td>
+                        <td class="num" style="color: var(--danger); font-weight: 700;">{{ l.days_overdue }} days</td>
+                        <td class="num" style="color: var(--danger); font-weight: 800;">₹{{ l.calculated_fine }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty">
+                                <svg class="icon"><use href="#i-check"/></svg>
+                                <b>No Overdue Loans</b>
+                                <span>All currently issued books are within their permitted borrowing period.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{ charts_json|json_script:"library-charts-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const raw = document.getElementById("library-charts-data");
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+
+    const ctx1 = document.getElementById("libCatChart");
+    if (ctx1 && data.categories.labels.length > 0) {
+        new Chart(ctx1, {
+            type: "pie",
+            data: {
+                labels: data.categories.labels,
+                datasets: [{
+                    data: data.categories.data,
+                    backgroundColor: ["#2563eb", "#7c3aed", "#16a34a", "#f59e0b"]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: "bottom" } }
+            }
+        });
+    }
+
+    const ctx2 = document.getElementById("libCircChart");
+    if (ctx2) {
+        new Chart(ctx2, {
+            type: "doughnut",
+            data: {
+                labels: data.status.labels,
+                datasets: [{
+                    data: data.status.data,
+                    backgroundColor: ["#16a34a", "#f59e0b"],
+                    borderWidth: 2,
+                    borderColor: "#ffffff"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "68%",
+                plugins: { legend: { position: "bottom" } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

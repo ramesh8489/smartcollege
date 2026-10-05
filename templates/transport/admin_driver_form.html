@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Driver Registration{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Manage driver qualifications, contact numbers, and vehicle links.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_drivers' %}">&larr; Back to Drivers</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please review the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_name">Driver Full Name *</label>
+                    {{ form.name }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_employee_id">Employee ID *</label>
+                    {{ form.employee_id }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_phone">Primary Phone *</label>
+                    {{ form.phone }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_email">Email (optional)</label>
+                    {{ form.email }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_licence_number">Commercial Driving Licence No *</label>
+                    {{ form.licence_number }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_licence_expiry">Licence Expiry Date *</label>
+                    {{ form.licence_expiry }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_assigned_vehicle">Assigned Bus</label>
+                    {{ form.assigned_vehicle }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_joining_date">Joining Date</label>
+                    {{ form.joining_date }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_emergency_contact">Emergency Contact Person</label>
+                    {{ form.emergency_contact }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_emergency_phone">Emergency Contact Phone</label>
+                    {{ form.emergency_phone }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label strong" for="id_address">Residential Address</label>
+                {{ form.address }}
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label strong" for="id_notes">Internal Remarks</label>
+                {{ form.notes }}
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+                {{ form.is_active }}
+                <label class="form-label strong" for="id_is_active" style="margin: 0;">Driver Currently Active in Fleet</label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 18px;">
+                <a href="{% url 'transport:admin_drivers' %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Save Driver
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

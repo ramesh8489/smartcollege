@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Stop Setup{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Route: {{ route.code }} - {{ route.name }}{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_route_detail' route.pk %}">&larr; Back to Route {{ route.code }}</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please review the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_stop_name">Stop Name *</label>
+                    {{ form.stop_name }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_stop_code">Stop Code (optional)</label>
+                    {{ form.stop_code }}
+                </div>
+            </div>
+
+            <div class="grid grid-3" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_stop_order">Stop Order *</label>
+                    {{ form.stop_order }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_distance_km">Distance (km)</label>
+                    {{ form.distance_km }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_fare_amount">Fare (₹)</label>
+                    {{ form.fare_amount }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_pickup_time">Morning Pickup Time *</label>
+                    {{ form.pickup_time }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_drop_time">Evening Drop Time *</label>
+                    {{ form.drop_time }}
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+                {{ form.is_active }}
+                <label class="form-label strong" for="id_is_active" style="margin: 0;">Stop Active for Service</label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 18px;">
+                <a href="{% url 'transport:admin_route_detail' route.pk %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Save Stop
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

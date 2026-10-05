@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transport Grievances & Complaints · Smart College{% endblock %}
+{% block topbar_title %}Transport Complaints{% endblock %}
+
+{% block page_title %}Transport Complaints & Grievance Redressal{% endblock %}
+{% block page_sub %}Manage student commute grievances, driver behavior issues, delay reports, and assign resolutions.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    {% if complaints %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Grievance ID</th>
+                    <th>Student</th>
+                    <th>Category</th>
+                    <th>Route / Bus</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th>Assigned To</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td><code>{{ c.complaint_id }}</code></td>
+                    <td>
+                        <strong>{{ c.student.name }}</strong>
+                        <div class="muted" style="font-size: 11px;">Roll: {{ c.student.roll_no }}</div>
+                    </td>
+                    <td><span class="badge blue">{{ c.get_category_display }}</span></td>
+                    <td>
+                        {% if c.route %}<code>{{ c.route.code }}</code>{% endif %}
+                        {% if c.vehicle %}<span class="muted">({{ c.vehicle.vehicle_number }})</span>{% endif %}
+                        {% if not c.route and not c.vehicle %}<span class="muted">-</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if c.priority == 'CRITICAL' %}
+                            <span class="badge red">Critical</span>
+                        {% elif c.priority == 'HIGH' %}
+                            <span class="badge amber">High</span>
+                        {% elif c.priority == 'MEDIUM' %}
+                            <span class="badge blue">Medium</span>
+                        {% else %}
+                            <span class="badge gray">Low</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.status == 'OPEN' %}
+                            <span class="badge amber">Open</span>
+                        {% elif c.status == 'IN_PROGRESS' %}
+                            <span class="badge blue">In Progress</span>
+                        {% elif c.status == 'RESOLVED' %}
+                            <span class="badge green">Resolved</span>
+                        {% else %}
+                            <span class="badge gray">Closed</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.created_at|date:"d M Y, H:i" }}</td>
+                    <td>
+                        {% if c.assigned_staff %}
+                            <span>{{ c.assigned_staff.get_full_name|default:c.assigned_staff.username }}</span>
+                        {% else %}
+                            <span class="muted" style="font-size: 12px;">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:admin_complaint_detail' c.pk %}" class="btn btn-ghost btn-sm">Review & Resolve</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 40px; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 8px;">🛡️</div>
+        <h3>No Transport Complaints Active</h3>
+        <p class="muted">All student commute grievance tickets have been resolved or none have been submitted.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

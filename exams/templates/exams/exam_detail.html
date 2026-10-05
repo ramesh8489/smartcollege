@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}{{ exam.name }} · Exam Details{% endblock %}
+{% block topbar_title %}Exam Details{% endblock %}
+
+{% block page_title %}{{ exam.name }}{% endblock %}
+{% block page_sub %}{{ exam.course.name }} · {{ exam.get_year_display }} · {{ exam.get_semester_display }} · {{ exam.academic_year }}{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-ghost" onclick="window.print();">
+            <svg class="icon"><use href="#i-download"/></svg>
+            <span>Print Timetable</span>
+        </button>
+        <a href="{% url 'exam_list' %}" class="btn btn-ghost">
+            ← All Exams
+        </a>
+        {% if is_admin or is_faculty %}
+            <a href="{% url 'exam_marks_dashboard' %}?exam={{ exam.pk }}" class="btn btn-soft">
+                <svg class="icon"><use href="#i-award"/></svg>
+                <span>View Exam Marks</span>
+            </a>
+        {% endif %}
+        {% if is_admin %}
+            <a href="{% url 'exam_edit' exam.pk %}" class="btn btn-soft">
+                <svg class="icon"><use href="#i-edit"/></svg>
+                <span>Edit Exam</span>
+            </a>
+            <a href="{% url 'exam_delete' exam.pk %}" class="btn btn-danger-soft">
+                <svg class="icon"><use href="#i-trash"/></svg>
+                <span>Delete</span>
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% else %}var(--success){% endif %}; margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 600; color: {% if message.tags == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+                    {{ message }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Exam Metadata Cards -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+            <span>Exam Overview & Parameters</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="badge" style="background: var(--brand-50); color: var(--brand-700); font-weight: 800;">
+                {{ exam.exam_type }}
+            </span>
+            {% if exam.timeline_status == "Ongoing" %}
+                <span class="badge green">● Ongoing</span>
+            {% elif exam.timeline_status == "Upcoming" %}
+                <span class="badge amber">Upcoming</span>
+            {% elif exam.timeline_status == "Completed" %}
+                <span class="badge violet">Completed</span>
+            {% else %}
+                <span class="badge">Inactive</span>
+            {% endif %}
+
+            {% if exam.is_active %}
+                <span class="badge green">Active Status</span>
+            {% else %}
+                <span class="badge red">Inactive</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="grid grid-4" style="gap: 16px;">
+            <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Course / Degree</div>
+                <div style="font-size: 15px; font-weight: 700; color: var(--ink); margin-top: 4px;">{{ exam.course.name }}</div>
+                <div class="muted" style="font-size: 12px;">{{ exam.course.department.name }}</div>
+            </div>
+
+            <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Academic Cohort</div>
+                <div style="font-size: 15px; font-weight: 700; color: var(--ink); margin-top: 4px;">{{ exam.get_year_display }}</div>
+                <div class="muted" style="font-size: 12px;">{{ exam.get_semester_display }} ({{ exam.academic_year }})</div>
+            </div>
+
+            <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Examination Period</div>
+                <div style="font-size: 14.5px; font-weight: 700; color: var(--ink); margin-top: 4px;">
+                    {{ exam.start_date|date:"d M Y" }}
+                </div>
+                <div class="muted" style="font-size: 12px;">to {{ exam.end_date|date:"d M Y" }}</div>
+            </div>
+
+            <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Slots Configured</div>
+                <div style="font-size: 20px; font-weight: 800; color: var(--brand); margin-top: 2px;">
+                    {{ schedules|length }} Subject{{ schedules|length|pluralize }}
+                </div>
+                <div class="muted" style="font-size: 12px;">Papers Scheduled</div>
+            </div>
+        </div>
+
+        {% if exam.description %}
+            <div style="margin-top: 18px; padding: 14px 16px; background: var(--brand-50); border-radius: var(--radius-sm); border-left: 4px solid var(--brand);">
+                <div style="font-size: 12px; font-weight: 800; color: var(--brand-900); text-transform: uppercase; margin-bottom: 4px;">
+                    Instructions & Description
+                </div>
+                <div style="font-size: 13.5px; color: var(--ink-2); line-height: 1.6; white-space: pre-line;">{{ exam.description }}</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Subject Timetable Slots -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-clock"/></svg>
+            <span>Subject Examination Timetable</span>
+        </div>
+        <span class="badge">{{ schedules|length }} Paper{{ schedules|length|pluralize }}</span>
+    </div>
+
+    <div class="card-body flush">
+        {% if schedules %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Subject Code & Name</th>
+                        <th>Exam Date</th>
+                        <th>Day</th>
+                        <th>Time Slot</th>
+                        <th>Room Number</th>
+                        <th>Invigilator</th>
+                        <th>Max Marks</th>
+                        <th>Status</th>
+                        {% if is_admin or is_faculty %}
+                            <th style="text-align: right;">Marks & Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in schedules %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--ink);">{{ slot.subject.name }}</strong>
+                            <div class="muted" style="font-size: 11.5px;">Code: {{ slot.subject.code }} · {{ slot.subject.get_subject_type_display }}</div>
+                        </td>
+                        <td>
+                            <strong style="font-weight: 700;">{{ slot.exam_date|date:"d M Y" }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge">{{ slot.exam_date|date:"l" }}</span>
+                        </td>
+                        <td>
+                            <span style="font-weight: 600;">{{ slot.start_time|time:"h:i A" }} - {{ slot.end_time|time:"h:i A" }}</span>
+                        </td>
+                        <td>
+                            {% if slot.room_number or slot.room %}
+                                <span class="badge" style="background: var(--surface-2); border: 1px solid var(--line-2);">
+                                    {{ slot.room_number|default:slot.room }}
+                                </span>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if slot.invigilator %}
+                                <div style="font-weight: 600;">{{ slot.invigilator.name }}</div>
+                                <div class="muted" style="font-size: 11px;">ID: {{ slot.invigilator.faculty_id }}</div>
+                            {% else %}
+                                <span class="muted">TBA</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ slot.max_marks }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge {% if slot.status == 'Completed' %}green{% elif slot.status == 'Ongoing' %}amber{% elif slot.status == 'Cancelled' %}rose{% else %}violet{% endif %}">
+                                {{ slot.status }}
+                            </span>
+                        </td>
+                        {% if is_admin or is_faculty %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            {% if slot.can_manage_marks %}
+                                <a href="{% url 'exam_schedule_marks_entry' slot.pk %}" class="btn btn-sm btn-primary" title="Enter / Update Marks">
+                                    <svg class="icon-sm"><use href="#i-edit"/></svg>
+                                    <span>Enter Marks</span>
+                                    {% if slot.marks_entered_count > 0 %}
+                                        <span class="badge" style="background: rgba(255,255,255,0.25); color: #fff; margin-left: 4px; padding: 2px 6px;">{{ slot.marks_entered_count }}</span>
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                            {% if is_admin %}
+                                <form method="post" action="{% url 'delete_schedule' slot.pk %}" style="display:inline;" onsubmit="return confirm('Remove {{ slot.subject.name }} from this exam schedule?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger-soft" title="Remove slot">
+                                        <svg class="icon-sm"><use href="#i-trash"/></svg>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty" style="padding: 36px 20px; text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 8px;">🗓️</div>
+                <div style="font-weight: 700; color: var(--ink);">No Subject Papers Scheduled Yet</div>
+                <div class="muted" style="font-size: 12.5px; margin-top: 4px;">
+                    Use the form below to add individual subject dates, times, rooms, and invigilators.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Subject Schedule Slot (Admin / Faculty) -->
+{% if schedule_form and is_admin %}
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-plus"/></svg>
+            <span>Add Subject Paper to Timetable</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'exam_detail' exam.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="add_schedule" value="1">
+
+            <div class="grid grid-3" style="gap: 16px;">
+                <div class="field" style="grid-column: span 2;">
+                    <label for="{{ schedule_form.subject.id_for_label }}">Subject <span style="color:var(--danger)">*</span></label>
+                    {{ schedule_form.subject }}
+                </div>
+
+                <div class="field">
+                    <label for="{{ schedule_form.exam_date.id_for_label }}">Exam Date <span style="color:var(--danger)">*</span></label>
+                    {{ schedule_form.exam_date }}
+                </div>
+
+                <div class="field">
+                    <label for="{{ schedule_form.start_time.id_for_label }}">Start Time <span style="color:var(--danger)">*</span></label>
+                    {{ schedule_form.start_time }}
+                </div>
+
+                <div class="field">
+                    <label for="{{ schedule_form.end_time.id_for_label }}">End Time <span style="color:var(--danger)">*</span></label>
+                    {{ schedule_form.end_time }}
+                </div>
+
+                <div class="field">
+                    <label for="{{ schedule_form.room_number.id_for_label }}">Room Number</label>
+                    {{ schedule_form.room_number }}
+                </div>
+
+                <div class="field" style="grid-column: span 2;">
+                    <label for="{{ schedule_form.invigilator.id_for_label }}">Invigilator Faculty</label>
+                    {{ schedule_form.invigilator }}
+                </div>
+
+                <div class="field">
+                    <label for="{{ schedule_form.max_marks.id_for_label }}">Maximum Marks</label>
+                    {{ schedule_form.max_marks }}
+                </div>
+
+                <div class="field">
+                    <label for="{{ schedule_form.status.id_for_label }}">Exam Status</label>
+                    {{ schedule_form.status }}
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-plus"/></svg>
+                    <span>Add to Exam Schedule</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

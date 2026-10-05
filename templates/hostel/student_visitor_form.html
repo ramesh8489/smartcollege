@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Request Visitor Pass · Smart College{% endblock %}
+{% block topbar_title %}Visitor Pass Request{% endblock %}
+
+{% block page_title %}Hostel Visitor Pass Application{% endblock %}
+{% block page_sub %}
+    Pre-register visiting family members, parents, or guardians for security clearance and hostel entry.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:student_visitors' %}">&larr; Back to Visitors</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if allocation %}
+<div class="card mb" style="max-width: 680px; margin: 0 auto 20px; padding: 16px 20px; background: var(--surface-alt, #f8fafc); border-left: 4px solid var(--brand-600);">
+    <div style="font-size: 13px; color: var(--ink);">
+        Hostel: <strong>{{ allocation.hostel.name }} ({{ allocation.hostel.code }})</strong> &middot; Room: <strong>{{ allocation.room.room_number }}</strong> &middot; Bed: <strong>{{ allocation.bed.bed_number }}</strong>
+    </div>
+</div>
+{% endif %}
+
+<div class="card" style="max-width: 680px; margin: 0 auto; padding: 28px 32px;">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div style="background: var(--danger-subtle, #fef2f2); border-left: 4px solid var(--danger, #dc2626); padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
+                {% for err in form.non_field_errors %}
+                    <div style="color: var(--danger, #dc2626); font-weight: 500;">{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label class="label">Visitor Full Name <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.visitor_name }}
+                {% if form.visitor_name.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.visitor_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div>
+                <label class="label">Relationship <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.relationship }}
+                {% if form.relationship.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.relationship.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label class="label">Contact Phone <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.phone.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div>
+                <label class="label">Planned Visit Date <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.visit_date }}
+                {% if form.visit_date.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.visit_date.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="label">Purpose of Visit <span style="color: var(--danger, #dc2626);">*</span></label>
+            {{ form.purpose }}
+            {% if form.purpose.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.purpose.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label class="label">Remarks / Special Notes</label>
+            {{ form.remarks }}
+            {% if form.remarks.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.remarks.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border); padding-top: 20px;">
+            <a href="{% url 'hostel:student_visitors' %}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-check"/></svg> Submit Visitor Pass Request
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

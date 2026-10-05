@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transport Complaints · Smart College{% endblock %}
+{% block topbar_title %}My Transport Complaints{% endblock %}
+
+{% block page_title %}Transport Complaints & Grievances{% endblock %}
+{% block page_sub %}Report bus delays, staff behavior, rash driving, or vehicle maintenance issues directly to transport management.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:student_complaint_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> Log New Issue
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:student_portal' %}">&larr; Transport Portal</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    {% if complaints %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Category</th>
+                    <th>Title</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Date Filed</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td><code>{{ c.complaint_id }}</code></td>
+                    <td>{{ c.get_category_display }}</td>
+                    <td class="strong">{{ c.title }}</td>
+                    <td>
+                        {% if c.priority == 'CRITICAL' %}
+                            <span class="badge red">Critical</span>
+                        {% elif c.priority == 'HIGH' %}
+                            <span class="badge amber">High</span>
+                        {% else %}
+                            <span class="badge gray">{{ c.get_priority_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.status == 'OPEN' %}
+                            <span class="badge amber">Open</span>
+                        {% elif c.status == 'IN_PROGRESS' %}
+                            <span class="badge violet">In Progress</span>
+                        {% elif c.status == 'RESOLVED' %}
+                            <span class="badge green">Resolved</span>
+                        {% elif c.status == 'CLOSED' %}
+                            <span class="badge gray">Closed</span>
+                        {% endif %}
+                    </td>
+                    <td class="muted">{{ c.created_at|date:"d M Y" }}</td>
+                    <td>
+                        <a href="{% url 'transport:student_complaint_detail' c.pk %}" class="btn btn-ghost btn-sm">Track &rarr;</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🛡️</div>
+        <h3>No Complaints Logged</h3>
+        <p class="muted" style="margin-bottom: 16px;">Have you experienced any route delays or vehicle issues?</p>
+        <a class="btn btn-primary" href="{% url 'transport:student_complaint_create' %}">Submit a Ticket</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block topbar_title %}Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block page_sub %}Your registration details on file.{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <div class="card-head">
+        <div class="card-title"><svg class="icon"><use href="#i-user"/></svg> {{ student.name }}</div>
+        <span class="badge green"><svg class="icon icon-sm"><use href="#i-check"/></svg> Approved</span>
+    </div>
+    <div class="card-body">
+        <div class="kv">
+            <div class="kv-item"><div class="kv-k">Roll number</div><div class="kv-v">{{ student.roll_no }}</div></div>
+            <div class="kv-item"><div class="kv-k">SIF number</div><div class="kv-v">{{ student.sif_number|default:"—" }}</div></div>
+            <div class="kv-item"><div class="kv-k">Email</div><div class="kv-v">{{ student.email }}</div></div>
+            <div class="kv-item"><div class="kv-k">School</div><div class="kv-v">{{ student.department.name }}</div></div>
+            <div class="kv-item"><div class="kv-k">Degree / Course</div><div class="kv-v">{{ student.course.name|default:"—" }}</div></div>
+            <div class="kv-item"><div class="kv-k">Year</div><div class="kv-v">Year {{ student.year }}</div></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

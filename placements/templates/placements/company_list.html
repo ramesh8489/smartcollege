@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Recruiting Companies · Smart College{% endblock %}
+{% block topbar_title %}Companies{% endblock %}
+
+{% block page_title %}Recruiting Corporate Partners{% endblock %}
+{% block page_sub %}Explore registered corporate partners, hiring criteria, primary HR contact information, and active placement history.{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px;">
+    <a class="btn btn-ghost" href="{% url 'placements_dashboard' %}">
+        &larr; Placement Dashboard
+    </a>
+    {% if is_officer %}
+    <a class="btn btn-primary" id="btn-add-company" href="{% url 'company_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        <span>Register Company</span>
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+<div style="margin-bottom: 20px;">
+    {% for message in messages %}
+    <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand); margin-bottom: 10px; background: var(--surface);">
+        <div style="font-weight: 600; color: var(--ink);">{{ message }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Filters & Search Bar -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-body">
+        <form method="get" action="." style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;">
+            <div class="field" style="min-width: 220px; flex: 1;">
+                <label class="label" for="search-company" style="font-size: 12px; font-weight: 700;">Search Company or Industry</label>
+                <input type="text" name="q" id="search-company" class="input" value="{{ search_q }}" placeholder="e.g. Google, IT, Banking...">
+            </div>
+
+            <div class="field" style="min-width: 170px;">
+                <label class="label" for="filter-status" style="font-size: 12px; font-weight: 700;">Status</label>
+                <select name="status" id="filter-status" class="select">
+                    <option value="">All Statuses</option>
+                    <option value="Active" {% if status_filter == 'Active' %}selected{% endif %}>Active</option>
+                    <option value="Inactive" {% if status_filter == 'Inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+
+            <div class="field" style="min-width: 190px;">
+                <label class="label" for="filter-industry" style="font-size: 12px; font-weight: 700;">Industry</label>
+                <select name="industry" id="filter-industry" class="select">
+                    <option value="">All Industries</option>
+                    {% for ind in industries %}
+                    <option value="{{ ind }}" {% if industry_filter == ind %}selected{% endif %}>{{ ind }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary" id="btn-filter-companies">
+                    <svg class="icon"><use href="#i-filter"/></svg>
+                    <span>Filter</span>
+                </button>
+                {% if search_q or status_filter or industry_filter %}
+                <a href="{% url 'company_list' %}" class="btn btn-ghost">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Company Cards Grid -->
+{% if companies %}
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 18px;">
+    {% for c in companies %}
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    {% if c.logo %}
+                    <img src="{{ c.logo.url }}" alt="{{ c.name }}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: contain; border: 1px solid var(--line);">
+                    {% else %}
+                    <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(59, 130, 246, 0.12); color: var(--brand); display: grid; place-items: center; font-weight: 800; font-size: 18px;">
+                        {{ c.name|slice:":1"|upper }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h3 style="font-size: 16px; font-weight: 700; color: var(--text); margin: 0;">
+                            <a href="{% url 'company_detail' c.id %}" style="color: inherit; text-decoration: none;">{{ c.name }}</a>
+                        </h3>
+                        <span class="badge slate" style="font-size: 11px; margin-top: 4px;">{{ c.industry }}</span>
+                    </div>
+                </div>
+                <span class="badge {% if c.status == 'Active' %}green{% else %}rose{% endif %}">
+                    {{ c.status }}
+                </span>
+            </div>
+
+            {% if c.description %}
+            <p style="font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; max-height: 42px; overflow: hidden;">
+                {{ c.description }}
+            </p>
+            {% endif %}
+
+            <div style="border-top: 1px solid var(--line); padding-top: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 5px; color: var(--muted);">
+                {% if c.hr_contact_person %}
+                <div>HR Contact: <strong style="color: var(--text);">{{ c.hr_contact_person }}</strong></div>
+                {% endif %}
+                {% if c.contact_email %}
+                <div>Email: <a href="mailto:{{ c.contact_email }}" style="color: var(--brand);">{{ c.contact_email }}</a></div>
+                {% endif %}
+                {% if c.website %}
+                <div>Web: <a href="{{ c.website }}" target="_blank" rel="noopener" style="color: var(--brand);">{{ c.website }}</a></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-top: 1px solid var(--line); background: var(--surface);">
+            <span style="font-size: 12px; color: var(--brand); font-weight: 700;">
+                {{ c.drives.count }} Drive{% if c.drives.count != 1 %}s{% endif %}
+            </span>
+            <div style="display: flex; gap: 6px;">
+                <a href="{% url 'company_detail' c.id %}" class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">Details</a>
+                {% if is_officer %}
+                <a href="{% url 'company_edit' c.id %}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">Edit</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="padding: 48px; text-align: center;">
+    <svg class="icon" style="width: 44px; height: 44px; color: var(--muted); margin-bottom: 12px;"><use href="#i-briefcase"/></svg>
+    <div style="font-size: 16px; font-weight: 700; color: var(--text);">No Companies Found</div>
+    <div class="muted" style="margin-top: 4px; font-size: 13px;">No corporate partners match your current filter parameters.</div>
+</div>
+{% endif %}
+
+{% endblock %}

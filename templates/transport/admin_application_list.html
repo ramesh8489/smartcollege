@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transport Applications · Smart College{% endblock %}
+{% block topbar_title %}Application Roster{% endblock %}
+
+{% block page_title %}Student Transport Applications{% endblock %}
+{% block page_sub %}Review, approve, or reject student commuter accommodation requests.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    <!-- Filters Toolbar -->
+    <form method="get" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search ID, student name, roll no..." class="form-control" style="max-width: 280px;">
+        <select name="status" class="form-control" style="max-width: 180px;">
+            <option value="">All Statuses</option>
+            <option value="PENDING" {% if status == 'PENDING' %}selected{% endif %}>Pending Review</option>
+            <option value="APPROVED" {% if status == 'APPROVED' %}selected{% endif %}>Approved</option>
+            <option value="REJECTED" {% if status == 'REJECTED' %}selected{% endif %}>Rejected</option>
+            <option value="CANCELLED" {% if status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+        </select>
+        <select name="route" class="form-control" style="max-width: 200px;">
+            <option value="">All Routes</option>
+            {% for r in routes %}
+                <option value="{{ r.id }}" {% if route == r.id|stringformat:"s" %}selected{% endif %}>{{ r.code }} - {{ r.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-ghost">
+            <svg class="icon icon-sm"><use href="#i-filter"/></svg> Filter
+        </button>
+        {% if q or status or route %}
+            <a href="{% url 'transport:admin_applications' %}" class="btn btn-ghost" style="color: var(--muted);">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if page_obj %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>App ID</th>
+                    <th>Roll No</th>
+                    <th>Student Name</th>
+                    <th>Route</th>
+                    <th>Boarding Stop</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in page_obj %}
+                <tr>
+                    <td><code>{{ app.application_id }}</code></td>
+                    <td><code>{{ app.student.roll_no }}</code></td>
+                    <td class="strong">{{ app.student.name }}</td>
+                    <td>{{ app.route.code }}</td>
+                    <td>{{ app.stop.stop_name }}</td>
+                    <td>{{ app.application_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if app.status == 'APPROVED' %}
+                            <span class="badge green">Approved</span>
+                        {% elif app.status == 'PENDING' %}
+                            <span class="badge amber">Pending Review</span>
+                        {% elif app.status == 'REJECTED' %}
+                            <span class="badge red">Rejected</span>
+                        {% else %}
+                            <span class="badge gray">{{ app.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:application_detail' app.pk %}" class="btn btn-ghost btn-sm">Review &rarr;</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}&route={{ route }}" class="btn btn-ghost btn-sm">&larr; Prev</a>
+        {% endif %}
+        <span class="muted" style="align-self: center; font-size: 13px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}&route={{ route }}" class="btn btn-ghost btn-sm">Next &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📬</div>
+        <h3>No Applications Found</h3>
+        <p class="muted">No student applications matched your filter criteria.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

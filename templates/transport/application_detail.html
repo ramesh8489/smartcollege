@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Application {{ application.application_id }} · Smart College{% endblock %}
+{% block topbar_title %}Transport Application Details{% endblock %}
+
+{% block page_title %}Application {{ application.application_id }}{% endblock %}
+{% block page_sub %}
+    Submitted on {{ application.application_date|date:"d M Y" }} &middot;
+    Current Status:
+    {% if application.status == 'APPROVED' %}
+        <span class="badge green">Approved</span>
+    {% elif application.status == 'PENDING' %}
+        <span class="badge amber">Pending Review</span>
+    {% elif application.status == 'REJECTED' %}
+        <span class="badge red">Rejected</span>
+    {% else %}
+        <span class="badge gray">{{ application.get_status_display }}</span>
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    {% if is_admin %}
+        <a class="btn btn-ghost" href="{% url 'transport:admin_applications' %}">&larr; Back to Applications Roster</a>
+    {% else %}
+        <a class="btn btn-ghost" href="{% url 'transport:application_list' %}">&larr; Back to My Applications</a>
+    {% endif %}
+{% endblock %}
+
+{% if is_admin %}
+<div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start;">
+{% else %}
+<div style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start;">
+{% endif %}
+    <!-- Details Column -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card" style="padding: 24px;">
+            <div class="card-head" style="margin-bottom: 16px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-bus"/></svg>
+                    <span>Commuter Transport Request</span>
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px;">
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Applicant Name</div>
+                    <div class="strong" style="font-size: 15px; margin-top: 2px;">{{ application.student.name }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Roll Number</div>
+                    <div style="font-size: 15px; margin-top: 2px;"><code>{{ application.student.roll_no }}</code></div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Course / Department</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ application.student.course.name }} ({{ application.student.department.name }})</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Academic Session</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ application.academic_year }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Requested Route</div>
+                    <div class="strong" style="font-size: 14px; margin-top: 2px; color: var(--brand-700);">
+                        {{ application.route.code }} - {{ application.route.name }}
+                    </div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Designated Stop</div>
+                    <div class="strong" style="font-size: 14px; margin-top: 2px;">{{ application.stop.stop_name }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Pickup Time</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ application.stop.pickup_time|time:"h:i A" }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Evening Drop Time</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ application.stop.drop_time|time:"h:i A" }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Parent / Emergency Phone</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ application.parent_phone|default:"Not Provided" }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Service Start Date</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ application.requested_from_date|date:"d M Y" }}</div>
+                </div>
+            </div>
+
+            {% if application.address %}
+            <div style="margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px;">
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Residential Address</div>
+                <div style="font-size: 13.5px; margin-top: 4px; line-height: 1.5;">{{ application.address }}</div>
+            </div>
+            {% endif %}
+
+            {% if application.remarks %}
+            <div style="margin-top: 14px;">
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Applicant Remarks / Notes</div>
+                <div style="font-size: 13px; margin-top: 4px; color: var(--muted); font-style: italic;">"{{ application.remarks }}"</div>
+            </div>
+            {% endif %}
+
+            {% if application.rejection_reason %}
+            <div style="margin-top: 18px; padding: 14px 18px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px;">
+                <div style="font-weight: 700; color: #991b1b; font-size: 13px;">Rejection Rationale:</div>
+                <div style="color: #b91c1c; font-size: 13px; margin-top: 2px;">{{ application.rejection_reason }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action / Status Sidebar -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        {% if is_admin and application.status == 'PENDING' %}
+        <div class="card" style="padding: 22px;">
+            <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+                <svg class="icon"><use href="#i-check"/></svg>
+                <span>Administrative Review</span>
+            </div>
+
+            <form method="post" action="{% url 'transport:admin_application_review' application.pk %}">
+                {% csrf_token %}
+                <div style="margin-bottom: 14px;">
+                    <label class="form-label strong" for="id_action">Decision *</label>
+                    {{ review_form.action }}
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label class="form-label strong" for="id_rejection_reason">Rejection Reason</label>
+                    {{ review_form.rejection_reason }}
+                    <div class="muted" style="font-size: 11px; margin-top: 2px;">Required only if rejecting the application.</div>
+                </div>
+
+                <div style="margin-bottom: 18px;">
+                    <label class="form-label strong" for="id_remarks">Review Notes</label>
+                    {{ review_form.remarks }}
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Submit Decision
+                </button>
+            </form>
+        </div>
+        {% elif is_admin and application.status == 'APPROVED' %}
+        <div class="card" style="padding: 22px; background: var(--surface);">
+            <div class="card-title" style="margin-bottom: 12px; font-size: 14px;">
+                <svg class="icon"><use href="#i-bus"/></svg>
+                <span>Ready for Bus Allocation</span>
+            </div>
+            <p class="muted" style="font-size: 12.5px; line-height: 1.5; margin-bottom: 14px;">
+                This application has been approved. Assign the student to a bus and issue an active transport pass.
+            </p>
+            <a href="{% url 'transport:admin_allocation_create' %}?student={{ application.student.id }}&route={{ application.route.id }}&stop={{ application.stop.id }}" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                Allocate Bus Seat &rarr;
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 12px; font-size: 13.5px;">
+                <svg class="icon"><use href="#i-clock"/></svg>
+                <span>Audit Trail</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Application Date:</span>
+                    <span>{{ application.application_date|date:"d M Y" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Status:</span>
+                    <span class="strong">{{ application.get_status_display }}</span>
+                </div>
+                {% if application.reviewed_by %}
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Reviewed By:</span>
+                    <span>{{ application.reviewed_by.username }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Reviewed At:</span>
+                    <span>{{ application.reviewed_at|date:"d M Y, h:i A" }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

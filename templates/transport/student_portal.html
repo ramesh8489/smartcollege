@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transport Portal · Smart College{% endblock %}
+{% block topbar_title %}Student Transport Portal{% endblock %}
+
+{% block page_title %}Transport & Commuter Services{% endblock %}
+{% block page_sub %}Manage your daily campus bus commute, route stops, digital transport pass, fees, and attendance.{% endblock %}
+
+{% block page_actions %}
+    {% if not allocation %}
+        <a class="btn btn-primary" href="{% url 'transport:application_apply' %}">
+            <svg class="icon"><use href="#i-plus"/></svg> Apply for Transport
+        </a>
+    {% else %}
+        <a class="btn btn-secondary" href="{% url 'transport:student_pass' %}">
+            <svg class="icon"><use href="#i-bus"/></svg> View Bus Pass
+        </a>
+    {% endif %}
+    <a class="btn btn-ghost" href="{% url 'transport:student_complaint_create' %}">
+        <svg class="icon"><use href="#i-edit"/></svg> Submit Complaint
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Primary Status Overview Grid -->
+<div class="grid grid-4" style="gap: 16px; margin-bottom: 24px;">
+    <!-- Allocation Card -->
+    <div class="card" style="padding: 18px; border-top: 3px solid #2563eb;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Commute Status</div>
+        <div style="font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 4px;">
+            {% if allocation %}
+                <span class="badge green">Allocated</span>
+            {% elif data.applications.pending %}
+                <span class="badge amber">Application Pending</span>
+            {% else %}
+                <span class="badge gray">Not Enrolled</span>
+            {% endif %}
+        </div>
+        <div class="muted" style="font-size: 12px; margin-top: 6px;">
+            {% if allocation %}
+                Bus <strong>{{ allocation.vehicle.vehicle_number }}</strong> &middot; Seat: {{ allocation.seat_number|default:"Open" }}
+            {% elif data.applications.pending %}
+                Application ID: <code>{{ data.applications.pending.application_id }}</code>
+            {% else %}
+                No active bus pass or route assigned
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Route & Stop -->
+    <div class="card" style="padding: 18px; border-top: 3px solid #7c3aed;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Assigned Route & Stop</div>
+        <div style="font-size: 18px; font-weight: 800; color: var(--ink); margin-top: 4px;">
+            {% if allocation %}
+                {{ allocation.route.code }}
+            {% else %}
+                -
+            {% endif %}
+        </div>
+        <div class="muted" style="font-size: 12px; margin-top: 6px;">
+            {% if allocation %}
+                Stop: <strong>{{ allocation.stop.stop_name }}</strong><br>
+                Pickup: {{ allocation.stop.pickup_time|time:"h:i A" }} &middot; Drop: {{ allocation.stop.drop_time|time:"h:i A" }}
+            {% else %}
+                Apply to select your boarding stop
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Fees Card -->
+    <div class="card" style="padding: 18px; border-top: 3px solid #059669;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Transport Fees</div>
+        <div style="font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 4px;">
+            ₹{{ fees.outstanding|floatformat:0 }}
+            <span class="muted" style="font-size: 12px; font-weight: 500;">Due</span>
+        </div>
+        <div class="muted" style="font-size: 12px; margin-top: 6px;">
+            Total: ₹{{ fees.total_fees|floatformat:0 }} &middot; Paid: ₹{{ fees.total_paid|floatformat:0 }}
+            {% if fees.status == 'PAID' %}
+                <span class="badge green" style="font-size: 10px; margin-left: 4px;">Clear</span>
+            {% elif fees.status == 'PARTIAL' %}
+                <span class="badge amber" style="font-size: 10px; margin-left: 4px;">Partial</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Attendance Card -->
+    <div class="card" style="padding: 18px; border-top: 3px solid #d97706;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Commute Attendance</div>
+        <div style="font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 4px;">
+            {% if attendance.percentage is not None %}{{ attendance.percentage }}%{% else %}N/A{% endif %}
+        </div>
+        <div class="muted" style="font-size: 12px; margin-top: 6px;">
+            Present: {{ attendance.present }} &middot; Absent: {{ attendance.absent }} &middot; Total: {{ attendance.total }}
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+    <!-- Main Left Column -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+        <!-- Active Bus Pass Card Preview -->
+        {% if allocation and pass %}
+        <div class="card" style="padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                <div>
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 700;">Smart College &middot; Commuter ID</div>
+                    <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 2px;">Official Student Bus Pass</div>
+                </div>
+                <div>
+                    {% if pass.is_valid %}
+                        <span class="badge green" style="font-size: 11px; padding: 4px 10px;">ACTIVE PASS</span>
+                    {% else %}
+                        <span class="badge red" style="font-size: 11px; padding: 4px 10px;">{{ pass.get_status_display }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin: 16px 0; padding: 14px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                <div>
+                    <div style="font-size: 11px; color: #94a3b8;">Pass Number</div>
+                    <div style="font-weight: 700; font-size: 14px; font-family: monospace; color: #f8fafc;">{{ pass.pass_number }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #94a3b8;">Vehicle / Bus No</div>
+                    <div style="font-weight: 700; font-size: 14px; color: #60a5fa;">{{ allocation.vehicle.vehicle_number }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #94a3b8;">Route & Stop</div>
+                    <div style="font-weight: 700; font-size: 14px; color: #f8fafc;">{{ allocation.route.code }} &middot; {{ allocation.stop.stop_name }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #94a3b8;">Validity Window</div>
+                    <div style="font-weight: 600; font-size: 13px; color: #f8fafc;">{{ pass.issue_date|date:"d M Y" }} to {{ pass.expiry_date|date:"d M Y" }}</div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 14px;">
+                <div style="font-size: 12px; color: #cbd5e1;">
+                    Passenger: <strong>{{ student.name }}</strong> (<code>{{ student.roll_no }}</code>)
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{% url 'transport:student_pass' %}" class="btn btn-ghost" style="color: #fff; border-color: rgba(255, 255, 255, 0.2);">Digital Pass</a>
+                    <a href="{% url 'transport:student_pass_pdf' %}" class="btn btn-primary" style="background: #3b82f6; border: none;">Download PDF Pass</a>
+                </div>
+            </div>
+        </div>
+        {% elif not allocation and not data.applications.pending %}
+        <div class="card" style="padding: 28px; text-align: center; border: 2px dashed var(--border);">
+            <div style="font-size: 36px; margin-bottom: 10px;">🚌</div>
+            <h3 style="margin-bottom: 6px; font-weight: 700;">Campus Bus Transport Not Assigned</h3>
+            <p class="muted" style="max-width: 480px; margin: 0 auto 18px; font-size: 13.5px;">
+                You are currently not enrolled in campus bus transport. Browse college routes, choose your pickup stop, and apply online today.
+            </p>
+            <a class="btn btn-primary" href="{% url 'transport:application_apply' %}">
+                <svg class="icon"><use href="#i-plus"/></svg> Apply for Campus Bus Transport
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Recent Transport Attendance -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-check"/></svg>
+                    <span>Recent Commute Attendance</span>
+                </div>
+                <a class="link-arrow" href="{% url 'transport:student_attendance' %}" style="font-size: 12.5px;">Full Log &rarr;</a>
+            </div>
+
+            {% if attendance.recent %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Trip</th>
+                            <th>Route & Bus</th>
+                            <th>Boarding Stop</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in attendance.recent %}
+                        <tr>
+                            <td>{{ att.date|date:"d M Y" }}</td>
+                            <td><span class="badge gray">{{ att.get_trip_type_display }}</span></td>
+                            <td>{{ att.route.code }} &middot; {{ att.vehicle.vehicle_number }}</td>
+                            <td>{{ att.boarding_stop.stop_name|default:"-" }}</td>
+                            <td>
+                                {% if att.status == 'PRESENT' %}
+                                    <span class="badge green">Present</span>
+                                {% elif att.status == 'ABSENT' %}
+                                    <span class="badge red">Absent</span>
+                                {% else %}
+                                    <span class="badge amber">{{ att.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 24px; text-align: center; color: var(--muted); font-size: 13px;">
+                No transport attendance records logged yet.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Complaints & Feedback -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-inbox"/></svg>
+                    <span>Transport Complaints & Issues</span>
+                </div>
+                <a class="link-arrow" href="{% url 'transport:student_complaints' %}" style="font-size: 12.5px;">View All &rarr;</a>
+            </div>
+
+            {% if complaints.recent %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Category</th>
+                            <th>Title</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in complaints.recent %}
+                        <tr>
+                            <td><code><a href="{% url 'transport:student_complaint_detail' c.pk %}">{{ c.complaint_id }}</a></code></td>
+                            <td>{{ c.get_category_display }}</td>
+                            <td class="strong">{{ c.title }}</td>
+                            <td><span class="badge gray">{{ c.get_priority_display }}</span></td>
+                            <td>
+                                {% if c.status == 'OPEN' %}
+                                    <span class="badge amber">Open</span>
+                                {% elif c.status == 'IN_PROGRESS' %}
+                                    <span class="badge violet">In Progress</span>
+                                {% elif c.status == 'RESOLVED' %}
+                                    <span class="badge green">Resolved</span>
+                                {% else %}
+                                    <span class="badge gray">{{ c.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="muted">{{ c.created_at|date:"d M Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 20px; text-align: center; color: var(--muted); font-size: 13px;">
+                No complaints submitted. Bus service operating smoothly!
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Sidebar Column -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+
+        <!-- Quick Links Card -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+                <svg class="icon"><use href="#i-layers"/></svg>
+                <span>Transport Portal Shortcuts</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <a href="{% url 'transport:student_pass' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                    <svg class="icon icon-sm"><use href="#i-bus"/></svg> My Digital Bus Pass
+                </a>
+                <a href="{% url 'transport:student_fees' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                    <svg class="icon icon-sm"><use href="#i-file"/></svg> Transport Fee Ledger
+                </a>
+                <a href="{% url 'transport:student_attendance' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                    <svg class="icon icon-sm"><use href="#i-check"/></svg> Commute Attendance
+                </a>
+                <a href="{% url 'transport:application_list' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                    <svg class="icon icon-sm"><use href="#i-calendar"/></svg> Application History
+                </a>
+                <a href="{% url 'transport:student_complaint_create' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                    <svg class="icon icon-sm"><use href="#i-edit"/></svg> Report Bus Issue / Delay
+                </a>
+            </div>
+        </div>
+
+        <!-- Allocation Details Card -->
+        {% if allocation %}
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+                <svg class="icon"><use href="#i-bus"/></svg>
+                <span>Bus Allocation Info</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Vehicle:</span>
+                    <span class="strong">{{ allocation.vehicle.vehicle_number }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Reg No:</span>
+                    <span>{{ allocation.vehicle.registration_number }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Route Code:</span>
+                    <span class="strong">{{ allocation.route.code }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Boarding Stop:</span>
+                    <span class="strong">{{ allocation.stop.stop_name }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Pickup Time:</span>
+                    <span>{{ allocation.stop.pickup_time|time:"h:i A" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Drop Time:</span>
+                    <span>{{ allocation.stop.drop_time|time:"h:i A" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Seat Number:</span>
+                    <span class="badge gray">{{ allocation.seat_number|default:"Open Seating" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Allocated Since:</span>
+                    <span>{{ allocation.start_date|date:"d M Y" }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Transport Office Contact -->
+        <div class="card" style="padding: 20px; background: var(--surface);">
+            <div class="card-title" style="margin-bottom: 12px; font-size: 14px;">
+                <svg class="icon"><use href="#i-shield"/></svg>
+                <span>Transport Helpdesk</span>
+            </div>
+            <p class="muted" style="font-size: 12.5px; line-height: 1.5; margin-bottom: 10px;">
+                For emergencies, bus breakdown alerts, or route change requests, contact the central campus transport office:
+            </p>
+            <div style="font-size: 13px; display: flex; flex-direction: column; gap: 4px;">
+                <div>📞 <strong>+91 (044) 2745-6789</strong></div>
+                <div>✉️ <a href="mailto:transport@smartcollege.edu">transport@smartcollege.edu</a></div>
+                <div class="muted" style="font-size: 11.5px; margin-top: 4px;">Hours: Mon - Sat, 06:30 AM to 07:30 PM</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

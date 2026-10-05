@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Conductors & Staff · Smart College{% endblock %}
+{% block topbar_title %}Conductor Roster{% endblock %}
+
+{% block page_title %}Conductors & Transport Staff{% endblock %}
+{% block page_sub %}Bus conductors and assistants managing student roll calls and route monitoring.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_conductor_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> Register Conductor
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    {% if conductors %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Emp ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Assigned Vehicle</th>
+                    <th>Assigned Route</th>
+                    <th>Joining Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in conductors %}
+                <tr>
+                    <td><code>{{ c.employee_id }}</code></td>
+                    <td class="strong">{{ c.name }}</td>
+                    <td>{{ c.phone }}</td>
+                    <td>
+                        {% if c.assigned_vehicle %}
+                            <strong>{{ c.assigned_vehicle.vehicle_number }}</strong>
+                        {% else %}
+                            <span class="muted" style="font-size: 12px;">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.assigned_route %}
+                            <span class="strong">{{ c.assigned_route.code }}</span>
+                        {% else %}
+                            <span class="muted" style="font-size: 12px;">All Routes</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.joining_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if c.is_active %}
+                            <span class="badge green">Active</span>
+                        {% else %}
+                            <span class="badge gray">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:admin_conductor_update' c.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">👥</div>
+        <h3>No Conductors Registered</h3>
+        <p class="muted" style="margin-bottom: 16px;">Add bus conductors to assign them to daily routes and roll call attendance.</p>
+        <a class="btn btn-primary" href="{% url 'transport:admin_conductor_create' %}">Register First Conductor</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

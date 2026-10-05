@@ -1,0 +1,35 @@
+<div class="tabs mb" style="border-bottom: 2px solid var(--line);">
+    <a class="tab {% if current_tab == 'overview' %}active{% endif %}" href="/analytics/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-home"/></svg> Overview
+    </a>
+    <a class="tab {% if current_tab == 'academic' %}active{% endif %}" href="/analytics/academic/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-chart"/></svg> Academic Performance
+    </a>
+    <a class="tab {% if current_tab == 'attendance' %}active{% endif %}" href="/analytics/attendance/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-check"/></svg> Attendance
+    </a>
+    <a class="tab {% if current_tab == 'risk' %}active{% endif %}" href="/analytics/risk/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px; color: var(--danger);"><use href="#i-shield"/></svg> Academic Risk (Support)
+    </a>
+    <a class="tab {% if current_tab == 'faculty' %}active{% endif %}" href="/analytics/faculty/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-award"/></svg> Faculty Workload
+    </a>
+    <a class="tab {% if current_tab == 'fees' %}active{% endif %}" href="/analytics/fees/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-file"/></svg> Fees & Payments
+    </a>
+    <a class="tab {% if current_tab == 'library' %}active{% endif %}" href="/analytics/library/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-book"/></svg> Library
+    </a>
+    <a class="tab {% if current_tab == 'placements' %}active{% endif %}" href="/analytics/placements/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-briefcase"/></svg> Placements
+    </a>
+    <a class="tab {% if current_tab == 'certificates' %}active{% endif %}" href="/analytics/certificates/{% if export_params %}?{{ export_params }}{% endif %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-inbox"/></svg> Certificates & Docs
+    </a>
+    <a class="tab {% if current_tab == 'hostel' %}active{% endif %}" href="/hostel/dashboard/">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-home"/></svg> Hostel & Residence
+    </a>
+    <a class="tab {% if current_tab == 'transport' %}active{% endif %}" href="{% url 'transport:admin_dashboard' %}">
+        <svg class="icon icon-sm" style="margin-right: 4px;"><use href="#i-bus"/></svg> Transport & Fleet
+    </a>
+</div>

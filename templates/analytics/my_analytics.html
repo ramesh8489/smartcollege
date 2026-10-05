@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Analytics · Smart College{% endblock %}
+{% block topbar_title %}My Personal Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .chart-box { position: relative; height: 220px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block page_title %}
+    {% if is_admin_view %}
+        Student Analytics: {{ student.name }} ({{ student.roll_no }})
+    {% else %}
+        My Academic & Personal Analytics
+    {% endif %}
+{% endblock %}
+
+{% block page_sub %}
+Comprehensive self-analytics across attendance, marks, fees, library, and institutional requests &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Generated on {{ generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block content %}
+
+{# Student Header Card #}
+<div class="card mb" style="background: linear-gradient(135deg, #0f1d4d 0%, #1e40af 100%); color: #ffffff; padding: 22px 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <div style="width: 56px; height: 56px; border-radius: 14px; background: rgba(255,255,255,0.18); display: grid; place-items: center; font-size: 24px; font-weight: 800; border: 1px solid rgba(255,255,255,0.25);">
+                {{ student.name|slice:":1"|upper }}
+            </div>
+            <div>
+                <h2 style="font-size: 20px; font-weight: 800; margin: 0; color: #ffffff;">{{ student.name }}</h2>
+                <div style="color: #cbd5e1; font-size: 13px; margin-top: 3px;">
+                    Roll No: <b style="color: #ffffff;">{{ student.roll_no }}</b>
+                    {% if student.sif_number %}&middot; SIF: <b style="color: #ffffff;">{{ student.sif_number }}</b>{% endif %}
+                    &middot; {{ student.course.name|default:"Unassigned Degree" }} (Year {{ student.year }})
+                </div>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 2px;">
+                    {{ student.department.name }} &middot; {{ student.email }}
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="text-align: right;">
+                <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: .05em;">Attendance Standing</div>
+                <div style="font-size: 22px; font-weight: 800; color: #ffffff;">
+                    {{ data.attendance.percentage }}%
+                </div>
+            </div>
+            {% if is_admin_view %}
+                <a href="/analytics/risk/" class="btn btn-ghost btn-sm" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+                    &larr; Back to Risk Roster
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Quick Top Stats #}
+<div class="grid grid-4 mb">
+    <!-- Attendance -->
+    <div class="stat">
+        <div class="stat-ico {% if data.attendance.percentage >= 75 %}green{% elif data.attendance.percentage >= 65 %}amber{% else %}rose{% endif %}">
+            <svg class="icon icon-lg"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ data.attendance.percentage }}%</div>
+            <div class="stat-label">Attendance ({{ data.attendance.present_classes }}/{{ data.attendance.total_classes }} Classes)</div>
+        </div>
+    </div>
+
+    <!-- Marks Average -->
+    <div class="stat">
+        <div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+        <div>
+            <div class="stat-val">
+                {% if data.marks.overall_percentage is not None %}{{ data.marks.overall_percentage }}%{% else %}—{% endif %}
+            </div>
+            <div class="stat-label">Academic Average</div>
+        </div>
+    </div>
+
+    <!-- Fee Outstanding -->
+    <div class="stat">
+        <div class="stat-ico {% if data.fees.balance > 0 %}amber{% else %}green{% endif %}">
+            <svg class="icon icon-lg"><use href="#i-file"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">₹{{ data.fees.balance|floatformat:0 }}</div>
+            <div class="stat-label">Fee Balance (₹{{ data.fees.paid|floatformat:0 }} Paid)</div>
+        </div>
+    </div>
+
+    <!-- Library Loans -->
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-book"/></svg></div>
+        <div>
+            <div class="stat-val">{{ data.library.active_loans.count }}</div>
+            <div class="stat-label">Active Loans ({{ data.library.overdue_count }} Overdue)</div>
+        </div>
+    </div>
+</div>
+
+{# 1. Academic & Subject Performance Section #}
+<div class="grid grid-2 mb">
+    <!-- Subject-wise Attendance Breakdown -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-check"/></svg> Subject Attendance Breakdown</div>
+            <span class="badge {% if data.attendance.percentage >= 75 %}green{% elif data.attendance.percentage >= 65 %}amber{% else %}red{% endif %}">
+                {% if data.attendance.percentage >= 75 %}Safe{% elif data.attendance.percentage >= 65 %}Warning{% else %}Critical Shortage{% endif %}
+            </span>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Subject</th><th class="num">Held</th><th class="num">Attended</th><th class="num">Attendance %</th></tr></thead>
+                <tbody>
+                    {% for sa in data.attendance.subjects %}
+                    <tr>
+                        <td class="strong">{{ sa.subject }} <span class="muted" style="font-size: 11px;">({{ sa.code }})</span></td>
+                        <td class="num">{{ sa.total }}</td>
+                        <td class="num" style="color: var(--success); font-weight: 700;">{{ sa.present }}</td>
+                        <td class="num">
+                            <span class="badge {% if sa.percentage >= 75 %}green{% elif sa.percentage >= 65 %}amber{% else %}red{% endif %}" style="font-size: 12px;">
+                                {{ sa.percentage }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="muted" style="text-align: center; padding: 16px;">No attendance sessions logged.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Subject Attendance Chart -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-chart"/></svg> Attendance Visual Benchmark</div>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="myAttChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# 2. Exam and Internal Marks Breakdown #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title"><svg class="icon"><use href="#i-award"/></svg> Academic Examination & Continuous Marks</div>
+        <span class="badge gray">Official Records</span>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Assessment / Exam</th>
+                        <th>Subject</th>
+                        <th class="num">Max Marks</th>
+                        <th class="num">Marks Obtained</th>
+                        <th class="num">Percentage</th>
+                        <th>Grade</th>
+                        <th>Result Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# Formal Exam marks #}
+                    {% for em in data.marks.exam_records %}
+                    <tr>
+                        <td class="strong">{{ em.exam.name }}</td>
+                        <td>{{ em.subject.name }}</td>
+                        <td class="num">{{ em.max_marks }}</td>
+                        <td class="num" style="font-weight: 700;">{{ em.marks_obtained }}</td>
+                        <td class="num"><b style="font-size: 13.5px;">{{ em.percentage }}%</b></td>
+                        <td><span class="badge violet">{{ em.grade }}</span></td>
+                        <td>
+                            <span class="badge {% if em.result_status == 'Pass' %}green{% elif em.result_status == 'Absent' %}gray{% else %}red{% endif %}">
+                                {{ em.result_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {# Internal CAT Marks #}
+                    {% for m in data.marks.internal_records %}
+                    <tr>
+                        <td class="strong">Continuous Assessment (CAT 1/2/3)</td>
+                        <td>{{ m.subject.name }}</td>
+                        <td class="num">150</td>
+                        <td class="num" style="font-weight: 700;">{{ m.grand_total }}</td>
+                        <td class="num">
+                            <b style="font-size: 13.5px;">{{ m.grand_total|floatformat:1 }}</b>
+                        </td>
+                        <td><span class="badge gray">Internal</span></td>
+                        <td>
+                            <span class="badge green">Recorded</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if not data.marks.exam_records and not data.marks.internal_records %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty">
+                                <svg class="icon"><use href="#i-award"/></svg>
+                                <b>No Examination Records Available</b>
+                                <span>No published examination or CAT records for your account yet.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# 3. Fees and Library Section #}
+<div class="grid grid-2 mb">
+    <!-- Fees Record -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-file"/></svg> Fee Payments & Invoices</div>
+            <a class="btn btn-ghost btn-sm" href="/fees/">Pay Fees</a>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Fee Title</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for f in data.fees.records %}
+                    <tr>
+                        <td class="strong">{{ f.title }}</td>
+                        <td class="num">₹{{ f.amount }}</td>
+                        <td class="num" style="color: var(--success);">₹{{ f.paid_amount }}</td>
+                        <td class="num" style="color: var(--danger); font-weight: 700;">₹{{ f.balance_amount }}</td>
+                        <td>
+                            <span class="badge {% if f.status == 'PAID' %}green{% elif f.status == 'PARTIAL' %}amber{% else %}red{% endif %}">
+                                {{ f.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="muted" style="text-align: center; padding: 14px;">No fee invoices assigned.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Library Loans -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-book"/></svg> Library Borrowed Books</div>
+            <a class="btn btn-ghost btn-sm" href="/library/">Library</a>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Book Title</th><th>Due Date</th><th>Fine</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for l in data.library.active_loans %}
+                    <tr>
+                        <td class="strong">{{ l.book.title }}</td>
+                        <td>{{ l.due_date }}</td>
+                        <td>
+                            {% if l.calculated_fine > 0 %}
+                                <span style="color: var(--danger); font-weight: 700;">₹{{ l.calculated_fine }}</span>
+                            {% else %}
+                                ₹0
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if l.current_status == 'OVERDUE' %}red{% else %}green{% endif %}">
+                                {{ l.current_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="muted" style="text-align: center; padding: 14px;">No active book loans.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# 4. Certificates and Placements #}
+<div class="grid grid-2 mb">
+    <!-- Certificates -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-inbox"/></svg> My Certificate Requests</div>
+            <a class="btn btn-ghost btn-sm" href="/certificates/">Request Certificate</a>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Request ID</th><th>Type</th><th>Applied</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for cr in data.certificates.requests %}
+                    <tr>
+                        <td><code>{{ cr.request_id }}</code></td>
+                        <td class="strong">{{ cr.certificate_type.name }}</td>
+                        <td class="muted">{{ cr.created_at|date:"d M Y" }}</td>
+                        <td><span class="badge {{ cr.status_badge_class }}">{{ cr.status }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="muted" style="text-align: center; padding: 14px;">No certificate requests filed.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Placements & Career -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-briefcase"/></svg> Career & Placements</div>
+            <a class="btn btn-ghost btn-sm" href="/placements/student/">Placement Profile</a>
+        </div>
+        <div class="card-body">
+            {% if data.placements.profile %}
+                <div style="font-size: 13.5px; margin-bottom: 12px;">
+                    <div><b>Resume Uploaded:</b> {% if data.placements.profile.default_resume %}<span class="badge green">Uploaded</span>{% else %}<span class="badge amber">Pending</span>{% endif %}</div>
+                    <div style="margin-top: 4px;"><b>Skills:</b> {{ data.placements.profile.skills|default:"Not specified" }}</div>
+                </div>
+            {% endif %}
+
+            <div style="font-weight: 700; font-size: 13px; margin-bottom: 6px; color: var(--muted); text-transform: uppercase;">
+                Job Applications ({{ data.placements.applications.count }})
+            </div>
+            {% for app in data.placements.applications %}
+                <div style="padding: 8px 10px; background: var(--surface-2); border-radius: 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <b>{{ app.placement_drive.company.name }}</b>
+                        <div class="muted" style="font-size: 11px;">{{ app.placement_drive.job_title }}</div>
+                    </div>
+                    <span class="badge {{ app.status_badge_class }}">{{ app.status }}</span>
+                </div>
+            {% empty %}
+                <div class="muted" style="font-size: 12.5px;">No job applications submitted yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{{ charts_json|json_script:"my-charts-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const raw = document.getElementById("my-charts-data");
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+
+    const ctx = document.getElementById("myAttChart");
+    if (ctx && data.subjects.labels.length > 0) {
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: data.subjects.labels,
+                datasets: [{
+                    label: "Attendance %",
+                    data: data.subjects.percentages,
+                    backgroundColor: "#1d4ed8",
+                    borderRadius: 6,
+                    maxBarThickness: 34
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%" } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    } else if (ctx) {
+        ctx.parentElement.innerHTML = '<div class="empty"><svg class="icon"><use href="#i-check"/></svg><b>No Subject Attendance Logged</b></div>';
+    }
+});
+</script>
+{% endblock %}

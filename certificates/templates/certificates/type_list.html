@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Certificate Types · Smart College{% endblock %}
+{% block topbar_title %}Admin · Certificate Types{% endblock %}
+
+{% block page_title %}Certificate Types Configuration{% endblock %}
+{% block page_sub %}Configure standard institutional certificates, approval criteria, PDF rendering availability, and custom templates.{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <a href="{% url 'certificate_type_create' %}" class="btn btn-primary btn-sm">
+            <svg class="icon icon-sm"><use href="#i-plus"/></svg>
+            <span>Add Certificate Type</span>
+        </a>
+        <a href="{% url 'certificates_admin_dashboard' %}" class="btn btn-ghost btn-sm">
+            ← Back to Requests
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Flash Messages -->
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 14px 18px; margin-bottom: 10px; border-left: 4px solid {% if message.tags == 'error' or message.tags == 'danger' %}var(--danger){% elif message.tags == 'warning' %}var(--warn){% else %}var(--success){% endif %}; background: var(--surface);">
+                <div style="font-weight: 600; font-size: 13.5px;">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-award"/></svg>
+            <span>Configured Certificate Types ({{ types.count }})</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-wrap">
+            <table class="table" style="width: 100%; margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Certificate Name & Code</th>
+                        <th>Description</th>
+                        <th>Approval Req</th>
+                        <th>PDF Engine</th>
+                        <th>Status</th>
+                        <th>Total Requests</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ct in types %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: var(--text);">{{ ct.name }}</div>
+                                <div class="muted" style="font-family: monospace; font-size: 11px;">{{ ct.code }}</div>
+                            </td>
+                            <td>
+                                <div style="font-size: 12.5px; max-width: 320px;">{{ ct.description|truncatechars:80|default:"—" }}</div>
+                            </td>
+                            <td>
+                                {% if ct.requires_approval %}
+                                    <span class="badge blue">Mandatory</span>
+                                {% else %}
+                                    <span class="badge slate">Auto</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ct.is_pdf_available %}
+                                    <span class="badge green">Enabled</span>
+                                {% else %}
+                                    <span class="badge gray">Manual</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ct.is_active %}
+                                    <span class="badge green">Active</span>
+                                {% else %}
+                                    <span class="badge rose">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ ct.request_count }}</strong>
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                    <a href="{% url 'certificate_type_edit' ct.pk %}" class="btn btn-ghost btn-sm" style="padding: 4px 8px;">
+                                        Edit
+                                    </a>
+                                    <form method="POST" action="{% url 'certificate_type_toggle' ct.pk %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn {% if ct.is_active %}btn-ghost{% else %}btn-secondary{% endif %} btn-sm" style="padding: 4px 8px; font-size: 11px;">
+                                            {% if ct.is_active %}Deactivate{% else %}Activate{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" style="padding: 30px; text-align: center;" class="muted">
+                                No certificate types configured. Click "Add Certificate Type" to create one.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

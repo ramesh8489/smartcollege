@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance History{% endblock %}
+{% block topbar_title %}Attendance History{% endblock %}
+{% block page_title %}Attendance History{% endblock %}
+{% block page_sub %}All attendance you've recorded, across your subjects.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-soft" href="/reports/faculty/attendance/excel/"><svg class="icon icon-sm"><use href="#i-download"/></svg> Excel</a>
+    <a class="btn btn-ghost" href="/reports/faculty/attendance/pdf/"><svg class="icon icon-sm"><use href="#i-file"/></svg> PDF</a>
+{% endblock %}
+
+{% block content %}
+
+<form class="filters" method="get">
+    <div class="filters-row">
+        <div class="field">
+            <label for="search">Search student</label>
+            <input class="input" type="search" id="search" name="search" value="{{ search|default:'' }}" placeholder="Name or roll no">
+        </div>
+        <div class="field">
+            <label for="subject">Subject</label>
+            <select class="select" id="subject" name="subject">
+                <option value="">All subjects</option>
+                {% for s in subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }} — {{ s.code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="date">Date</label>
+            <input class="input" type="date" id="date" name="date" value="{{ selected_date|default:'' }}">
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit"><svg class="icon icon-sm"><use href="#i-filter"/></svg> Apply</button>
+            <a class="btn btn-ghost" href="/faculty/attendance-history/">Clear</a>
+        </div>
+    </div>
+</form>
+
+<div class="grid-4 mb">
+    <div class="stat"><div class="stat-ico"><svg class="icon icon-lg"><use href="#i-calendar"/></svg></div>
+        <div><div class="stat-val">{{ total_classes }}</div><div class="stat-label">Total records</div></div></div>
+    <div class="stat"><div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div><div class="stat-val">{{ present_classes }}</div><div class="stat-label">Present</div></div></div>
+    <div class="stat"><div class="stat-ico rose"><svg class="icon icon-lg"><use href="#i-inbox"/></svg></div>
+        <div><div class="stat-val">{{ absent_classes }}</div><div class="stat-label">Absent</div></div></div>
+    <div class="stat"><div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+        <div><div class="stat-val">{{ attendance_percentage }}%</div><div class="stat-label">Attendance</div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-calendar"/></svg> Records</div></div>
+    <div class="card-body flush">
+        {% if attendance_records %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Student</th><th>Roll No</th><th>Subject</th><th>Date</th><th>Period</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for r in attendance_records %}
+                    <tr>
+                        <td class="strong">{{ r.student.name }}</td>
+                        <td>{{ r.student.roll_no }}</td>
+                        <td>{{ r.subject.name }}</td>
+                        <td>{{ r.date|date:"d M Y" }}</td>
+                        <td class="muted">{% if r.period %}P{{ r.period.period_number }}{% else %}—{% endif %}</td>
+                        <td>{% if r.present %}<span class="badge green">Present</span>{% else %}<span class="badge red">Absent</span>{% endif %}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty"><svg class="icon"><use href="#i-inbox"/></svg><b>No records found</b>Try a different filter.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

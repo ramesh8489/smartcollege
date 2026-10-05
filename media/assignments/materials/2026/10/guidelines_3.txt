@@ -1,0 +1,7 @@
+SmartCollege Academic Assignment Guidelines
+Title: Homework 3: Dynamic Programming & Greedy Algorithms
+Course: M.Sc Computer Science (AI & Data Science)
+Subject: Cloud Computing & DevOps
+Max Marks: 20
+
+Please follow the department code formatting guidelines.

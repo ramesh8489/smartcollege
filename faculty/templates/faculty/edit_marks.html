@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Edit Marks{% endblock %}
+{% block topbar_title %}Edit Marks{% endblock %}
+{% block page_title %}Edit Marks{% endblock %}
+{% block page_sub %}{{ mark.student.name }} · {{ mark.subject.name }}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+            <div class="field"><label>CAT 1 Exam (40)</label><input class="input" type="number" min="0" max="40" name="cat_1" value="{{ mark.cat_1 }}" required></div>
+            <div class="field"><label>CAT 1 Assignment (10)</label><input class="input" type="number" min="0" max="10" name="cat_1_assignment" value="{{ mark.cat_1_assignment }}" required></div>
+            <div class="field"><label>CAT 2 Exam (40)</label><input class="input" type="number" min="0" max="40" name="cat_2" value="{{ mark.cat_2 }}" required></div>
+            <div class="field"><label>CAT 2 Assignment (10)</label><input class="input" type="number" min="0" max="10" name="cat_2_assignment" value="{{ mark.cat_2_assignment }}" required></div>
+            <div class="field"><label>CAT 3 Exam (40)</label><input class="input" type="number" min="0" max="40" name="cat_3" value="{{ mark.cat_3 }}" required></div>
+            <div class="field"><label>CAT 3 Assignment (10)</label><input class="input" type="number" min="0" max="10" name="cat_3_assignment" value="{{ mark.cat_3_assignment }}" required></div>
+            <button class="btn btn-primary" type="submit">Update marks</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

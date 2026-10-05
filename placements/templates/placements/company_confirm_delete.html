@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Deactivate {{ company.name }} · Smart College{% endblock %}
+{% block topbar_title %}Placements · Remove Company{% endblock %}
+
+{% block page_title %}Remove / Deactivate Company{% endblock %}
+{% block page_sub %}Confirm modification of recruitment partner partnership status.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'company_detail' company.pk %}" class="btn btn-ghost">
+        ← Cancel
+    </a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto;">
+    <div class="card" style="border-top: 4px solid var(--danger);">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon" style="color: var(--danger);"><use href="#i-alert"/></svg>
+                <span>Confirm Company Action</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="font-size: 14.5px; line-height: 1.6; margin-bottom: 20px;">
+                Are you sure you want to deactivate or remove <strong>{{ company.name }}</strong>?
+            </p>
+
+            {% if company.drives.exists %}
+                <div class="card" style="padding: 14px 18px; background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); margin-bottom: 24px;">
+                    <div style="font-weight: 700; color: #b45309; margin-bottom: 4px;">Historical Records Protected</div>
+                    <div style="font-size: 13px; color: var(--text);">
+                        This company has <strong>{{ company.drives.count }} placement drives</strong> on file. To protect historical student applications and offer data, this company will be safely marked as <strong>Inactive</strong> instead of permanently deleted from the database.
+                    </div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 14px 18px; background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger); margin-bottom: 24px;">
+                    <div style="font-weight: 700; color: var(--danger); margin-bottom: 4px;">Permanent Removal</div>
+                    <div style="font-size: 13px; color: var(--text);">
+                        This company has no associated placement drives. Confirming will permanently remove this company profile.
+                    </div>
+                </div>
+            {% endif %}
+
+            <form method="post" style="display: flex; justify-content: flex-end; gap: 12px;">
+                {% csrf_token %}
+                <a href="{% url 'company_detail' company.pk %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-danger">
+                    {% if company.drives.exists %}Deactivate Company{% else %}Delete Company{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

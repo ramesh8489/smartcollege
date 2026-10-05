@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Fees Management · Smart College{% endblock %}
+{% block topbar_title %}Hostel Fees{% endblock %}
+
+{% block page_title %}Hostel Fee Records & Dues Management{% endblock %}
+{% block page_sub %}
+    Track hostel rent, mess, maintenance, admission charges, dues collection, and official payment receipts.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'hostel:admin_fee_create' %}">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Issue Fee Demand
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="grid grid-4 mb">
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--brand-600);">₹{{ summary.total_billed|floatformat:2 }}</div>
+        <div class="stat-lbl">Total Billed Demands</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--success, #16a34a);">₹{{ summary.total_paid|floatformat:2 }}</div>
+        <div class="stat-lbl">Total Collected</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--danger, #dc2626);">₹{{ summary.total_outstanding|floatformat:2 }}</div>
+        <div class="stat-lbl">Outstanding Dues</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--ink);">{{ summary.collection_rate }}%</div>
+        <div class="stat-lbl">Collection Rate ({{ summary.dues_count }} Dues)</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb" style="padding: 18px 24px;">
+    <form method="get" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 220px;">
+            <label class="label" style="font-size: 12px;">Search Student / Roll No / Fee Title</label>
+            <input type="text" name="search" value="{{ search_query }}" class="input" placeholder="Search resident or fee...">
+        </div>
+
+        <div style="width: 200px;">
+            <label class="label" style="font-size: 12px;">Payment Status</label>
+            <select name="status" class="select">
+                <option value="">All Statuses</option>
+                <option value="PENDING" {% if selected_status == "PENDING" %}selected{% endif %}>Pending</option>
+                <option value="PARTIAL" {% if selected_status == "PARTIAL" %}selected{% endif %}>Partially Paid</option>
+                <option value="PAID" {% if selected_status == "PAID" %}selected{% endif %}>Paid</option>
+            </select>
+        </div>
+
+        <div style="width: 220px;">
+            <label class="label" style="font-size: 12px;">Resident Hostel</label>
+            <select name="hostel" class="select">
+                <option value="">All Hostels</option>
+                {% for h in hostels %}
+                    <option value="{{ h.id }}" {% if selected_hostel == h.id|stringformat:"i" %}selected{% endif %}>{{ h.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-search"/></svg> Filter
+            </button>
+            <a href="{% url 'hostel:admin_fees' %}" class="btn btn-ghost" style="margin-left: 6px;">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-dollar"/></svg>
+            <span>Hostel Fee Invoices & Records</span>
+        </div>
+        <span class="badge gray">{{ records|length }} Records</span>
+    </div>
+
+    {% if records %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Fee Category / Title</th>
+                    <th>Session</th>
+                    <th>Due Date</th>
+                    <th>Amount</th>
+                    <th>Paid</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th class="num">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>
+                        <div class="strong">{{ r.student.name }}</div>
+                        <div class="text-sm text-muted">Roll: {{ r.student.roll_no|default:"—" }}</div>
+                    </td>
+                    <td>
+                        <span class="badge blue" style="font-size: 11px;">{{ r.title }}</span>
+                        {% if r.remarks %}<div class="text-sm text-muted">{{ r.remarks|truncatechars:35 }}</div>{% endif %}
+                    </td>
+                    <td>{{ r.academic_year }}</td>
+                    <td>{{ r.due_date|date:"d M Y"|default:"—" }}</td>
+                    <td class="strong">₹{{ r.amount|floatformat:2 }}</td>
+                    {% if r.balance_amount > 0 %}
+                    <td style="color: var(--danger, #dc2626); font-weight: 600;">
+                    {% else %}
+                    <td style="color: var(--ink-muted); font-weight: 600;">
+                    {% endif %}
+                        ₹{{ r.balance_amount|floatformat:2 }}
+                    </td>
+                    <td>
+                        {% if r.status == 'PAID' %}
+                            <span class="badge green">Paid</span>
+                        {% elif r.status == 'PARTIAL' %}
+                            <span class="badge yellow">Partial</span>
+                        {% else %}
+                            <span class="badge red">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="num">
+                        <div style="display: inline-flex; gap: 6px; align-items: center;">
+                            {% if r.balance_amount > 0 %}
+                                <a class="btn btn-sm btn-primary" href="{% url 'hostel:admin_fee_pay' r.id %}">
+                                    Record Payment
+                                </a>
+                            {% endif %}
+                            {% with first_payment=r.payments.first %}
+                                {% if first_payment %}
+                                    <a class="btn btn-sm btn-ghost" href="{% url 'payment_receipt' first_payment.id %}" target="_blank" title="Download PDF Receipt">
+                                        Receipt PDF
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 48px; text-align: center; color: var(--ink-muted);">
+        <p style="font-size: 15px; font-weight: 500;">No hostel fee demands found.</p>
+        <p style="font-size: 13px;">Click "Issue Fee Demand" above to bill hostel admission, rent, or mess fees.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

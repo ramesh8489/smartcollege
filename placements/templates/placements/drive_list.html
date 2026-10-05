@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Placement Drives · Smart College{% endblock %}
+{% block topbar_title %}Placements · Recruitment Drives{% endblock %}
+
+{% block page_title %}Campus Placement Drives{% endblock %}
+{% block page_sub %}Schedule, track, and monitor on-campus and virtual hiring drives across partner corporations.{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <a href="{% url 'placements_dashboard' %}" class="btn btn-ghost">
+            ← Placement Hub
+        </a>
+        {% if is_officer %}
+            <a href="{% url 'drive_create' %}" class="btn btn-primary" id="btn-create-drive">
+                <svg class="icon"><use href="#i-plus"/></svg>
+                <span>Schedule New Drive</span>
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+<!-- Search & Filter Card -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-body">
+        <form method="get" class="grid grid-4" style="gap: 14px; align-items: flex-end;">
+            <div class="field">
+                <label for="search_q" style="font-size: 12px; font-weight: 700;">Search Drive / Company</label>
+                <input type="text" name="q" id="search_q" class="input" placeholder="Search title, company, location..." value="{{ search_q }}">
+            </div>
+
+            <div class="field">
+                <label for="filter_company" style="font-size: 12px; font-weight: 700;">Company</label>
+                <select name="company" id="filter_company" class="select">
+                    <option value="">All Partner Companies</option>
+                    {% for c in companies %}
+                        <option value="{{ c.pk }}" {% if selected_company == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="filter_status" style="font-size: 12px; font-weight: 700;">Drive Status</label>
+                <select name="status" id="filter_status" class="select">
+                    <option value="">All Statuses</option>
+                    {% for val, label in status_choices %}
+                        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    <svg class="icon"><use href="#i-search"/></svg>
+                    <span>Filter</span>
+                </button>
+                {% if search_q or status_filter or selected_company %}
+                    <a href="{% url 'drive_list' %}" class="btn btn-ghost" title="Clear Filters">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Drives List Table / Grid -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-briefcase"/></svg>
+            <span>Recruitment Drives ({{ drives.count }})</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if drives %}
+            <table class="table" style="width: 100%; margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Job Title & Company</th>
+                        <th>Type & Location</th>
+                        <th>CTC / Package</th>
+                        <th>Eligibility Criteria</th>
+                        <th>Important Dates</th>
+                        <th>Applicants</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in drives %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; font-size: 14px; color: var(--text);">
+                                    <a href="{% url 'drive_detail' d.pk %}" style="color: inherit; text-decoration: none;">
+                                        {{ d.job_title }}
+                                    </a>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                                    <span style="font-weight: 600; color: var(--brand); font-size: 12.5px;">{{ d.company.name }}</span>
+                                    <span class="muted" style="font-size: 11px;">• {{ d.company.industry }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div><span class="badge slate">{{ d.get_employment_type_display }}</span></div>
+                                <div class="muted" style="font-size: 11.5px; margin-top: 4px;">{{ d.job_location }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 800; color: var(--brand); font-size: 13.5px;">{{ d.salary_package }}</div>
+                                {% if d.vacancies_count > 0 %}
+                                    <div class="muted" style="font-size: 11px;">{{ d.vacancies_count }} Openings</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="font-size: 12px; color: var(--text);">
+                                    Min {{ d.minimum_percentage }}% • Max {{ d.maximum_backlogs }} Backlogs
+                                </div>
+                                <div class="muted" style="font-size: 11px; margin-top: 2px;">
+                                    {% if d.eligible_year == 0 %}All Years{% else %}Year {{ d.eligible_year }}{% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size: 12.5px; font-weight: 600;">Drive: {{ d.drive_date|date:"d M Y" }}</div>
+                                <div class="muted" style="font-size: 11px;">Deadline: {{ d.application_deadline|date:"d M Y" }}</div>
+                            </td>
+                            <td>
+                                <span class="badge blue" style="font-weight: 700;">
+                                    {{ d.applications.count }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if d.status == 'Open' %}green{% elif d.status == 'Completed' %}blue{% elif d.status == 'Closed' %}rose{% elif d.status == 'Draft' %}amber{% else %}slate{% endif %}">
+                                    {{ d.status }}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                    <a href="{% url 'drive_detail' d.pk %}" class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">
+                                        View →
+                                    </a>
+                                    {% if is_officer %}
+                                        <a href="{% url 'drive_edit' d.pk %}" class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;" title="Edit Drive">
+                                            <svg class="icon"><use href="#i-edit"/></svg>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="padding: 48px; text-align: center;">
+                <svg class="icon" style="width: 44px; height: 44px; color: var(--muted); margin-bottom: 12px;"><use href="#i-briefcase"/></svg>
+                <div style="font-size: 16px; font-weight: 700; color: var(--text);">No Placement Drives Found</div>
+                <div class="muted" style="margin-top: 4px; font-size: 13px;">No drives match your search or filter criteria.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

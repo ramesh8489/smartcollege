@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Hostel Applications · Smart College{% endblock %}
+{% block topbar_title %}Hostel Applications{% endblock %}
+
+{% block page_title %}Hostel Accommodation Applications{% endblock %}
+{% block page_sub %}
+    View your hostel application status, history, room preferences, and administrative decisions.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:student_fees' %}" style="margin-right: 8px;">
+        <svg class="icon icon-sm"><use href="#i-dollar"/></svg> My Hostel Fees
+    </a>
+    <a class="btn btn-ghost" href="{% url 'hostel:student_attendance' %}" style="margin-right: 8px;">
+        <svg class="icon icon-sm"><use href="#i-calendar"/></svg> My Attendance
+    </a>
+    <a class="btn btn-ghost" href="{% url 'hostel:student_complaints' %}" style="margin-right: 8px;">
+        <svg class="icon icon-sm"><use href="#i-alert-circle"/></svg> Complaints
+    </a>
+    <a class="btn btn-ghost" href="{% url 'hostel:student_notices' %}" style="margin-right: 8px;">
+        <svg class="icon icon-sm"><use href="#i-bell"/></svg> Notices
+    </a>
+    <a class="btn btn-primary" href="{% url 'hostel:application_create' %}">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Apply for Hostel
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-home"/></svg>
+            <span>My Submitted Applications</span>
+        </div>
+        <span class="badge gray">{{ applications|length }} Total</span>
+    </div>
+
+    {% if applications %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Application ID</th>
+                    <th>Hostel Preference</th>
+                    <th>Room Type</th>
+                    <th>Academic Year</th>
+                    <th>Application Date</th>
+                    <th>Status</th>
+                    <th class="num">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td><code>{{ app.application_id }}</code></td>
+                    <td class="strong">{{ app.hostel_preference.name }}</td>
+                    <td>{{ app.get_room_type_preference_display }}</td>
+                    <td>{{ app.academic_year }}</td>
+                    <td>{{ app.application_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if app.status == 'APPROVED' %}
+                            <span class="badge green">Approved</span>
+                        {% elif app.status == 'PENDING' %}
+                            <span class="badge amber">Pending Review</span>
+                        {% elif app.status == 'UNDER_REVIEW' %}
+                            <span class="badge violet">Under Review</span>
+                        {% elif app.status == 'WAITLISTED' %}
+                            <span class="badge gray">Waitlisted</span>
+                        {% elif app.status == 'REJECTED' %}
+                            <span class="badge red">Rejected</span>
+                        {% else %}
+                            <span class="badge gray">{{ app.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="num">
+                        <a class="btn btn-ghost btn-sm" href="{% url 'hostel:application_detail' app.pk %}">
+                            View Details &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty" style="padding: 48px; text-align: center;">
+        <svg class="icon icon-xl" style="color: var(--text-muted); width: 48px; height: 48px; margin-bottom: 12px;"><use href="#i-home"/></svg>
+        <h3 style="margin-bottom: 8px;">No Hostel Applications Found</h3>
+        <p class="muted" style="margin-bottom: 16px;">You haven't submitted any hostel accommodation applications yet.</p>
+        <a class="btn btn-primary" href="{% url 'hostel:application_create' %}">Apply for Hostel Accommodation</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Notices & Bulletins · Smart College{% endblock %}
+{% block topbar_title %}Hostel Notices{% endblock %}
+
+{% block page_title %}Official Hostel Notices & Bulletins{% endblock %}
+{% block page_sub %}
+    Stay informed about curfew hours, mess arrangements, room inspections, and maintenance schedules.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:application_list' %}">&larr; Back to Hostel Home</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if allocation %}
+<div class="card mb" style="padding: 16px 20px; background: var(--surface-alt, #f8fafc);">
+    <div style="font-size: 13px; color: var(--ink);">
+        Showing circulars and bulletins for: <strong>{{ allocation.hostel.name }}</strong> (Room {{ allocation.room.room_number }})
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-bell"/></svg>
+            <span>Notice Board</span>
+        </div>
+        <span class="badge gray">{{ notices|length }} Notices</span>
+    </div>
+
+    {% if notices %}
+    <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px 24px;">
+        {% for n in notices %}
+        {% if n.priority == 'URGENT' %}
+        <div style="padding: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); border-left: 4px solid var(--danger, #dc2626);">
+        {% elif n.priority == 'IMPORTANT' %}
+        <div style="padding: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); border-left: 4px solid var(--warning, #d97706);">
+        {% else %}
+        <div style="padding: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); border-left: 4px solid var(--brand-600);">
+        {% endif %}
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <div>
+                    <h3 style="margin: 0 0 4px; font-size: 16px; font-weight: 600; color: var(--ink);">{{ n.title }}</h3>
+                    <div class="text-sm text-muted">
+                        Published by {{ n.created_by.get_full_name|default:n.created_by.username }} · {{ n.publish_date|date:"D, d M Y" }}
+                        {% if n.expiry_date %}· Valid until {{ n.expiry_date|date:"d M Y" }}{% endif %}
+                    </div>
+                </div>
+                <div>
+                    {% if n.priority == 'URGENT' %}
+                        <span class="badge red">Urgent</span>
+                    {% elif n.priority == 'IMPORTANT' %}
+                        <span class="badge yellow">Important</span>
+                    {% else %}
+                        <span class="badge gray">Notice</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="font-size: 14px; line-height: 1.6; color: var(--ink); white-space: pre-wrap;">{{ n.message }}</div>
+
+            {% if n.attachment %}
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border);">
+                <a href="{{ n.attachment.url }}" target="_blank" class="btn btn-sm btn-ghost">
+                    <svg class="icon icon-sm"><use href="#i-download"/></svg> Download Attachment
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding: 48px; text-align: center; color: var(--ink-muted);">
+        <p style="font-size: 15px; font-weight: 500;">No notices posted for your hostel at this time.</p>
+        <p style="font-size: 13px;">Check back later for circulars from your hostel warden.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

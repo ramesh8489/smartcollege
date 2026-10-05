@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Academic Performance Analytics{% endblock %}
+{% block topbar_title %}Academic Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .chart-box { position: relative; height: 260px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block page_title %}Academic Performance Analytics{% endblock %}
+
+{% block page_sub %}
+Subject-level mastery, curriculum benchmark diagnostics, and achievement distributions &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Updated {{ scope.generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="/analytics/export/excel/?type=academic&{{ export_params }}">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg> Export Subject Excel
+    </a>
+    <a class="btn btn-ghost" href="/analytics/export/pdf/?type=academic&{{ export_params }}" target="_blank">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> PDF Report
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "analytics/_nav_tabs.html" %}
+{% include "analytics/_filter_bar.html" %}
+
+{# Academic Summary Cards #}
+<div class="grid grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+        <div>
+            <div class="stat-val">{{ academic.total_evaluated_students }}</div>
+            <div class="stat-label">Evaluated Students</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+        <div>
+            <div class="stat-val">{% if kpi.avg_marks is not None %}{{ kpi.avg_marks }}%{% else %}—{% endif %}</div>
+            <div class="stat-label">Overall Average Marks</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-award"/></svg></div>
+        <div>
+            <div class="stat-val">{{ academic.distribution.distinction }}</div>
+            <div class="stat-label">Distinction (&ge; {{ scope.settings.marks_distinction_threshold }}%)</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico rose"><svg class="icon icon-lg"><use href="#i-shield"/></svg></div>
+        <div>
+            <div class="stat-val">{{ academic.distribution.fail_class }}</div>
+            <div class="stat-label">Below Passing Standard (&lt; {{ scope.settings.marks_passing_threshold }}%)</div>
+        </div>
+    </div>
+</div>
+
+{# Charts Row #}
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-chart"/></svg> Subject Average Scores
+            </div>
+            <span class="badge gray">Scores in %</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="subjScoreChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-check"/></svg> Subject Pass Rates
+            </div>
+            <span class="badge gray">Pass Threshold &ge; {{ scope.settings.marks_passing_threshold }}%</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="subjPassChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Comprehensive Subject Performance Table #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-book"/></svg> Subject-wise Performance Diagnostics
+        </div>
+        <span class="badge gray">{{ academic.subjects|length }} Subject(s) Evaluated</span>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Subject Name</th>
+                        <th>Code</th>
+                        <th>Assigned Faculty</th>
+                        <th class="num">Students</th>
+                        <th class="num">Average %</th>
+                        <th class="num">Pass Rate</th>
+                        <th class="num">Highest</th>
+                        <th class="num">Lowest</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in academic.subjects %}
+                    <tr>
+                        <td class="strong">{{ s.name }}</td>
+                        <td><code>{{ s.code }}</code></td>
+                        <td>{{ s.faculty_name }}</td>
+                        <td class="num">{{ s.students_count }}</td>
+                        <td class="num"><b style="font-size: 14px;">{{ s.avg_percentage }}%</b></td>
+                        <td class="num">
+                            <span class="badge {% if s.pass_rate >= 80 %}green{% elif s.pass_rate >= 50 %}amber{% else %}red{% endif %}">
+                                {{ s.pass_rate }}%
+                            </span>
+                        </td>
+                        <td class="num">{{ s.max_score }}%</td>
+                        <td class="num">{{ s.min_score }}%</td>
+                        <td>
+                            {% if s.avg_percentage >= scope.settings.marks_distinction_threshold %}
+                                <span class="badge violet">High Performing</span>
+                            {% elif s.avg_percentage >= scope.settings.marks_passing_threshold %}
+                                <span class="badge green">Satisfactory</span>
+                            {% else %}
+                                <span class="badge red">Attention Required</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty">
+                                <svg class="icon"><use href="#i-book"/></svg>
+                                <b>No Subject Marks Found</b>
+                                <span>No exams or CAT marks have been entered for this filter.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# High Performers vs Support List #}
+<div class="grid grid-2 mb">
+    <!-- Top 5 Performers -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon" style="color: var(--success);"><use href="#i-award"/></svg>
+                <span>Highest Performing Students</span>
+            </div>
+            <span class="badge green">Academic Leaders</span>
+        </div>
+        <div class="card-body flush">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Roll No</th>
+                            <th>Course</th>
+                            <th class="num">Average</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for st in academic.top_performers %}
+                        <tr>
+                            <td class="strong">{{ st.name }}</td>
+                            <td><code>{{ st.roll_no }}</code></td>
+                            <td>{{ st.course }} (Yr {{ st.year }})</td>
+                            <td class="num">
+                                <span class="badge green" style="font-size: 13px; font-weight: 800;">{{ st.avg_percentage }}%</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="muted" style="text-align: center; padding: 18px;">No performance records available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lowest Performers / Academic Attention -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon" style="color: var(--danger);"><use href="#i-shield"/></svg>
+                <span>Academic Support Candidates</span>
+            </div>
+            <span class="badge red">Priority Advisory</span>
+        </div>
+        <div class="card-body flush">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Roll No</th>
+                            <th>Course</th>
+                            <th class="num">Average</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for st in academic.lowest_performers %}
+                        <tr>
+                            <td class="strong">{{ st.name }}</td>
+                            <td><code>{{ st.roll_no }}</code></td>
+                            <td>{{ st.course }} (Yr {{ st.year }})</td>
+                            <td class="num">
+                                <span class="badge {% if st.avg_percentage < scope.settings.marks_passing_threshold %}red{% else %}amber{% endif %}" style="font-size: 13px; font-weight: 800;">
+                                    {{ st.avg_percentage }}%
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="muted" style="text-align: center; padding: 18px;">No candidates flagged.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Degree / Course and Year Performance Comparison #}
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-layers"/></svg> Degree / Course Comparison</div>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Course</th><th class="num">Students</th><th class="num">Average</th></tr></thead>
+                <tbody>
+                    {% for c in academic.courses %}
+                    <tr>
+                        <td class="strong">{{ c.name }}</td>
+                        <td class="num">{{ c.student_count }}</td>
+                        <td class="num"><b>{% if c.avg_percentage is not None %}{{ c.avg_percentage }}%{% else %}—{% endif %}</b></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="muted" style="text-align: center; padding: 14px;">No courses found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-calendar"/></svg> Year-wise Academic Comparison</div>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Year</th><th class="num">Students</th><th class="num">Average</th></tr></thead>
+                <tbody>
+                    {% for y in academic.years %}
+                    <tr>
+                        <td class="strong">{{ y.year_label }}</td>
+                        <td class="num">{{ y.student_count }}</td>
+                        <td class="num"><b>{% if y.avg_percentage is not None %}{{ y.avg_percentage }}%{% else %}—{% endif %}</b></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="muted" style="text-align: center; padding: 14px;">No year records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{ charts_json|json_script:"academic-charts-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const raw = document.getElementById("academic-charts-data");
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+
+    // Subject Scores
+    const ctx1 = document.getElementById("subjScoreChart");
+    if (ctx1 && data.subjects.labels.length > 0) {
+        new Chart(ctx1, {
+            type: "bar",
+            data: {
+                labels: data.subjects.labels,
+                datasets: [{
+                    label: "Average Marks %",
+                    data: data.subjects.scores,
+                    backgroundColor: "#2563eb",
+                    borderRadius: 6,
+                    maxBarThickness: 36,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%" } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Subject Pass Rates
+    const ctx2 = document.getElementById("subjPassChart");
+    if (ctx2 && data.subjects.labels.length > 0) {
+        new Chart(ctx2, {
+            type: "bar",
+            data: {
+                labels: data.subjects.labels,
+                datasets: [{
+                    label: "Pass Rate %",
+                    data: data.subjects.pass_rates,
+                    backgroundColor: "#16a34a",
+                    borderRadius: 6,
+                    maxBarThickness: 36,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%" } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

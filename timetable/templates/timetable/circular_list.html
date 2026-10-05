@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Circulars{% endblock %}
+{% block topbar_title %}Circulars{% endblock %}
+{% block page_title %}Circulars{% endblock %}
+{% block page_sub %}Announcements posted by the administration.{% endblock %}
+
+{% block content %}
+
+{% if circulars %}
+    {% for c in circulars %}
+        <div class="note">
+            <h3>{{ c.title }} <span class="badge gray" style="margin-left:8px">{{ c.get_audience_display }}</span></h3>
+            <div class="meta">{{ c.posted_at|date:"d M Y, g:i A" }}</div>
+            <p>{{ c.message }}</p>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="card"><div class="empty"><svg class="icon"><use href="#i-bell"/></svg><b>No circulars yet</b>Check back later.</div></div>
+{% endif %}
+
+{% endblock %}

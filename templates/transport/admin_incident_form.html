@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Log Incident{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Record vehicle breakdowns, road accidents, route diversions, or transit safety concerns.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_incidents' %}">&larr; Back to Incidents</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please review the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid grid-3" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_date">Incident Date *</label>
+                    {{ form.date }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_severity">Severity Level *</label>
+                    {{ form.severity }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_status">Status *</label>
+                    {{ form.status }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_vehicle">Vehicle / Bus Involved</label>
+                    {{ form.vehicle }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_route">Route Involved</label>
+                    {{ form.route }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label strong" for="id_description">Incident Description *</label>
+                {{ form.description }}
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label class="form-label strong" for="id_action_taken">Immediate Action Taken / Remediation</label>
+                {{ form.action_taken }}
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Save Incident Log
+                </button>
+                <a href="{% url 'transport:admin_incidents' %}" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

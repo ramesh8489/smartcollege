@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Transport Applications · Smart College{% endblock %}
+{% block topbar_title %}Transport Applications{% endblock %}
+
+{% block page_title %}My Transport Applications{% endblock %}
+{% block page_sub %}History of your submitted requests for college bus transport.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:application_apply' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> New Application
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:student_portal' %}">&larr; Transport Portal</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    {% if applications %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Application ID</th>
+                    <th>Route</th>
+                    <th>Boarding Stop</th>
+                    <th>Academic Session</th>
+                    <th>Requested From</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td><code>{{ app.application_id }}</code></td>
+                    <td class="strong">{{ app.route.code }} - {{ app.route.name }}</td>
+                    <td>{{ app.stop.stop_name }}</td>
+                    <td>{{ app.academic_year }}</td>
+                    <td>{{ app.requested_from_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if app.status == 'APPROVED' %}
+                            <span class="badge green">Approved</span>
+                        {% elif app.status == 'PENDING' %}
+                            <span class="badge amber">Pending Review</span>
+                        {% elif app.status == 'REJECTED' %}
+                            <span class="badge red">Rejected</span>
+                        {% else %}
+                            <span class="badge gray">{{ app.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:application_detail' app.pk %}" class="btn btn-ghost btn-sm">View Details &rarr;</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 40px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🚌</div>
+        <h3>No Applications Found</h3>
+        <p class="muted" style="margin-bottom: 16px;">You haven't submitted any transport requests yet.</p>
+        <a class="btn btn-primary" href="{% url 'transport:application_apply' %}">Apply Now</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

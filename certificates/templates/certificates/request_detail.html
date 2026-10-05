@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Request Dossier · {{ req.request_id }} · Smart College{% endblock %}
+{% block topbar_title %}Request Dossier · {{ req.request_id }}{% endblock %}
+
+{% block page_title %}{{ req.certificate_type.name }}{% endblock %}
+{% block page_sub %}Request Dossier: {{ req.request_id }} · Submitted on {{ req.created_at|date:"d M Y, h:i A" }}{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        {% if is_officer %}
+            <a href="{% url 'certificates_admin_dashboard' %}" class="btn btn-ghost">
+                ← Back to Requests Ledger
+            </a>
+        {% else %}
+            <a href="{% url 'certificates_student_portal' %}" class="btn btn-ghost">
+                ← Back to Portal
+            </a>
+        {% endif %}
+
+        {% if cert %}
+            <a href="{% url 'download_certificate_pdf' req.pk %}" class="btn btn-primary" id="btn-download-pdf">
+                <svg class="icon"><use href="#i-download"/></svg>
+                <span>Download Official Certificate PDF</span>
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Flash Messages -->
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 14px 18px; margin-bottom: 10px; border-left: 4px solid {% if message.tags == 'error' or message.tags == 'danger' %}var(--danger){% elif message.tags == 'warning' %}var(--warn){% else %}var(--success){% endif %}; background: var(--surface);">
+                <div style="font-weight: 600; font-size: 13.5px;">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Certificate Generated Congratulatory Banner -->
+{% if cert %}
+    <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%); border-left: 5px solid #10b981;">
+        <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; color: white;">
+                    <svg class="icon" style="width: 28px; height: 28px;"><use href="#i-check"/></svg>
+                </div>
+                <div>
+                    <div style="font-size: 18px; font-weight: 800; color: var(--text);">
+                        Official Certificate Generated & Active
+                    </div>
+                    <div class="muted" style="font-size: 13.5px; margin-top: 2px;">
+                        Certificate No: <strong style="color: #1e40af; font-family: monospace;">{{ cert.certificate_number }}</strong> · Issued on {{ cert.issue_date|date:"d M Y" }}
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'certificate_verify' cert.certificate_number %}" target="_blank" class="btn btn-secondary btn-sm">
+                    <svg class="icon icon-sm"><use href="#i-shield"/></svg>
+                    <span>Verify Record ↗</span>
+                </a>
+                <a href="{% url 'download_certificate_pdf' req.pk %}" class="btn btn-primary btn-sm">
+                    <svg class="icon icon-sm"><use href="#i-download"/></svg>
+                    <span>Download PDF</span>
+                </a>
+            </div>
+        </div>
+    </div>
+{% elif req.status == 'Rejected' %}
+    <div class="card" style="margin-bottom: 24px; background: rgba(239, 68, 68, 0.06); border-left: 5px solid var(--danger);">
+        <div class="card-body">
+            <div style="font-size: 16px; font-weight: 800; color: var(--danger); margin-bottom: 4px;">
+                Certificate Request Rejected
+            </div>
+            <div style="font-size: 13.5px; color: var(--text);">
+                <strong>Reason:</strong> {{ req.rejection_reason }}
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<div class="split" style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 24px;">
+
+    <!-- Left Column: Student Details & Request Metadata -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+        <!-- Student Academic Information Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-user"/></svg>
+                    <span>Student Academic Profile</span>
+                </div>
+                <span class="badge green">Enrolled</span>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Full Name</div>
+                        <div style="font-weight: 700; font-size: 15px; color: var(--text); margin-top: 2px;">{{ student.name }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Roll Number</div>
+                        <div style="font-weight: 700; font-size: 14px; color: var(--brand); margin-top: 2px;">{{ student.roll_no }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">SIF Number</div>
+                        <div style="font-weight: 600; font-size: 13.5px; margin-top: 2px;">{{ student.sif_number|default:"Not Allocated" }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">School / Department</div>
+                        <div style="font-weight: 600; font-size: 13.5px; margin-top: 2px;">{{ student.department.name }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Degree / Course</div>
+                        <div style="font-weight: 600; font-size: 13.5px; margin-top: 2px;">{{ student.course.name|default:"General Degree" }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Current Academic Year</div>
+                        <div style="font-weight: 600; font-size: 13.5px; margin-top: 2px;">Year {{ student.year }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Email Address</div>
+                        <div style="font-size: 13px; margin-top: 2px;">{{ student.email }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Phone Number</div>
+                        <div style="font-size: 13px; margin-top: 2px;">{{ student.phone|default:"—" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Request Details Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-file"/></svg>
+                    <span>Request Details</span>
+                </div>
+                <span class="badge {{ req.status_badge_class }}">{{ req.status }}</span>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Requested Certificate</div>
+                        <div style="font-weight: 700; font-size: 15px; color: var(--text); margin-top: 2px;">
+                            {{ req.certificate_type.name }}
+                        </div>
+                        <div class="muted" style="font-size: 12px; margin-top: 2px;">{{ req.certificate_type.description }}</div>
+                    </div>
+
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Stated Purpose</div>
+                        <div style="font-size: 14px; margin-top: 2px; padding: 10px; background: var(--bg); border-radius: 8px;">
+                            {{ req.purpose }}
+                        </div>
+                    </div>
+
+                    {% if req.additional_remarks %}
+                        <div>
+                            <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase;">Additional Student Remarks</div>
+                            <div style="font-size: 13px; margin-top: 2px; padding: 10px; background: var(--bg); border-radius: 8px;">
+                                {{ req.additional_remarks }}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; border-top: 1px solid var(--line); padding-top: 14px;">
+                        <div>
+                            <div class="muted" style="font-size: 11.5px; font-weight: 700;">Submission Date</div>
+                            <div style="font-size: 13px; font-weight: 600;">{{ req.created_at|date:"d M Y, h:i A" }}</div>
+                        </div>
+                        <div>
+                            <div class="muted" style="font-size: 11.5px; font-weight: 700;">Last Status Update</div>
+                            <div style="font-size: 13px; font-weight: 600;">{{ req.updated_at|date:"d M Y, h:i A" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Documents Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-file"/></svg>
+                    <span>Student Verification Documents ({{ student_documents.count }})</span>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                {% if student_documents %}
+                    <div class="table-wrap">
+                        <table class="table" style="width: 100%; margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th>Document Title</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Uploaded</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for d in student_documents %}
+                                    <tr>
+                                        <td><strong>{{ d.title }}</strong></td>
+                                        <td><span class="badge slate">{{ d.document_type }}</span></td>
+                                        <td><span class="badge {{ d.status_badge_class }}">{{ d.verification_status }}</span></td>
+                                        <td>{{ d.uploaded_at|date:"d M Y" }}</td>
+                                        <td style="text-align: right;">
+                                            <a href="{% url 'download_student_document' d.pk %}" target="_blank" class="btn btn-ghost btn-sm" style="padding: 3px 8px;">
+                                                <svg class="icon icon-sm"><use href="#i-download"/></svg> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div style="padding: 24px; text-align: center;" class="muted">
+                        No supporting identity or marks documents uploaded by this student.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right Column: Status & Administrative Actions -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+
+        <!-- Status Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-clock"/></svg>
+                    <span>Lifecycle Status</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="text-align: center; padding: 12px 0 20px;">
+                    <span class="badge {{ req.status_badge_class }}" style="font-size: 15px; padding: 6px 16px; border-radius: 20px;">
+                        {{ req.status }}
+                    </span>
+                    <div class="muted" style="font-size: 12px; margin-top: 8px;">
+                        Current step in certificate workflow
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--line); padding-top: 16px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+                        <span class="muted">Approval Required:</span>
+                        <strong>{% if req.certificate_type.requires_approval %}Yes{% else %}No{% endif %}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+                        <span class="muted">PDF Generation:</span>
+                        <strong>{% if req.certificate_type.is_pdf_available %}Available{% else %}Manual{% endif %}</strong>
+                    </div>
+                    {% if req.approved_by %}
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+                            <span class="muted">Approved By:</span>
+                            <strong>{{ req.approved_by.username }}</strong>
+                        </div>
+                    {% endif %}
+                    {% if req.approved_at %}
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+                            <span class="muted">Approved At:</span>
+                            <strong>{{ req.approved_at|date:"d M Y, h:i A" }}</strong>
+                        </div>
+                    {% endif %}
+                    {% if cert %}
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+                            <span class="muted">Downloads:</span>
+                            <strong>{{ cert.download_count }} times</strong>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Administrative Actions (Staff Only) -->
+        {% if is_officer %}
+            <div class="card" style="border-top: 4px solid var(--brand);">
+                <div class="card-head">
+                    <div class="card-title">
+                        <svg class="icon"><use href="#i-shield"/></svg>
+                        <span>Administrative Actions</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+
+                        <!-- Action 1: Mark Under Review -->
+                        {% if req.status == 'Pending' %}
+                            <form method="POST" action="{% url 'certificate_request_action' req.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="review">
+                                <button type="submit" class="btn btn-secondary btn-block">
+                                    <svg class="icon icon-sm"><use href="#i-clock"/></svg>
+                                    <span>Mark Under Review</span>
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        <!-- Action 2: Approve Request -->
+                        {% if req.status == 'Pending' or req.status == 'Under Review' %}
+                            <form method="POST" action="{% url 'certificate_request_action' req.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-primary btn-block" style="background: #15803d; border-color: #15803d;">
+                                    <svg class="icon icon-sm"><use href="#i-check"/></svg>
+                                    <span>Approve Certificate Request</span>
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        <!-- Action 3: Generate Certificate -->
+                        {% if req.status == 'Approved' or req.status == 'Pending' or req.status == 'Under Review' or req.status == 'Generated' %}
+                            <form method="POST" action="{% url 'certificate_request_action' req.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="generate">
+                                <div style="margin-bottom: 8px;">
+                                    <label style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Signatory Title</label>
+                                    <input type="text" name="signatory_title" class="input" value="{% if cert %}{{ cert.signatory_title }}{% else %}Principal / Academic Registrar{% endif %}" style="font-size: 12.5px; padding: 6px 10px;">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <svg class="icon icon-sm"><use href="#i-award"/></svg>
+                                    <span>{% if cert %}Re-Generate PDF{% else %}Generate Official Certificate{% endif %}</span>
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        <!-- Action 4: Reject Request Trigger -->
+                        {% if req.status != 'Rejected' and req.status != 'Downloaded' %}
+                            <button type="button" class="btn btn-danger btn-block" onclick="document.getElementById('rejectModal').style.display='block'">
+                                <svg class="icon icon-sm"><use href="#i-trash"/></svg>
+                                <span>Reject Request</span>
+                            </button>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 999; backdrop-filter: blur(2px);">
+    <div style="background: var(--surface); max-width: 500px; margin: 100px auto; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); border: 1px solid var(--line);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="font-weight: 800; font-size: 17px; color: var(--danger);">Reject Certificate Request</div>
+            <button type="button" onclick="document.getElementById('rejectModal').style.display='none'" style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted);">&times;</button>
+        </div>
+        <form method="POST" action="{% url 'certificate_request_action' req.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <p style="font-size: 13px; color: var(--muted); margin-bottom: 14px;">
+                Please provide a mandatory reason for rejecting this request for <strong>{{ student.name }}</strong>. The student will be notified and will see this reason in their portal.
+            </p>
+            <div style="margin-bottom: 18px;">
+                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Reason for Rejection <span style="color: var(--danger);">*</span></label>
+                {{ reject_form.rejection_reason }}
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-ghost" onclick="document.getElementById('rejectModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

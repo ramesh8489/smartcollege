@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mark Attendance · Smart College{% endblock %}
+{% block topbar_title %}Roll Call Register{% endblock %}
+
+{% block page_title %}Mark Route Commuter Attendance{% endblock %}
+{% block page_sub %}Log student morning boarding or evening drop attendance by route.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_attendance' %}">&larr; Back to Register</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px; margin-bottom: 24px;">
+    <!-- Selector Form -->
+    <form method="get" style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
+        <div>
+            <label class="form-label strong" for="id_date">Date *</label>
+            <input type="date" id="id_date" name="date" value="{{ selected_date }}" class="form-control" style="width: 170px;">
+        </div>
+        <div>
+            <label class="form-label strong" for="id_trip_type">Trip Type *</label>
+            <select id="id_trip_type" name="trip_type" class="form-control" style="width: 170px;">
+                <option value="MORNING" {% if trip_type == 'MORNING' %}selected{% endif %}>Morning Pickup</option>
+                <option value="EVENING" {% if trip_type == 'EVENING' %}selected{% endif %}>Evening Drop</option>
+            </select>
+        </div>
+        <div style="flex: 1; min-width: 240px;">
+            <label class="form-label strong" for="id_route">Select Route *</label>
+            <select id="id_route" name="route" class="form-control" required>
+                <option value="">-- Choose Route to Load Roster --</option>
+                {% for r in routes %}
+                    <option value="{{ r.id }}" {% if route_id == r.id|stringformat:"s" %}selected{% endif %}>
+                        {{ r.code }} - {{ r.name }} ({% if r.assigned_vehicle %}{{ r.assigned_vehicle.vehicle_number }}{% else %}No Bus{% endif %})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="height: 40px;">Load Roster</button>
+    </form>
+</div>
+
+{% if route %}
+<div class="card" style="padding: 24px;">
+    <div class="card-head" style="margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-check"/></svg>
+            <span>Roll Call: Route {{ route.code }} ({{ roster|length }} Students)</span>
+        </div>
+        <div class="muted" style="font-size: 13px;">Date: <strong>{{ selected_date }}</strong> &middot; Trip: <strong>{{ trip_type }}</strong></div>
+    </div>
+
+    {% if roster %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="route" value="{{ route.id }}">
+        <input type="hidden" name="trip_type" value="{{ trip_type }}">
+        <input type="hidden" name="date" value="{{ selected_date }}">
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Roll No</th>
+                        <th>Student Name</th>
+                        <th>Boarding Stop</th>
+                        <th>Vehicle</th>
+                        <th style="min-width: 240px;">Attendance Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in roster %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><code>{{ item.student.roll_no }}</code></td>
+                        <td class="strong">{{ item.student.name }}</td>
+                        <td>{{ item.stop.stop_name }}</td>
+                        <td>{{ item.vehicle.vehicle_number }}</td>
+                        <td>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <label style="display: flex; align-items: center; gap: 4px; font-weight: 500; cursor: pointer; color: #15803d;">
+                                    <input type="radio" name="status_{{ item.student.id }}" value="PRESENT" {% if item.existing_status == 'PRESENT' %}checked{% endif %}>
+                                    Present
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; font-weight: 500; cursor: pointer; color: #b91c1c;">
+                                    <input type="radio" name="status_{{ item.student.id }}" value="ABSENT" {% if item.existing_status == 'ABSENT' %}checked{% endif %}>
+                                    Absent
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; font-weight: 500; cursor: pointer; color: #b45309;">
+                                    <input type="radio" name="status_{{ item.student.id }}" value="NOT_BOARDED" {% if item.existing_status == 'NOT_BOARDED' %}checked{% endif %}>
+                                    Not Boarded
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 18px;">
+            <a href="{% url 'transport:admin_attendance' %}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon"><use href="#i-check"/></svg> Save Attendance Records
+            </button>
+        </div>
+    </form>
+    {% else %}
+    <div class="empty-state" style="padding: 30px; text-align: center; color: var(--muted);">
+        No active students allocated to Route {{ route.code }}.
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

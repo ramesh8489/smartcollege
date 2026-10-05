@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Issue Hostel Fee Demand · Smart College{% endblock %}
+{% block topbar_title %}Hostel Fees{% endblock %}
+
+{% block page_title %}Issue Hostel Fee Demand{% endblock %}
+{% block page_sub %}
+    Bill hostel admission, room rent, mess charges, or maintenance fees to resident students.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_fees' %}">&larr; Back to Hostel Fees</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="card" style="max-width: 720px; margin: 0 auto; padding: 28px 32px;">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div style="background: var(--danger-subtle, #fef2f2); border-left: 4px solid var(--danger, #dc2626); padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
+                {% for err in form.non_field_errors %}
+                    <div style="color: var(--danger, #dc2626); font-weight: 500;">{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div style="margin-bottom: 20px;">
+            <label class="label">{{ form.student.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+            {{ form.student }}
+            {% if form.student.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.student.errors.0 }}</div>
+            {% endif %}
+            <div class="text-sm text-muted" style="margin-top: 4px;">Select the enrolled student resident to bill.</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label class="label">{{ form.fee_subtype.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.fee_subtype }}
+                {% if form.fee_subtype.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.fee_subtype.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div>
+                <label class="label">{{ form.amount.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.amount }}
+                {% if form.amount.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.amount.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label class="label">{{ form.academic_year.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.academic_year }}
+                {% if form.academic_year.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.academic_year.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div>
+                <label class="label">{{ form.due_date.label }}</label>
+                {{ form.due_date }}
+                {% if form.due_date.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.due_date.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label class="label">{{ form.remarks.label }}</label>
+            {{ form.remarks }}
+            {% if form.remarks.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.remarks.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <a href="{% url 'hostel:admin_fees' %}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-check"/></svg> Generate & Issue Fee Demand
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

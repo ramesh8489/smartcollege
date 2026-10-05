@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}{{ company.name }} · Partner Profile{% endblock %}
+{% block topbar_title %}Placements · Company Details{% endblock %}
+
+{% block page_title %}{{ company.name }}{% endblock %}
+{% block page_sub %}{{ company.industry }} · Campus Recruitment Partner{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <a href="{% url 'company_list' %}" class="btn btn-ghost">
+            ← All Companies
+        </a>
+        {% if is_officer %}
+            <a href="{% url 'company_edit' company.pk %}" class="btn btn-secondary">
+                <svg class="icon"><use href="#i-edit"/></svg>
+                <span>Edit Profile</span>
+            </a>
+            <a href="{% url 'drive_create' %}?company={{ company.pk }}" class="btn btn-primary">
+                <svg class="icon"><use href="#i-plus"/></svg>
+                <span>Create Drive</span>
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-3" style="gap: 24px; align-items: start;">
+    <!-- Left Column: Company Dossier Card -->
+    <div class="card" style="grid-column: span 1;">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-briefcase"/></svg>
+                <span>Company Overview</span>
+            </div>
+            <span class="badge {% if company.status == 'Active' %}green{% else %}rose{% endif %}">
+                {{ company.status }}
+            </span>
+        </div>
+        <div class="card-body">
+            {% if company.logo %}
+                <div style="text-align: center; margin-bottom: 20px; padding: 16px; background: var(--surface); border-radius: 8px; border: 1px solid var(--line);">
+                    <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                </div>
+            {% endif %}
+
+            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13.5px;">
+                <div>
+                    <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Industry</div>
+                    <div style="font-weight: 600; color: var(--text);">{{ company.industry }}</div>
+                </div>
+
+                {% if company.website %}
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Website</div>
+                        <div>
+                            <a href="{{ company.website }}" target="_blank" rel="noopener" style="color: var(--brand); font-weight: 600; word-break: break-all;">
+                                {{ company.website }} ↗
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div>
+                    <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Recruitment HR Contact</div>
+                    <div style="font-weight: 600; color: var(--text);">{{ company.hr_contact_person }}</div>
+                    <div class="muted" style="font-size: 12px;">{{ company.contact_email }}</div>
+                    <div class="muted" style="font-size: 12px;">{{ company.contact_phone }}</div>
+                </div>
+
+                {% if company.address %}
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Location / Address</div>
+                        <div style="color: var(--text); font-size: 12.5px;">{{ company.address }}</div>
+                    </div>
+                {% endif %}
+
+                {% if company.description %}
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">About Company</div>
+                        <div style="color: var(--muted); font-size: 12.5px; line-height: 1.5; margin-top: 4px;">{{ company.description }}</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if is_officer %}
+                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); text-align: right;">
+                    <a href="{% url 'company_delete' company.pk %}" class="btn btn-ghost" style="color: var(--danger); font-size: 12px;">
+                        Deactivate / Delete Company
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Drives & Placements History -->
+    <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 24px;">
+        <!-- Drives Hosted Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-calendar"/></svg>
+                    <span>Placement Drives ({{ drives.count }})</span>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                {% if drives %}
+                    <table class="table" style="width: 100%; margin: 0;">
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Type</th>
+                                <th>Package (CTC)</th>
+                                <th>Drive Date</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in drives %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 700; color: var(--text);">
+                                            <a href="{% url 'drive_detail' d.pk %}" style="color: inherit; text-decoration: none;">{{ d.job_title }}</a>
+                                        </div>
+                                        <div class="muted" style="font-size: 11px;">{{ d.job_location }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge slate">{{ d.get_employment_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 700; color: var(--brand);">{{ d.salary_package }}</span>
+                                    </td>
+                                    <td>
+                                        <div>{{ d.drive_date|date:"d M Y" }}</div>
+                                        <div class="muted" style="font-size: 11px;">Deadline: {{ d.application_deadline|date:"d M" }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if d.status == 'Open' %}green{% elif d.status == 'Completed' %}blue{% elif d.status == 'Closed' %}rose{% else %}amber{% endif %}">
+                                            {{ d.status }}
+                                        </span>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <a href="{% url 'drive_detail' d.pk %}" class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">
+                                            View Drive →
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div style="padding: 32px; text-align: center;" class="muted">
+                        No placement drives scheduled yet for this company.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Hired Students Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-check"/></svg>
+                    <span>Selected Students from SmartCollege ({{ results.count }})</span>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                {% if results %}
+                    <table class="table" style="width: 100%; margin: 0;">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Roll No</th>
+                                <th>Programme</th>
+                                <th>Designation</th>
+                                <th>CTC</th>
+                                <th>Offer Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in results %}
+                                <tr>
+                                    <td style="font-weight: 600;">{{ r.student.name }}</td>
+                                    <td><code>{{ r.student.roll_no }}</code></td>
+                                    <td>{{ r.student.course.name }}</td>
+                                    <td>{{ r.job_title }}</td>
+                                    <td style="font-weight: 700; color: var(--brand);">{{ r.ctc }}</td>
+                                    <td>{{ r.result_date|date:"d M Y" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div style="padding: 32px; text-align: center;" class="muted">
+                        No final student selections recorded yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Visitor Management · Smart College{% endblock %}
+{% block topbar_title %}Visitor Management{% endblock %}
+
+{% block page_title %}Hostel Visitor Logs & Gate Passes{% endblock %}
+{% block page_sub %}
+    Review visitor clearance requests, approve passes, track gate check-in/out timestamps, and maintain campus security logs.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_dashboard' %}">&larr; Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="grid grid-5 mb">
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--brand-600);">{{ total_count }}</div>
+        <div class="stat-lbl">Total Records</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--warning, #d97706);">{{ pending_count }}</div>
+        <div class="stat-lbl">Pending Review</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--success, #16a34a);">{{ approved_count }}</div>
+        <div class="stat-lbl">Approved</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--primary, #2563eb);">{{ checked_in_count }}</div>
+        <div class="stat-lbl">Checked In (Active)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--muted, #64748b);">{{ checked_out_count }}</div>
+        <div class="stat-lbl">Checked Out</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb" style="padding: 18px 24px;">
+    <form method="get" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 200px;">
+            <label class="label" style="font-size: 12px;">Search Visitor / Student / Phone</label>
+            <input type="text" name="search" value="{{ search_query }}" class="input" placeholder="Search visitor or student name...">
+        </div>
+
+        {% if hostels|length > 1 %}
+        <div style="width: 180px;">
+            <label class="label" style="font-size: 12px;">Hostel</label>
+            <select name="hostel" class="select">
+                <option value="">All Hostels</option>
+                {% for h in hostels %}
+                    <option value="{{ h.id }}" {% if selected_hostel == h.id|stringformat:"s" %}selected{% endif %}>{{ h.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <div style="width: 170px;">
+            <label class="label" style="font-size: 12px;">Status</label>
+            <select name="status" class="select">
+                <option value="">All Statuses</option>
+                {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="width: 160px;">
+            <label class="label" style="font-size: 12px;">Visit Date</label>
+            <input type="date" name="date" value="{{ selected_date }}" class="input">
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary" style="height: 38px;">
+                <svg class="icon icon-sm"><use href="#i-search"/></svg> Filter
+            </button>
+            <a href="{% url 'hostel:admin_visitors' %}" class="btn btn-ghost" style="height: 38px;">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Visitors Table -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-users"/></svg>
+            <span>Hostel Visitor Registry</span>
+        </div>
+        <span class="badge gray">{{ visitors|length }} displayed</span>
+    </div>
+
+    {% if visitors %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Visitor Information</th>
+                    <th>Resident Student</th>
+                    <th>Hostel</th>
+                    <th>Purpose</th>
+                    <th>Gate Timing (In / Out)</th>
+                    <th>Status</th>
+                    <th>Approval</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in visitors %}
+                <tr>
+                    <td style="font-weight: 600; white-space: nowrap;">
+                        {{ v.visit_date|date:"d M Y" }}
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: var(--ink);">{{ v.visitor_name }}</div>
+                        <div style="font-size: 12px; color: var(--muted);">
+                            <span class="badge gray" style="font-size: 10px; padding: 2px 6px;">{{ v.relationship }}</span>
+                            &middot; <span style="font-family: monospace;">{{ v.phone }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 500; color: var(--ink);">{{ v.student.name }}</div>
+                        <div style="font-size: 12px; color: var(--muted); font-family: monospace;">{{ v.student.roll_no }}</div>
+                    </td>
+                    <td>
+                        <span class="badge blue">{{ v.hostel.code }}</span>
+                    </td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ v.purpose }}
+                    </td>
+                    <td style="white-space: nowrap;">
+                        {% if v.entry_time %}
+                            <span style="font-weight: 600; color: var(--success, #16a34a);">{{ v.entry_time|time:"H:i" }}</span>
+                        {% else %}
+                            <span style="color: var(--muted);">&mdash;</span>
+                        {% endif %}
+                        <span style="color: var(--muted);"> / </span>
+                        {% if v.exit_time %}
+                            <span style="font-weight: 600; color: var(--muted);">{{ v.exit_time|time:"H:i" }}</span>
+                        {% else %}
+                            <span style="color: var(--muted);">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if v.status == "PENDING" %}
+                            <span class="badge orange">Pending</span>
+                        {% elif v.status == "APPROVED" %}
+                            <span class="badge green">Approved</span>
+                        {% elif v.status == "CHECKED_IN" %}
+                            <span class="badge blue">Checked In</span>
+                        {% elif v.status == "CHECKED_OUT" %}
+                            <span class="badge gray">Checked Out</span>
+                        {% elif v.status == "REJECTED" %}
+                            <span class="badge red">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if v.approved_by %}
+                            <div style="font-size: 12px; font-weight: 500;">{{ v.approved_by.get_full_name|default:v.approved_by.username }}</div>
+                        {% else %}
+                            <div style="font-size: 12px; color: var(--muted);">&mdash;</div>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <a href="{% url 'hostel:admin_visitor_update' v.pk %}" class="btn btn-sm btn-outline">
+                            Manage Pass
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-top: 1px solid var(--border);">
+        <div style="font-size: 13px; color: var(--muted);">
+            Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </div>
+        <div style="display: flex; gap: 8px;">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&hostel={{ selected_hostel }}&status={{ selected_status }}&date={{ selected_date }}" class="btn btn-sm btn-ghost">&laquo; Prev</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&hostel={{ selected_hostel }}&status={{ selected_status }}&date={{ selected_date }}" class="btn btn-sm btn-ghost">Next &raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align: center; padding: 48px 24px; color: var(--muted);">
+        <svg class="icon icon-xl" style="margin-bottom: 12px; opacity: 0.5;"><use href="#i-users"/></svg>
+        <p style="font-size: 15px; margin-bottom: 4px;">No visitor records found matching your filters.</p>
+        <p style="font-size: 13px;">Clear search parameters or wait for resident requests.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

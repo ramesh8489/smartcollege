@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}Leave Request #{{ leave.id }} · Smart College{% endblock %}
+{% block topbar_title %}Leave Details{% endblock %}
+
+{% block page_title %}
+    Leave Application #{{ leave.id }}
+{% endblock %}
+
+{% block page_sub %}
+    Student: {{ student.name }} ({{ student.roll_no }}) · Applied on {{ leave.applied_date|date:"d M Y, h:i A" }}
+{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <a class="btn btn-ghost" href="javascript:history.back()">
+            &larr; Back
+        </a>
+        {% if can_cancel %}
+            <form method="post" action="{% url 'cancel_leave' leave.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel your leave request?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger-soft" id="btn-cancel-leave">
+                    Cancel Leave Request
+                </button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--danger);">{{ message }}</div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--success); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--success);">{{ message }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Header / Status Banner -->
+<div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+        <div>
+            <div style="font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;">
+                Current Lifecycle Status
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge {{ leave.status_badge_class }}" style="font-size: 14px; padding: 6px 14px; font-weight: 800;">
+                    {{ leave.status }}
+                </span>
+                <span style="font-size: 13.5px; color: var(--muted);">
+                    Last updated {{ leave.updated_date|date:"d M Y, h:i A" }}
+                </span>
+            </div>
+        </div>
+
+        {% if leave.approved_rejected_date %}
+            <div style="text-align: right;">
+                <div style="font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Decision Recorded</div>
+                <div style="font-size: 13.5px; font-weight: 700; color: var(--ink);">
+                    {{ leave.approved_rejected_date|date:"d M Y, h:i A" }}
+                    {% if leave.approved_rejected_by %}
+                        by {{ leave.approved_rejected_by.get_full_name|default:leave.approved_rejected_by.username }}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 4-Stage Visual Progress Stepper -->
+    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line);">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; position: relative;">
+            <!-- Step 1: Student Submitted -->
+            <div style="text-align: center;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--success); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                    ✓
+                </div>
+                <div style="font-size: 12.5px; font-weight: 700; color: var(--ink);">1. Student</div>
+                <div style="font-size: 11px; color: var(--muted);">Submitted</div>
+            </div>
+
+            <!-- Step 2: Faculty Review -->
+            <div style="text-align: center;">
+                {% if leave.status == "Faculty Rejected" %}
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--danger); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                        ✕
+                    </div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: var(--danger);">2. Faculty</div>
+                    <div style="font-size: 11px; color: var(--danger);">Rejected</div>
+                {% else %}
+                    {% if leave.status == "Pending" %}
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--warn); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                            •
+                        </div>
+                        <div style="font-size: 12.5px; font-weight: 700; color: var(--warn);">2. Faculty</div>
+                        <div style="font-size: 11px; color: var(--muted);">Pending</div>
+                    {% else %}
+                        {% if leave.status == "Cancelled" %}
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #94a3b8; color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                                —
+                            </div>
+                            <div style="font-size: 12.5px; font-weight: 700; color: var(--muted);">2. Faculty</div>
+                            <div style="font-size: 11px; color: var(--muted);">Cancelled</div>
+                        {% else %}
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--success); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                                ✓
+                            </div>
+                            <div style="font-size: 12.5px; font-weight: 700; color: var(--success);">2. Faculty</div>
+                            <div style="font-size: 11px; color: var(--success);">Approved</div>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Step 3: School Incharge -->
+            <div style="text-align: center;">
+                {% if leave.status == "Incharge Rejected" %}
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--danger); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                        ✕
+                    </div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: var(--danger);">3. Incharge</div>
+                    <div style="font-size: 11px; color: var(--danger);">Rejected</div>
+                {% else %}
+                    {% if leave.status == "Faculty Approved" %}
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--warn); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                            •
+                        </div>
+                        <div style="font-size: 12.5px; font-weight: 700; color: var(--warn);">3. Incharge</div>
+                        <div style="font-size: 11px; color: var(--muted);">Under Review</div>
+                    {% else %}
+                        {% if leave.status == "Incharge Approved" %}
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--success); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                                ✓
+                            </div>
+                            <div style="font-size: 12.5px; font-weight: 700; color: var(--success);">3. Incharge</div>
+                            <div style="font-size: 11px; color: var(--success);">Approved</div>
+                        {% else %}
+                            {% if leave.status == "Admin Approved" %}
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--success); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                                    ✓
+                                </div>
+                                <div style="font-size: 12.5px; font-weight: 700; color: var(--success);">3. Incharge</div>
+                                <div style="font-size: 11px; color: var(--success);">Approved</div>
+                            {% else %}
+                                {% if leave.status == "Admin Rejected" %}
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--success); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                                        ✓
+                                    </div>
+                                    <div style="font-size: 12.5px; font-weight: 700; color: var(--ink);">3. Incharge</div>
+                                    <div style="font-size: 11px; color: var(--muted);">Passed</div>
+                                {% else %}
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #64748b; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                                        3
+                                    </div>
+                                    <div style="font-size: 12.5px; font-weight: 600; color: var(--muted);">3. Incharge</div>
+                                    <div style="font-size: 11px; color: var(--muted);">Pending</div>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Step 4: Admin Approval -->
+            <div style="text-align: center;">
+                {% if leave.status == "Admin Approved" %}
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--success); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                        ✓
+                    </div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: var(--success);">4. Admin</div>
+                    <div style="font-size: 11px; color: var(--success);">Final Approval</div>
+                {% else %}
+                    {% if leave.status == "Admin Rejected" %}
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--danger); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                            ✕
+                        </div>
+                        <div style="font-size: 12.5px; font-weight: 700; color: var(--danger);">4. Admin</div>
+                        <div style="font-size: 11px; color: var(--danger);">Rejected</div>
+                    {% else %}
+                        {% if leave.status == "Incharge Approved" %}
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--warn); color: #fff; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                                •
+                            </div>
+                            <div style="font-size: 12.5px; font-weight: 700; color: var(--warn);">4. Admin</div>
+                            <div style="font-size: 11px; color: var(--muted);">Final Review</div>
+                        {% else %}
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #64748b; margin: 0 auto 6px; display: grid; place-items: center; font-weight: 800; font-size: 13px;">
+                                4
+                            </div>
+                            <div style="font-size: 12.5px; font-weight: 600; color: var(--muted);">4. Admin</div>
+                            <div style="font-size: 11px; color: var(--muted);">Final Stage</div>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Two-Column Grid: Details & Review Actions -->
+<div style="display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start;">
+    <!-- Left Column: Details, Reason, Remarks, Audit Timeline -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Application Details Card -->
+        <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm);">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                Application Specifications
+            </h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                <div>
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Leave Type</div>
+                    <div style="font-size: 15px; font-weight: 700; color: var(--ink); margin-top: 2px;">{{ leave.leave_type }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Duration</div>
+                    <div style="font-size: 15px; font-weight: 700; color: var(--brand); margin-top: 2px;">
+                        {{ leave.number_of_days }} Day{% if leave.number_of_days > 1 %}s{% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase;">From Date</div>
+                    <div style="font-size: 15px; font-weight: 700; color: var(--ink); margin-top: 2px;">{{ leave.from_date|date:"D, d M Y" }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase;">To Date</div>
+                    <div style="font-size: 15px; font-weight: 700; color: var(--ink); margin-top: 2px;">{{ leave.to_date|date:"D, d M Y" }}</div>
+                </div>
+            </div>
+
+            <!-- Reason Box -->
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">Reason for Absence</div>
+                <div style="background: var(--surface-2); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--line); font-size: 14px; line-height: 1.6; color: var(--ink-2); white-space: pre-wrap;">{{ leave.reason }}</div>
+            </div>
+
+            <!-- Supporting Document -->
+            {% if leave.supporting_document %}
+                <div style="margin-bottom: 10px;">
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">Attached Document</div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <svg class="icon icon-lg" style="color: var(--brand);"><use href="#i-file"/></svg>
+                            <div>
+                                <div style="font-weight: 700; font-size: 13.5px; color: var(--ink);">Supporting Document</div>
+                                <div style="font-size: 11.5px; color: var(--muted);">Click to securely view / download</div>
+                            </div>
+                        </div>
+                        <a href="{% url 'download_leave_document' leave.id %}" target="_blank" class="btn btn-primary btn-sm" id="btn-download-document">
+                            <svg class="icon icon-sm"><use href="#i-download"/></svg>
+                            <span>View / Download</span>
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Remarks at Each Approval Level -->
+        <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm);">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                Remarks from Approval Hierarchy
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Student remarks -->
+                <div style="padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 12.5px; color: var(--brand);">Student Remarks:</span>
+                    </div>
+                    <div style="font-size: 13.5px; color: var(--ink-2);">
+                        {{ leave.student_remarks|default:"(No initial student remarks provided)" }}
+                    </div>
+                </div>
+
+                <!-- Faculty remarks -->
+                <div style="padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 12.5px; color: var(--warn);">Faculty Remarks:</span>
+                    </div>
+                    <div style="font-size: 13.5px; color: var(--ink-2);">
+                        {{ leave.faculty_remarks|default:"(Pending or not yet reviewed by faculty)" }}
+                    </div>
+                </div>
+
+                <!-- School Incharge remarks -->
+                <div style="padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 12.5px; color: var(--accent);">School Incharge Remarks:</span>
+                    </div>
+                    <div style="font-size: 13.5px; color: var(--ink-2);">
+                        {{ leave.incharge_remarks|default:"(Pending or not yet reviewed by school incharge)" }}
+                    </div>
+                </div>
+
+                <!-- Admin remarks -->
+                <div style="padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 12.5px; color: var(--success);">Admin Remarks:</span>
+                    </div>
+                    <div style="font-size: 13.5px; color: var(--ink-2);">
+                        {{ leave.admin_remarks|default:"(Pending or not yet finalized by administrator)" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval History / Audit Trail -->
+        <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm);">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+                Audit History & Transition Log
+            </h3>
+
+            {% if history_records %}
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    {% for h in history_records %}
+                        <div style="display: flex; gap: 14px; position: relative;">
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--brand); margin-top: 6px; flex-shrink: 0;"></div>
+                            <div style="flex: 1; padding-bottom: 12px; border-bottom: 1px dashed var(--line);">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
+                                    <div style="font-weight: 700; font-size: 14px; color: var(--ink);">
+                                        {{ h.action }}
+                                        <span style="font-size: 12px; font-weight: 600; color: var(--muted); margin-left: 6px;">
+                                            (&rarr; {{ h.new_status }})
+                                        </span>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--muted);">{{ h.timestamp|date:"d M Y, h:i:s A" }}</div>
+                                </div>
+                                <div style="font-size: 12.5px; color: var(--ink-2); margin-top: 3px;">
+                                    By: <b>{{ h.action_taken_by.get_full_name|default:h.action_taken_by.username|default:"System" }}</b>
+                                </div>
+                                {% if h.remarks %}
+                                    <div style="font-size: 13px; color: var(--ink-2); background: var(--surface-2); padding: 8px 12px; border-radius: 6px; margin-top: 6px;">
+                                        {{ h.remarks }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 20px;">
+                    No audit records recorded yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Student Profile & Review Action Form -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Student Information Card -->
+        <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm);">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); margin-bottom: 14px;">Student Dossier</div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, var(--brand), var(--brand-700)); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 20px;">
+                    {{ student.name|slice:":1"|upper }}
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 16px; color: var(--ink);">{{ student.name }}</div>
+                    <div style="font-size: 12.5px; color: var(--muted);">Roll No: <b>{{ student.roll_no }}</b></div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">School:</span>
+                    <span style="font-weight: 600; color: var(--ink); text-align: right;">{{ student.department.name }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">Degree / Course:</span>
+                    <span style="font-weight: 600; color: var(--ink); text-align: right;">{{ student.course.name|default:"General" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">Year:</span>
+                    <span style="font-weight: 600; color: var(--ink);">Year {{ student.year }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">Email:</span>
+                    <span style="font-weight: 600; color: var(--ink); font-size: 12px;">{{ student.email }}</span>
+                </div>
+                {% if student.phone %}
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--muted);">Phone:</span>
+                        <span style="font-weight: 600; color: var(--ink);">{{ student.phone }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action Box for Reviewers -->
+        {% if can_faculty_act %}
+            <div class="card" style="background: var(--surface); border: 2px solid var(--warn); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span class="badge amber" style="font-weight: 800;">Faculty Action</span>
+                </div>
+                <h4 style="font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 8px;">Review Leave Request</h4>
+                <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 16px;">
+                    As the authorized faculty, evaluate this student's leave application and provide required remarks.
+                </p>
+
+                <form method="post" action="{% url 'faculty_review_action' leave.id %}">
+                    {% csrf_token %}
+                    <div class="field" style="margin-bottom: 14px;">
+                        <label class="label" for="fac-remarks">Decision Remarks <span style="color: var(--danger);">*</span></label>
+                        <textarea name="remarks" id="fac-remarks" class="textarea" rows="3" placeholder="Enter reason for approval or rejection..." required></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="submit" name="action" value="approve" class="btn btn-success btn-block" id="btn-faculty-approve">
+                            <svg class="icon icon-sm"><use href="#i-check"/></svg>
+                            <span>Approve</span>
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger btn-block" id="btn-faculty-reject" onclick="return confirm('Confirm rejection of this leave request?');">
+                            <svg class="icon icon-sm"><use href="#i-trash"/></svg>
+                            <span>Reject</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if can_incharge_act %}
+            <div class="card" style="background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span class="badge violet" style="font-weight: 800;">School Incharge Action</span>
+                </div>
+                <h4 style="font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 8px;">School Incharge Endorsement</h4>
+                <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 16px;">
+                    This request was approved by the class faculty. Endorse or reject before escalating to Administrator.
+                </p>
+
+                <form method="post" action="{% url 'incharge_review_action' leave.id %}">
+                    {% csrf_token %}
+                    <div class="field" style="margin-bottom: 14px;">
+                        <label class="label" for="inc-remarks">Incharge Remarks <span style="color: var(--danger);">*</span></label>
+                        <textarea name="remarks" id="inc-remarks" class="textarea" rows="3" placeholder="Enter school endorsement or rejection remarks..." required></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="submit" name="action" value="approve" class="btn btn-success btn-block" id="btn-incharge-approve">
+                            <svg class="icon icon-sm"><use href="#i-check"/></svg>
+                            <span>Approve</span>
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger btn-block" id="btn-incharge-reject" onclick="return confirm('Confirm rejection of this leave request?');">
+                            <svg class="icon icon-sm"><use href="#i-trash"/></svg>
+                            <span>Reject</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if can_admin_act %}
+            <div class="card" style="background: var(--surface); border: 2px solid var(--brand); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span class="badge" style="font-weight: 800;">Administrator Action</span>
+                </div>
+                <h4 style="font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 8px;">Final Authorization</h4>
+                <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 16px;">
+                    Grant final institutional approval or rejection. This decision closes the lifecycle of this application.
+                </p>
+
+                <form method="post" action="{% url 'admin_review_action' leave.id %}">
+                    {% csrf_token %}
+                    <div class="field" style="margin-bottom: 14px;">
+                        <label class="label" for="adm-remarks">Admin Decision Remarks <span style="color: var(--danger);">*</span></label>
+                        <textarea name="remarks" id="adm-remarks" class="textarea" rows="3" placeholder="Enter final authorization remarks..." required></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="submit" name="action" value="approve" class="btn btn-success btn-block" id="btn-admin-approve">
+                            <svg class="icon icon-sm"><use href="#i-check"/></svg>
+                            <span>Final Approve</span>
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger btn-block" id="btn-admin-reject" onclick="return confirm('Confirm final rejection of this leave request?');">
+                            <svg class="icon icon-sm"><use href="#i-trash"/></svg>
+                            <span>Final Reject</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

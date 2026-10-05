@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+{% block topbar_title %}AI & Advanced Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .analytics-grid-4 { display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .analytics-grid-6 { display: grid; gap: 14px; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    @media (max-width: 1200px) {
+        .analytics-grid-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .analytics-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 680px) {
+        .analytics-grid-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .analytics-grid-4 { grid-template-columns: 1fr; }
+    }
+    .chart-box { position: relative; height: 260px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block page_title %}AI & Advanced Analytics Dashboard{% endblock %}
+
+{% block page_sub %}
+Institutional intelligence computed strictly from live database records &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Analytics generated on {{ scope.generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="/analytics/export/excel/?{{ export_params }}">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg> Export Excel
+    </a>
+    <a class="btn btn-ghost" href="/analytics/export/pdf/?{{ export_params }}" target="_blank">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> Generate PDF Report
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{# Sub Navigation Tabs #}
+{% include "analytics/_nav_tabs.html" %}
+
+{# Filter Bar #}
+{% include "analytics/_filter_bar.html" %}
+
+{# Top KPI Summary Cards - 12 key statistics #}
+<div class="analytics-grid-6 mb">
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+        <div><div class="stat-val">{{ kpi.total_students }}</div><div class="stat-label">Total Students</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-award"/></svg></div>
+        <div><div class="stat-val">{{ kpi.total_faculty }}</div><div class="stat-label">Total Faculty</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-book"/></svg></div>
+        <div><div class="stat-val">{{ kpi.total_subjects }}</div><div class="stat-label">Total Subjects</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-layers"/></svg></div>
+        <div><div class="stat-val">{{ kpi.total_classes }}</div><div class="stat-label">Total Classes</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico {% if kpi.avg_attendance >= 75 %}green{% elif kpi.avg_attendance >= 65 %}amber{% else %}rose{% endif %}">
+            <svg class="icon icon-lg"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{% if kpi.avg_attendance is not None %}{{ kpi.avg_attendance }}%{% else %}—{% endif %}</div>
+            <div class="stat-label">Avg Attendance</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico rose"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+        <div>
+            <div class="stat-val">{% if kpi.avg_marks is not None %}{{ kpi.avg_marks }}%{% else %}—{% endif %}</div>
+            <div class="stat-label">Avg Marks</div>
+        </div>
+    </div>
+</div>
+
+<div class="analytics-grid-6 mb">
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-file"/></svg></div>
+        <div>
+            <div class="stat-val" style="font-size: 19px;">₹{{ kpi.fees_collected|floatformat:0 }}</div>
+            <div class="stat-label">Fees Collected ({{ kpi.fee_collection_rate }}%)</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-file"/></svg></div>
+        <div>
+            <div class="stat-val" style="font-size: 19px;">₹{{ kpi.fees_outstanding|floatformat:0 }}</div>
+            <div class="stat-label">Outstanding Fees</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-book"/></svg></div>
+        <div><div class="stat-val">{{ kpi.books_issued }}</div><div class="stat-label">Books Issued</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-briefcase"/></svg></div>
+        <div><div class="stat-val">{{ kpi.placement_rate }}%</div><div class="stat-label">Placement Rate</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-inbox"/></svg></div>
+        <div><div class="stat-val">{{ kpi.pending_certificates }}</div><div class="stat-label">Pending Certs</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico rose"><svg class="icon icon-lg"><use href="#i-shield"/></svg></div>
+        <div><div class="stat-val">{{ kpi.pending_doc_verification }}</div><div class="stat-label">Pending Docs</div></div>
+    </div>
+</div>
+
+{# AI Academic Insights #}
+{% include "analytics/_insights_card.html" %}
+
+{# Interactive Charts Row #}
+<div class="grid grid-2 mb">
+    <!-- Chart 1: Subject Performance -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-chart"/></svg> Subject Performance Benchmark
+            </div>
+            <a class="btn btn-ghost btn-sm" href="/analytics/academic/?{{ export_params }}">View Details</a>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="subjectChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Attendance Shortage Distribution -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-check"/></svg> Attendance Health Distribution
+            </div>
+            <a class="btn btn-ghost btn-sm" href="/analytics/attendance/?{{ export_params }}">View Shortage List</a>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2 mb">
+    <!-- Chart 3: Academic Marks Distribution -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-award"/></svg> Academic Performance Distribution
+            </div>
+            <span class="badge violet">{{ academic.total_evaluated_students }} Evaluated</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="marksDistChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Fee Realization vs Outstanding -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-file"/></svg> Fee Realization & Collection Status
+            </div>
+            <a class="btn btn-ghost btn-sm" href="/analytics/fees/?{{ export_params }}">Fee Analytics</a>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="feesChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Academic Risk Summary Table Preview #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon" style="color: var(--danger);"><use href="#i-shield"/></svg>
+            <span>Academic Risk Indicator (Priority Support List)</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="badge red">High: {{ risk.high_risk_count }}</span>
+            <span class="badge amber">Medium: {{ risk.medium_risk_count }}</span>
+            <span class="badge green">Low: {{ risk.low_risk_count }}</span>
+            <a class="btn btn-ghost btn-sm" href="/analytics/risk/?{{ export_params }}">Full Support List &rarr;</a>
+        </div>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Roll No</th>
+                        <th>Course & Year</th>
+                        <th class="num">Attendance</th>
+                        <th class="num">Academic Avg</th>
+                        <th class="num">Risk Score</th>
+                        <th>Risk Level</th>
+                        <th>Primary Reasons</th>
+                        <th class="num">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in risk.students|slice:":5" %}
+                    <tr>
+                        <td class="strong">
+                            <div class="person">
+                                <div class="avatar" style="width: 28px; height: 28px; font-size: 11px;">{{ item.name|slice:":1"|upper }}</div>
+                                <span>{{ item.name }}</span>
+                            </div>
+                        </td>
+                        <td><code>{{ item.roll_no }}</code></td>
+                        <td>{{ item.course }} (Yr {{ item.year }})</td>
+                        <td class="num">
+                            {% if item.attendance_pct is not None %}
+                                <span class="badge {% if item.attendance_pct >= scope.settings.attendance_warning_threshold %}green{% elif item.attendance_pct >= scope.settings.attendance_critical_threshold %}amber{% else %}red{% endif %}">
+                                    {{ item.attendance_pct }}%
+                                </span>
+                            {% else %}
+                                <span class="badge gray">No Data</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">
+                            {% if item.marks_pct is not None %}
+                                <span class="strong">{{ item.marks_pct }}%</span>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="num"><b style="font-size: 14px;">{{ item.risk_score }}</b>/100</td>
+                        <td>
+                            <span class="badge {{ item.badge_class }}">{{ item.risk_level }}</span>
+                        </td>
+                        <td>
+                            <div style="font-size: 11.5px; color: var(--ink-2); max-width: 280px;">
+                                {% for r in item.reasons|slice:":2" %}
+                                    <div>&bull; {{ r }}</div>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="num">
+                            <a class="btn btn-ghost btn-sm" href="/analytics/student/{{ item.student.id }}/">Profile</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty">
+                                <svg class="icon"><use href="#i-check"/></svg>
+                                <b>No student risk records found</b>
+                                <span>Enrolled candidates are currently meeting academic & attendance baselines.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# Quick Module Navigation Cards #}
+<div class="analytics-grid-4 mb">
+    <a class="card" href="/analytics/academic/?{{ export_params }}" style="text-decoration: none; color: inherit; padding: 18px; display: flex; gap: 14px; align-items: center; transition: transform .15s;">
+        <div class="stat-ico" style="background: var(--brand-50); color: var(--brand);"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+        <div>
+            <div style="font-weight: 800; font-size: 15px;">Academic Analytics</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Subject averages & top performers</div>
+        </div>
+    </a>
+    <a class="card" href="/analytics/attendance/?{{ export_params }}" style="text-decoration: none; color: inherit; padding: 18px; display: flex; gap: 14px; align-items: center; transition: transform .15s;">
+        <div class="stat-ico" style="background: var(--success-50); color: var(--success);"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div>
+            <div style="font-weight: 800; font-size: 15px;">Attendance Analytics</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Shortage alerts & class trends</div>
+        </div>
+    </a>
+    <a class="card" href="/analytics/fees/?{{ export_params }}" style="text-decoration: none; color: inherit; padding: 18px; display: flex; gap: 14px; align-items: center; transition: transform .15s;">
+        <div class="stat-ico" style="background: var(--warn-50); color: var(--warn);"><svg class="icon icon-lg"><use href="#i-file"/></svg></div>
+        <div>
+            <div style="font-weight: 800; font-size: 15px;">Fees Analytics</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Collections & balance risks</div>
+        </div>
+    </a>
+    <a class="card" href="/analytics/risk/?{{ export_params }}" style="text-decoration: none; color: inherit; padding: 18px; display: flex; gap: 14px; align-items: center; transition: transform .15s;">
+        <div class="stat-ico" style="background: var(--danger-50); color: var(--danger);"><svg class="icon icon-lg"><use href="#i-shield"/></svg></div>
+        <div>
+            <div style="font-weight: 800; font-size: 15px;">Risk Identification</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Academic support recommendations</div>
+        </div>
+    </a>
+</div>
+
+{{ charts_json|json_script:"charts-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const rawData = document.getElementById("charts-data");
+    if (!rawData) return;
+    const data = JSON.parse(rawData.textContent);
+
+    // Chart.js global defaults
+    Chart.defaults.font.family = '"Inter", "Segoe UI", system-ui, sans-serif';
+    Chart.defaults.color = "#64748b";
+
+    // 1. Subject Benchmark (Bar)
+    const ctxSubject = document.getElementById("subjectChart");
+    if (ctxSubject && data.subjects.labels.length > 0) {
+        new Chart(ctxSubject, {
+            type: "bar",
+            data: {
+                labels: data.subjects.labels,
+                datasets: [{
+                    label: "Average Marks %",
+                    data: data.subjects.data,
+                    backgroundColor: "#2563eb",
+                    borderRadius: 6,
+                    maxBarThickness: 38,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%" } },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: c => `Average: ${c.raw}%` } }
+                }
+            }
+        });
+    } else if (ctxSubject) {
+        ctxSubject.parentElement.innerHTML = '<div class="empty"><svg class="icon"><use href="#i-chart"/></svg><b>No Subject Marks Available</b><span>No evaluations recorded for selected scope.</span></div>';
+    }
+
+    // 2. Attendance Health (Doughnut)
+    const ctxAtt = document.getElementById("attendanceChart");
+    const totalAtt = data.attendance.data.reduce((a, b) => a + b, 0);
+    if (ctxAtt && totalAtt > 0) {
+        new Chart(ctxAtt, {
+            type: "doughnut",
+            data: {
+                labels: data.attendance.labels,
+                datasets: [{
+                    data: data.attendance.data,
+                    backgroundColor: ["#16a34a", "#f59e0b", "#ef4444"],
+                    borderWidth: 2,
+                    borderColor: "#ffffff",
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "68%",
+                plugins: {
+                    legend: { position: "bottom", labels: { boxWidth: 12, padding: 14 } }
+                }
+            }
+        });
+    } else if (ctxAtt) {
+        ctxAtt.parentElement.innerHTML = '<div class="empty"><svg class="icon"><use href="#i-check"/></svg><b>No Attendance Records</b><span>Attendance has not been logged yet for selected filter.</span></div>';
+    }
+
+    // 3. Marks Distribution (Bar)
+    const ctxMarks = document.getElementById("marksDistChart");
+    const totalMarksStudents = data.marks_dist.data.reduce((a, b) => a + b, 0);
+    if (ctxMarks && totalMarksStudents > 0) {
+        new Chart(ctxMarks, {
+            type: "bar",
+            data: {
+                labels: data.marks_dist.labels,
+                datasets: [{
+                    label: "Students",
+                    data: data.marks_dist.data,
+                    backgroundColor: ["#7c3aed", "#2563eb", "#0284c7", "#16a34a", "#dc2626"],
+                    borderRadius: 6,
+                    maxBarThickness: 34,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: c => `${c.raw} Student(s)` } }
+                }
+            }
+        });
+    } else if (ctxMarks) {
+        ctxMarks.parentElement.innerHTML = '<div class="empty"><svg class="icon"><use href="#i-award"/></svg><b>No Performance Records</b><span>No evaluation data available.</span></div>';
+    }
+
+    // 4. Fee Realization (Doughnut)
+    const ctxFees = document.getElementById("feesChart");
+    const totalFeesVal = data.fees.data.reduce((a, b) => a + b, 0);
+    if (ctxFees && totalFeesVal > 0) {
+        new Chart(ctxFees, {
+            type: "doughnut",
+            data: {
+                labels: data.fees.labels,
+                datasets: [{
+                    data: data.fees.data,
+                    backgroundColor: ["#16a34a", "#f59e0b"],
+                    borderWidth: 2,
+                    borderColor: "#ffffff",
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "68%",
+                plugins: {
+                    legend: { position: "bottom", labels: { boxWidth: 12, padding: 14 } },
+                    tooltip: { callbacks: { label: c => `${c.label}: ₹${c.raw.toLocaleString()}` } }
+                }
+            }
+        });
+    } else if (ctxFees) {
+        ctxFees.parentElement.innerHTML = '<div class="empty"><svg class="icon"><use href="#i-file"/></svg><b>No Fee Records</b><span>No fee assessments entered for current criteria.</span></div>';
+    }
+});
+</script>
+{% endblock %}

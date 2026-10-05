@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Fees Analytics{% endblock %}
+{% block topbar_title %}Fees Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .chart-box { position: relative; height: 260px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block page_title %}Fees Management & Collection Analytics{% endblock %}
+
+{% block page_sub %}
+Institutional fee assessment, realization velocity, and outstanding balance monitoring &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Updated {{ scope.generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="/analytics/export/excel/?type=fees&{{ export_params }}">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg> Export Fees Excel
+    </a>
+    <a class="btn btn-ghost" href="/analytics/export/pdf/?type=fees&{{ export_params }}" target="_blank">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> PDF Report
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "analytics/_nav_tabs.html" %}
+{% include "analytics/_filter_bar.html" %}
+
+{# Fees KPI Summary #}
+<div class="grid grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-file"/></svg></div>
+        <div>
+            <div class="stat-val">₹{{ fees.total_fees|floatformat:0 }}</div>
+            <div class="stat-label">Total Fees Assessed</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div>
+            <div class="stat-val">₹{{ fees.total_paid|floatformat:0 }}</div>
+            <div class="stat-label">Total Realized ({{ fees.collection_percentage }}%)</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-clock"/></svg></div>
+        <div>
+            <div class="stat-val">₹{{ fees.total_outstanding|floatformat:0 }}</div>
+            <div class="stat-label">Outstanding Balance</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+        <div>
+            <div class="stat-val">{{ fees.count_paid }} / {{ fees.count_partial }} / {{ fees.count_unpaid }}</div>
+            <div class="stat-label">Paid / Partial / Unpaid Records</div>
+        </div>
+    </div>
+</div>
+
+{# Charts #}
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-file"/></svg> Realization vs Outstanding</div>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="feeCollectionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-chart"/></svg> Fee Type Distribution</div>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="feeTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Fee Type Breakdown Table #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title"><svg class="icon"><use href="#i-layers"/></svg> Category-wise Fee Collection</div>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fee Type</th>
+                        <th class="num">Records</th>
+                        <th class="num">Total Amount</th>
+                        <th class="num">Amount Collected</th>
+                        <th class="num">Outstanding Balance</th>
+                        <th class="num">Collection %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in fees.type_distribution %}
+                    <tr>
+                        <td class="strong">{{ t.label }}</td>
+                        <td class="num">{{ t.count }}</td>
+                        <td class="num">₹{{ t.total_amount|floatformat:2 }}</td>
+                        <td class="num" style="color: var(--success); font-weight: 700;">₹{{ t.paid_amount|floatformat:2 }}</td>
+                        <td class="num" style="color: var(--danger); font-weight: 700;">₹{{ t.outstanding|floatformat:2 }}</td>
+                        <td class="num">
+                            {% if t.total_amount > 0 %}
+                                <span class="badge {% if t.paid_amount == t.total_amount %}green{% else %}amber{% endif %}">
+                                    {{ t.paid_amount|floatformat:0 }} / {{ t.total_amount|floatformat:0 }}
+                                </span>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="muted" style="text-align: center; padding: 16px;">No fee categories found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# Fee Risk Table: Outstanding Balance Roster #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon" style="color: var(--warn);"><use href="#i-file"/></svg>
+            <span>Outstanding Fee Roster (Fee Risk)</span>
+        </div>
+        <span class="badge amber">{{ fees.fee_risk_list|length }} Pending Balance(s)</span>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Roll No</th>
+                        <th>Course & Year</th>
+                        <th>Fee Title</th>
+                        <th>Type</th>
+                        <th class="num">Total</th>
+                        <th class="num">Paid</th>
+                        <th class="num">Balance Due</th>
+                        <th>Status</th>
+                        <th>Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in page_obj %}
+                    <tr>
+                        <td class="strong">{{ item.student_name }}</td>
+                        <td><code>{{ item.roll_no }}</code></td>
+                        <td>{{ item.course }} (Yr {{ item.year }})</td>
+                        <td>{{ item.title }}</td>
+                        <td><span class="badge gray">{{ item.fee_type }}</span></td>
+                        <td class="num">₹{{ item.total_amount }}</td>
+                        <td class="num" style="color: var(--success);">₹{{ item.paid_amount }}</td>
+                        <td class="num" style="color: var(--danger); font-weight: 800;">₹{{ item.balance_amount }}</td>
+                        <td>
+                            <span class="badge {% if item.status == 'PARTIAL' %}amber{% else %}red{% endif %}">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                        <td>{{ item.due_date|default:"Not specified" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10">
+                            <div class="empty">
+                                <svg class="icon"><use href="#i-check"/></svg>
+                                <b>No Outstanding Fees</b>
+                                <span>All enrolled students have fully cleared their assessed fees.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="pagination">
+            <span class="muted">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <div class="pages">
+                {% if page_obj.has_previous %}
+                    <a class="page-btn" href="?page={{ page_obj.previous_page_number }}{% if export_params %}&{{ export_params }}{% endif %}">&larr;</a>
+                {% endif %}
+                <span class="page-btn active">{{ page_obj.number }}</span>
+                {% if page_obj.has_next %}
+                    <a class="page-btn" href="?page={{ page_obj.next_page_number }}{% if export_params %}&{{ export_params }}{% endif %}">&rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{{ charts_json|json_script:"fees-charts-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const raw = document.getElementById("fees-charts-data");
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+
+    const ctx1 = document.getElementById("feeCollectionChart");
+    if (ctx1) {
+        new Chart(ctx1, {
+            type: "doughnut",
+            data: {
+                labels: data.collection.labels,
+                datasets: [{
+                    data: data.collection.data,
+                    backgroundColor: ["#16a34a", "#f59e0b"],
+                    borderWidth: 2,
+                    borderColor: "#ffffff"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "68%",
+                plugins: {
+                    legend: { position: "bottom" },
+                    tooltip: { callbacks: { label: c => `${c.label}: ₹${c.raw.toLocaleString()}` } }
+                }
+            }
+        });
+    }
+
+    const ctx2 = document.getElementById("feeTypeChart");
+    if (ctx2 && data.types.labels.length > 0) {
+        new Chart(ctx2, {
+            type: "bar",
+            data: {
+                labels: data.types.labels,
+                datasets: [
+                    { label: "Assessed Amount", data: data.types.total, backgroundColor: "#93c5fd", borderRadius: 4 },
+                    { label: "Paid Amount", data: data.types.paid, backgroundColor: "#1d4ed8", borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: v => "₹" + v.toLocaleString() } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Sign in{% endblock %} · Smart College</title>
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+</head>
+<body>
+{% include "_icons.html" %}
+<div class="auth">
+
+    <section class="auth-art">
+        <a class="brand" href="/accounts/login/" style="padding:0">
+            <span class="brand-mark">🎓</span>
+            <span>
+                <div class="brand-name" style="font-size:18px">Smart College</div>
+                <div class="brand-sub">Takshashila University</div>
+            </span>
+        </a>
+
+        <div>
+            <h2>One place for classes, attendance and results.</h2>
+            <p>Faculty mark attendance hour by hour, students track their progress, and administrators see every school at a glance.</p>
+            <ul class="auth-points">
+                <li><span class="dot"><svg class="icon icon-sm"><use href="#i-calendar"/></svg></span> Timetables built by each School Incharge</li>
+                <li><span class="dot"><svg class="icon icon-sm"><use href="#i-check"/></svg></span> Period-wise attendance for every class</li>
+                <li><span class="dot"><svg class="icon icon-sm"><use href="#i-bell"/></svg></span> Circulars delivered to the right audience</li>
+            </ul>
+        </div>
+
+        <div style="color:#9db0e8;font-size:12.5px">© Smart College Management System</div>
+    </section>
+
+    <section class="auth-form-wrap">
+        <div class="auth-card">
+            {% block card %}{% endblock %}
+        </div>
+    </section>
+
+</div>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

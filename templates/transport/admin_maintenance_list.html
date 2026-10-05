@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Fleet Maintenance & Servicing · Smart College{% endblock %}
+{% block topbar_title %}Fleet Maintenance{% endblock %}
+
+{% block page_title %}Vehicle Maintenance & Fitness{% endblock %}
+{% block page_sub %}Log preventive maintenance, periodic servicing, repairs, and track next scheduled service dates.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_maintenance_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> Log Service / Repair
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    {% if records %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ref #</th>
+                    <th>Vehicle</th>
+                    <th>Maintenance Type</th>
+                    <th>Service Date</th>
+                    <th>Next Due Date</th>
+                    <th>Provider / Garage</th>
+                    <th>Cost (₹)</th>
+                    <th>Invoice No</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td><code>#{{ r.pk }}</code></td>
+                    <td>
+                        <a href="{% url 'transport:admin_vehicle_detail' r.vehicle.pk %}">
+                            <strong>{{ r.vehicle.vehicle_number }}</strong>
+                        </a>
+                        <div class="muted" style="font-size: 11px;">{{ r.vehicle.bus_name }}</div>
+                    </td>
+                    <td>
+                        <span class="badge blue">{{ r.get_maintenance_type_display }}</span>
+                    </td>
+                    <td>{{ r.service_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if r.next_service_date %}
+                            {% if r.is_overdue %}
+                                <span class="badge red">{{ r.next_service_date|date:"d M Y" }} (Overdue)</span>
+                            {% else %}
+                                <span>{{ r.next_service_date|date:"d M Y" }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.service_provider|default:"-" }}</td>
+                    <td class="strong">₹{{ r.cost|floatformat:2 }}</td>
+                    <td><code>{{ r.invoice_number|default:"-" }}</code></td>
+                    <td>
+                        {% if r.status == 'COMPLETED' %}
+                            <span class="badge green">Completed</span>
+                        {% elif r.status == 'IN_PROGRESS' %}
+                            <span class="badge blue">In Progress</span>
+                        {% elif r.status == 'SCHEDULED' %}
+                            <span class="badge amber">Scheduled</span>
+                        {% else %}
+                            <span class="badge gray">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:admin_maintenance_update' r.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 40px; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 8px;">🔧</div>
+        <h3>No Maintenance Logs Found</h3>
+        <p class="muted" style="margin-bottom: 16px;">Keep your fleet in optimal condition by recording periodic oil changes, tyre replacements, and fitness checkups.</p>
+        <a class="btn btn-primary" href="{% url 'transport:admin_maintenance_create' %}">Record First Maintenance</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

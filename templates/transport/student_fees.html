@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transport Fees · Smart College{% endblock %}
+{% block topbar_title %}Transport Fee Ledger{% endblock %}
+
+{% block page_title %}Transport Fee Ledger{% endblock %}
+{% block page_sub %}Review your assigned college transport fees, payment history, and downloadable receipts.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:student_portal' %}">&larr; Transport Portal</a>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Overview Cards -->
+<div class="grid grid-4" style="gap: 16px; margin-bottom: 24px;">
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Total Billed</div>
+        <div style="font-size: 22px; font-weight: 800; color: var(--ink); margin-top: 4px;">₹{{ fees.total_fees|floatformat:2 }}</div>
+    </div>
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Total Paid</div>
+        <div style="font-size: 22px; font-weight: 800; color: #059669; margin-top: 4px;">₹{{ fees.total_paid|floatformat:2 }}</div>
+    </div>
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Outstanding Dues</div>
+        {% if fees.outstanding > 0 %}
+        <div style="font-size: 22px; font-weight: 800; color: #dc2626; margin-top: 4px;">
+        {% else %}
+        <div style="font-size: 22px; font-weight: 800; color: #059669; margin-top: 4px;">
+        {% endif %}
+            ₹{{ fees.outstanding|floatformat:2 }}
+        </div>
+    </div>
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Ledger Status</div>
+        <div style="font-size: 20px; font-weight: 800; margin-top: 4px;">
+            {% if fees.status == 'PAID' %}
+                <span class="badge green">Paid in Full</span>
+            {% elif fees.status == 'PARTIAL' %}
+                <span class="badge amber">Partially Paid</span>
+            {% elif fees.status == 'NO_FEES' %}
+                <span class="badge gray">No Dues</span>
+            {% else %}
+                <span class="badge red">Payment Pending</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="card" style="padding: 24px;">
+    <div class="card-head" style="margin-bottom: 16px;">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-file"/></svg>
+            <span>Transport Fee Records & Receipts</span>
+        </div>
+    </div>
+
+    {% if fees.records %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fee Title</th>
+                    <th>Academic Session</th>
+                    <th>Due Date</th>
+                    <th>Total Amount</th>
+                    <th>Paid Amount</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Payments / Receipts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in fees.records %}
+                <tr>
+                    <td class="strong">{{ r.title }}</td>
+                    <td>{{ r.academic_year }}</td>
+                    <td>{{ r.due_date|date:"d M Y"|default:"-" }}</td>
+                    <td>₹{{ r.amount|floatformat:2 }}</td>
+                    <td style="color: #059669; font-weight: 600;">₹{{ r.paid_amount|floatformat:2 }}</td>
+                    {% if r.balance_amount > 0 %}
+                    <td style="color: #dc2626; font-weight: 700;">
+                    {% else %}
+                    <td style="color: #059669; font-weight: 700;">
+                    {% endif %}
+                        ₹{{ r.balance_amount|floatformat:2 }}
+                    </td>
+                    <td>
+                        {% if r.status == 'PAID' %}
+                            <span class="badge green">Paid</span>
+                        {% elif r.status == 'PARTIAL' %}
+                            <span class="badge amber">Partial</span>
+                        {% else %}
+                            <span class="badge red">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.payments.all %}
+                            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11.5px;">
+                                {% for p in r.payments.all %}
+                                    <div style="background: var(--surface-2); padding: 4px 8px; border-radius: 4px;">
+                                        <code>{{ p.receipt_number }}</code> &middot; ₹{{ p.amount }} ({{ p.payment_date|date:"d M" }})
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="muted" style="font-size: 12px;">No payments recorded</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">💳</div>
+        <h3>No Fee Records Found</h3>
+        <p class="muted">No transport fees have been billed to your account yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

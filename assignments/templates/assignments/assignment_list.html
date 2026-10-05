@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Assignments · Smart College{% endblock %}
+{% block topbar_title %}Assignments{% endblock %}
+
+{% block page_title %}
+    {% if is_student %}
+        My Assignments & Projects
+    {% else %}
+        Assignment Management
+    {% endif %}
+{% endblock %}
+
+{% block page_sub %}
+    {% if is_student %}
+        View course assignments, track submission deadlines, upload solutions, and review faculty evaluations.
+    {% else %}
+        Create, organize, and evaluate coursework, homework, lab records, seminars, and student submissions.
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        {% if is_student %}
+            <a class="btn btn-soft" href="{% url 'student_submissions_list' %}">
+                <svg class="icon"><use href="#i-check"/></svg>
+                <span>My Submissions History</span>
+            </a>
+        {% else %}
+            {% if is_admin or is_faculty %}
+                <a class="btn btn-primary" href="{% url 'assignment_create' %}">
+                    <svg class="icon"><use href="#i-plus"/></svg>
+                    <span>Create Assignment</span>
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--danger);">
+                        {{ message }}
+                    </div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--success); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--success);">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Quick Statistics Bar -->
+<div class="grid grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico">
+            <svg class="icon"><use href="#i-file"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ total_count }}</div>
+            <div class="stat-label">Total Assignments</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green">
+            <svg class="icon"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ submitted_count }}</div>
+            <div class="stat-label">{% if is_student %}My Submissions{% else %}Total Submissions{% endif %}</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber">
+            <svg class="icon"><use href="#i-clock"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ pending_count }}</div>
+            <div class="stat-label">{% if is_student %}Pending Submission{% else %}Pending Evaluation{% endif %}</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico violet">
+            <svg class="icon"><use href="#i-award"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ evaluated_count }}</div>
+            <div class="stat-label">Evaluated / Graded</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-filter"/></svg>
+            <span>Filter Assignments</span>
+        </div>
+        {% if filters.q or filters.type or filters.course or filters.subject or filters.status %}
+            <a href="{% url 'assignment_list' %}" class="btn btn-ghost btn-sm">Clear Filters</a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'assignment_list' %}" class="grid grid-4" style="gap: 14px; align-items: flex-end;">
+            <div class="field" style="grid-column: span 2;">
+                <label for="q">Search Assignment</label>
+                <input type="text" id="q" name="q" value="{{ filters.q }}" class="input" placeholder="Search by title, subject name, code...">
+            </div>
+
+            <div class="field">
+                <label for="type">Assignment Type</label>
+                <select id="type" name="type" class="select">
+                    <option value="">All Types</option>
+                    {% for at in assignment_types %}
+                        <option value="{{ at }}" {% if filters.type == at %}selected{% endif %}>{{ at }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="status">Timeline Status</label>
+                <select id="status" name="status" class="select">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Open for Submission</option>
+                    <option value="passed" {% if filters.status == 'passed' %}selected{% endif %}>Deadline Passed</option>
+                </select>
+            </div>
+
+            {% if not student or is_admin or is_faculty %}
+            <div class="field">
+                <label for="course">Course / Degree</label>
+                <select id="course" name="course" class="select">
+                    <option value="">All Courses</option>
+                    {% for c in courses %}
+                        <option value="{{ c.id }}" {% if filters.course == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="subject">Subject</label>
+                <select id="subject" name="subject" class="select">
+                    <option value="">All Subjects</option>
+                    {% for s in subjects %}
+                        <option value="{{ s.id }}" {% if filters.subject == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }} ({{ s.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary btn-block">
+                    <svg class="icon"><use href="#i-filter"/></svg>
+                    <span>Filter</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Assignments Table -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-file"/></svg>
+            <span>Assignments List</span>
+        </div>
+        <span class="badge">{{ assignments|length }} Assignment{{ assignments|length|pluralize }}</span>
+    </div>
+
+    <div class="card-body flush">
+        {% if assignments %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Title & Subject</th>
+                        <th>Type</th>
+                        <th>Target Cohort</th>
+                        <th>Faculty</th>
+                        <th>Submission Deadline</th>
+                        <th>Max Marks</th>
+                        {% if is_student %}
+                            <th>My Status</th>
+                            <th>My Score</th>
+                        {% else %}
+                            <th>Submissions</th>
+                        {% endif %}
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in assignments %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'assignment_detail' a.pk %}" style="font-weight: 700; color: var(--ink); text-decoration: none;">
+                                {{ a.title }}
+                            </a>
+                            <div class="muted" style="font-size: 11.5px;">{{ a.subject.name }} ({{ a.subject.code }})</div>
+                            {% if a.attachment %}
+                                <div style="margin-top: 2px;">
+                                    <a href="{% url 'download_assignment_material' a.pk %}" style="font-size: 11px; color: var(--brand); text-decoration: none;">
+                                        📎 Material Attached
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge" style="background: var(--brand-50); color: var(--brand-700); font-weight: 700;">
+                                {{ a.assignment_type }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;">{{ a.course.name }}</div>
+                            <div class="muted" style="font-size: 11.5px;">Year {{ a.year }} · Sem {{ a.semester }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;">{{ a.faculty.name }}</div>
+                            <div class="muted" style="font-size: 11px;">{{ a.faculty.department.name }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; white-space: nowrap;">
+                                {{ a.submission_deadline|date:"d M Y, h:i A" }}
+                            </div>
+                            <div style="font-size: 11.5px; margin-top: 2px;">
+                                {% if a.is_deadline_passed %}
+                                    <span class="badge red">Closed</span>
+                                {% else %}
+                                    <span class="badge amber">{{ a.time_remaining_display }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{ a.max_marks }}</strong>
+                        </td>
+                        {% if is_student %}
+                            <td>
+                                {% if a.user_submission %}
+                                    <span class="badge {{ a.user_submission.badge_class }}">
+                                        {{ a.user_submission.status }}
+                                    </span>
+                                {% else %}
+                                    {% if a.is_deadline_passed %}
+                                        <span class="badge red">Missed</span>
+                                    {% else %}
+                                        <span class="badge">Not Submitted</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if a.user_submission and a.user_submission.marks_obtained is not None %}
+                                    <strong style="color: var(--brand);">{{ a.user_submission.marks_obtained }}</strong> / {{ a.max_marks }}
+                                    <div class="muted" style="font-size: 11px;">({{ a.user_submission.percentage }}%)</div>
+                                {% else %}
+                                    <span class="muted">—</span>
+                                {% endif %}
+                            </td>
+                        {% else %}
+                            <td>
+                                <span class="badge" style="background: var(--surface-2); font-weight: 700;">
+                                    {{ a.submission_count }} Submitted
+                                </span>
+                                {% if a.pending_evaluation_count > 0 %}
+                                    <div style="margin-top: 3px;">
+                                        <span class="badge amber" style="font-size: 10.5px;">{{ a.pending_evaluation_count }} Pending</span>
+                                    </div>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{% url 'assignment_detail' a.pk %}" class="btn btn-sm btn-soft">
+                                {% if is_student %}
+                                    {% if a.user_submission %}View Submission{% else %}Submit Solution{% endif %}
+                                {% else %}
+                                    View / Grade
+                                {% endif %}
+                            </a>
+                            {% if not is_student %}
+                                {% if is_admin or a.faculty == faculty %}
+                                    <a href="{% url 'assignment_edit' a.pk %}" class="btn btn-sm btn-ghost" title="Edit">
+                                        <svg class="icon-sm"><use href="#i-edit"/></svg>
+                                    </a>
+                                    <a href="{% url 'assignment_delete' a.pk %}" class="btn btn-sm btn-danger-soft" title="Delete">
+                                        <svg class="icon-sm"><use href="#i-trash"/></svg>
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty" style="padding: 48px 20px; text-align: center;">
+                <div style="font-size: 40px; margin-bottom: 12px;">📁</div>
+                <div style="font-size: 16px; font-weight: 700; color: var(--ink);">No Assignments Found</div>
+                <div class="muted" style="max-width: 440px; margin: 4px auto 16px;">
+                    No assignments match your current filter criteria.
+                </div>
+                {% if not is_student %}
+                    {% if is_admin or is_faculty %}
+                        <a href="{% url 'assignment_create' %}" class="btn btn-primary">
+                            <svg class="icon"><use href="#i-plus"/></svg>
+                            <span>Create Assignment</span>
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

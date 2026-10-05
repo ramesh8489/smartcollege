@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Allocations · Smart College{% endblock %}
+{% block topbar_title %}Allocation Roster{% endblock %}
+
+{% block page_title %}Student Bus Allocations{% endblock %}
+{% block page_sub %}Active bus seating allocations, designated boarding stops, and digital bus passes.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_allocation_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> New Bus Allocation
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    <!-- Filter Toolbar -->
+    <form method="get" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search student name, roll no, alloc ID..." class="form-control" style="max-width: 280px;">
+        <select name="route" class="form-control" style="max-width: 180px;">
+            <option value="">All Routes</option>
+            {% for r in routes %}
+                <option value="{{ r.id }}" {% if route == r.id|stringformat:"s" %}selected{% endif %}>{{ r.code }}</option>
+            {% endfor %}
+        </select>
+        <select name="vehicle" class="form-control" style="max-width: 180px;">
+            <option value="">All Vehicles</option>
+            {% for v in vehicles %}
+                <option value="{{ v.id }}" {% if vehicle == v.id|stringformat:"s" %}selected{% endif %}>{{ v.vehicle_number }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-ghost">
+            <svg class="icon icon-sm"><use href="#i-filter"/></svg> Filter
+        </button>
+        {% if q or route or vehicle %}
+            <a href="{% url 'transport:admin_allocations' %}" class="btn btn-ghost" style="color: var(--muted);">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if page_obj %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Alloc ID</th>
+                    <th>Roll No</th>
+                    <th>Student Name</th>
+                    <th>Bus / Vehicle</th>
+                    <th>Route</th>
+                    <th>Boarding Stop</th>
+                    <th>Seat</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in page_obj %}
+                <tr>
+                    <td><code>{{ a.allocation_id }}</code></td>
+                    <td><code>{{ a.student.roll_no }}</code></td>
+                    <td class="strong">{{ a.student.name }}</td>
+                    <td>
+                        <a href="{% url 'transport:admin_vehicle_detail' a.vehicle.pk %}"><strong>{{ a.vehicle.vehicle_number }}</strong></a>
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:admin_route_detail' a.route.pk %}">{{ a.route.code }}</a>
+                    </td>
+                    <td>{{ a.stop.stop_name }}</td>
+                    <td><span class="badge gray">{{ a.seat_number|default:"Open" }}</span></td>
+                    <td>
+                        {% if a.status == 'ACTIVE' %}
+                            <span class="badge green">Active</span>
+                        {% elif a.status == 'CANCELLED' %}
+                            <span class="badge red">Cancelled</span>
+                        {% else %}
+                            <span class="badge gray">{{ a.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:admin_allocation_detail' a.pk %}" class="btn btn-ghost btn-sm">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&route={{ route }}&vehicle={{ vehicle }}" class="btn btn-ghost btn-sm">&larr; Prev</a>
+        {% endif %}
+        <span class="muted" style="align-self: center; font-size: 13px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&route={{ route }}&vehicle={{ vehicle }}" class="btn btn-ghost btn-sm">Next &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🚌</div>
+        <h3>No Allocations Found</h3>
+        <p class="muted">No student bus allocations match your filter criteria.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

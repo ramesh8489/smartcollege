@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Complaints & Maintenance Management · Smart College{% endblock %}
+{% block topbar_title %}Complaints Management{% endblock %}
+
+{% block page_title %}Hostel Maintenance Complaints Roster{% endblock %}
+{% block page_sub %}
+    Track, triage, assign maintenance personnel, and resolve resident complaints across hostels.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_allocations' %}">&larr; Back to Allocations</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="grid grid-4 mb">
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--brand-600);">{{ complaints|length }}</div>
+        <div class="stat-lbl">Total Complaints</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--danger, #dc2626);">{{ open_count }}</div>
+        <div class="stat-lbl">Open Tickets</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--warning, #d97706);">{{ assigned_count }}</div>
+        <div class="stat-lbl">Assigned / In Progress</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--success, #16a34a);">{{ resolved_count }}</div>
+        <div class="stat-lbl">Resolved / Closed</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb" style="padding: 18px 24px;">
+    <form method="get" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 220px;">
+            <label class="label" style="font-size: 12px;">Search ID / Student / Title</label>
+            <input type="text" name="search" value="{{ search_query }}" class="input" placeholder="Search complaint...">
+        </div>
+
+        <div style="width: 170px;">
+            <label class="label" style="font-size: 12px;">Status</label>
+            <select name="status" class="select">
+                <option value="">All Statuses</option>
+                {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="width: 170px;">
+            <label class="label" style="font-size: 12px;">Category</label>
+            <select name="category" class="select">
+                <option value="">All Categories</option>
+                {% for code, label in category_choices %}
+                    <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="width: 170px;">
+            <label class="label" style="font-size: 12px;">Priority</label>
+            <select name="priority" class="select">
+                <option value="">All Priorities</option>
+                {% for code, label in priority_choices %}
+                    <option value="{{ code }}" {% if selected_priority == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="width: 200px;">
+            <label class="label" style="font-size: 12px;">Hostel</label>
+            <select name="hostel" class="select">
+                <option value="">All Hostels</option>
+                {% for h in hostels %}
+                    <option value="{{ h.id }}" {% if selected_hostel == h.id|stringformat:'i' %}selected{% endif %}>{{ h.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-search"/></svg> Filter
+            </button>
+            <a href="{% url 'hostel:admin_complaints' %}" class="btn btn-ghost" style="margin-left: 6px;">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Complaints Table -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-alert-circle"/></svg>
+            <span>Complaints Roster</span>
+        </div>
+        <span class="badge gray">{{ complaints|length }} Complaints</span>
+    </div>
+
+    {% if complaints %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Student Resident</th>
+                    <th>Issue Summary</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Hostel / Room</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th class="num">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td><code>{{ c.complaint_id }}</code></td>
+                    <td>
+                        <div class="strong">{{ c.student.name }}</div>
+                        <div class="text-sm text-muted">Roll: {{ c.student.roll_no|default:"—" }}</div>
+                    </td>
+                    <td>
+                        <div class="strong">{{ c.title }}</div>
+                        <div class="text-sm text-muted">{{ c.description|truncatechars:40 }}</div>
+                    </td>
+                    <td><span class="badge blue">{{ c.get_category_display }}</span></td>
+                    <td>
+                        {% if c.priority == 'URGENT' %}
+                            <span class="badge red">Urgent</span>
+                        {% elif c.priority == 'HIGH' %}
+                            <span class="badge yellow">High</span>
+                        {% elif c.priority == 'MEDIUM' %}
+                            <span class="badge gray">Medium</span>
+                        {% else %}
+                            <span class="badge gray">Low</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div>{{ c.hostel.name }}</div>
+                        {% if c.room %}<div class="text-sm text-muted">Room {{ c.room.room_number }}</div>{% endif %}
+                    </td>
+                    <td>
+                        {% if c.assigned_staff %}
+                            <span class="badge gray">{{ c.assigned_staff.get_full_name|default:c.assigned_staff.username }}</span>
+                        {% else %}
+                            <span class="text-muted text-sm">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.status == 'OPEN' %}
+                            <span class="badge yellow">Open</span>
+                        {% elif c.status == 'ASSIGNED' %}
+                            <span class="badge blue">Assigned</span>
+                        {% elif c.status == 'IN_PROGRESS' %}
+                            <span class="badge yellow">In Progress</span>
+                        {% elif c.status == 'RESOLVED' %}
+                            <span class="badge green">Resolved</span>
+                        {% elif c.status == 'CLOSED' %}
+                            <span class="badge gray">Closed</span>
+                        {% elif c.status == 'REJECTED' %}
+                            <span class="badge red">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td class="num">
+                        <a class="btn btn-sm btn-primary" href="{% url 'hostel:admin_complaint_detail' c.pk %}">
+                            Manage &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 48px; text-align: center; color: var(--ink-muted);">
+        <p style="font-size: 15px; font-weight: 500;">No complaints match the filter criteria.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

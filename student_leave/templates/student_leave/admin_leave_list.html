@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Student Leaves · Smart College{% endblock %}
+{% block topbar_title %}Institutional Leave Administration{% endblock %}
+
+{% block page_title %}Student Leave Administration{% endblock %}
+{% block page_sub %}
+    Institution-wide leave governance, multi-attribute filtering, audit tracking, and final administrative approval.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="/accounts/admin-dashboard/">
+        &larr; Admin Dashboard
+    </a>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--danger);">{{ message }}</div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--success); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--success);">{{ message }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- High-Level Statistics Grid -->
+<div class="stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--brand-50); color: var(--brand); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--ink);">{{ total_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Total Applications</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--warn-50); color: var(--warn); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-clock"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--warn);">{{ total_pending_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Pending All Stages</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--accent-50); color: var(--accent); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-shield"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--accent);">{{ pending_admin_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Awaiting Final Admin</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--success-50); color: var(--success); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--success);">{{ approved_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Final Admin Approved</div>
+        </div>
+    </div>
+</div>
+
+<!-- Multi-Filter Bar: School, Course, Year, Leave Type, Status, Search -->
+<div class="filters" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+    <form method="get" action="." style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; align-items: end;">
+        <!-- School -->
+        <div class="field">
+            <label class="label" for="f-school">School / Dept</label>
+            <select name="school" id="f-school" class="select">
+                <option value="">All Schools</option>
+                {% for s in schools %}
+                    <option value="{{ s.id }}" {% if selected_school == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Course -->
+        <div class="field">
+            <label class="label" for="f-course">Course / Degree</label>
+            <select name="course" id="f-course" class="select">
+                <option value="">All Courses</option>
+                {% for c in courses %}
+                    <option value="{{ c.id }}" {% if selected_course == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Year -->
+        <div class="field">
+            <label class="label" for="f-year">Year</label>
+            <select name="year" id="f-year" class="select">
+                <option value="">All Years</option>
+                <option value="1" {% if selected_year == "1" %}selected{% endif %}>Year 1</option>
+                <option value="2" {% if selected_year == "2" %}selected{% endif %}>Year 2</option>
+                <option value="3" {% if selected_year == "3" %}selected{% endif %}>Year 3</option>
+                <option value="4" {% if selected_year == "4" %}selected{% endif %}>Year 4</option>
+            </select>
+        </div>
+
+        <!-- Leave Type -->
+        <div class="field">
+            <label class="label" for="f-type">Leave Type</label>
+            <select name="leave_type" id="f-type" class="select">
+                <option value="">All Types</option>
+                {% for tp_val, tp_lbl in leave_types %}
+                    <option value="{{ tp_val }}" {% if selected_type == tp_val %}selected{% endif %}>{{ tp_lbl }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Status -->
+        <div class="field">
+            <label class="label" for="f-status">Lifecycle Status</label>
+            <select name="status" id="f-status" class="select">
+                <option value="">All Statuses</option>
+                {% for st_val, st_lbl in status_choices %}
+                    <option value="{{ st_val }}" {% if selected_status == st_val %}selected{% endif %}>{{ st_lbl }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Search Input & Actions -->
+        <div class="field">
+            <label class="label" for="f-search">Search Keyword</label>
+            <input type="text" name="q" id="f-search" value="{{ search_q }}" placeholder="Student name or roll..." class="input">
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary" id="btn-admin-filter">
+                <svg class="icon"><use href="#i-filter"/></svg>
+                <span>Filter</span>
+            </button>
+            <a href="{% url 'admin_leave_list' %}" class="btn btn-ghost" id="btn-admin-reset">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- All Leave Applications Master Table -->
+<div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);">
+    <div style="padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--ink);">
+            Master Student Leaves Ledger
+        </h3>
+        <span style="font-size: 13px; color: var(--muted); font-weight: 500;">
+            Showing {{ leaves.count }} record(s)
+        </span>
+    </div>
+
+    {% if leaves %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Student</th>
+                        <th>School & Course</th>
+                        <th>Type</th>
+                        <th>Duration</th>
+                        <th>Dates</th>
+                        <th>Status</th>
+                        <th>Applied On</th>
+                        <th>Attachment</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in leaves %}
+                        <tr>
+                            <td class="muted">#{{ l.id }}</td>
+                            <td>
+                                <div style="font-weight: 700; color: var(--ink);">{{ l.student.name }}</div>
+                                <div style="font-size: 12px; color: var(--muted);">{{ l.student.roll_no }}</div>
+                            </td>
+                            <td>
+                                <div style="font-size: 13px; font-weight: 600; color: var(--ink);">{{ l.student.course.name|default:"General" }} (Yr {{ l.student.year }})</div>
+                                <div style="font-size: 11.5px; color: var(--muted);">{{ l.student.department.name }}</div>
+                            </td>
+                            <td>
+                                <span style="font-weight: 700;">{{ l.leave_type }}</span>
+                            </td>
+                            <td>
+                                <span class="badge gray">{{ l.number_of_days }}d</span>
+                            </td>
+                            <td>
+                                <div style="font-size: 12.5px;">{{ l.from_date|date:"d M" }} &rarr; {{ l.to_date|date:"d M Y" }}</div>
+                            </td>
+                            <td>
+                                <span class="badge {{ l.status_badge_class }}">{{ l.status }}</span>
+                            </td>
+                            <td class="muted">{{ l.applied_date|date:"d M Y" }}</td>
+                            <td>
+                                {% if l.supporting_document %}
+                                    <a href="{% url 'download_leave_document' l.id %}" target="_blank" class="btn btn-ghost btn-sm" style="font-size: 11px;">
+                                        Doc
+                                    </a>
+                                {% else %}
+                                    <span style="color: var(--muted); font-size: 12px;">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'leave_detail' l.id %}" class="btn btn-primary btn-sm" id="btn-admin-manage-{{ l.id }}">
+                                    Manage
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="padding: 48px; text-align: center; color: var(--muted);">
+            <div style="width: 56px; height: 56px; border-radius: 16px; background: var(--surface-2); display: grid; place-items: center; margin: 0 auto 16px; color: var(--muted);">
+                <svg class="icon icon-lg"><use href="#i-calendar"/></svg>
+            </div>
+            <h4 style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 6px;">No Leave Records Match Filters</h4>
+            <p style="font-size: 13.5px; margin: 0 auto 16px;">Try adjusting your school, course, or status filter parameters.</p>
+            <a href="{% url 'admin_leave_list' %}" class="btn btn-ghost btn-sm">Clear All Filters</a>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

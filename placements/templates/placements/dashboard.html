@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Placement Cell · Smart College{% endblock %}
+{% block topbar_title %}Training & Placement Cell{% endblock %}
+
+{% block page_title %}Placement & Career Portal{% endblock %}
+{% block page_sub %}
+    Corporate relations, campus recruitment drives, student eligibility governance, and institutional placement statistics.
+{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <a class="btn btn-primary" id="btn-create-drive" href="{% url 'drive_create' %}">
+            <svg class="icon"><use href="#i-plus"/></svg>
+            <span>Schedule Drive</span>
+        </a>
+        <a class="btn btn-soft" id="btn-add-company" href="{% url 'company_create' %}">
+            <svg class="icon"><use href="#i-plus"/></svg>
+            <span>Add Company</span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--danger);">{{ message }}</div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--success); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--success);">{{ message }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Primary Metrics Overview (Requirement 1) -->
+<div class="stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--brand-50); color: var(--brand); width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-school"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 24px; font-weight: 800; color: var(--ink);">{{ total_companies }}</div>
+            <div class="stat-label" style="font-size: 12.5px; color: var(--muted); font-weight: 600;">Total Companies</div>
+            <div style="font-size: 11px; color: var(--success); font-weight: 700;">{{ active_companies }} Active</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--accent-50); color: var(--accent); width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-briefcase"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 24px; font-weight: 800; color: var(--accent);">{{ total_drives }}</div>
+            <div class="stat-label" style="font-size: 12.5px; color: var(--muted); font-weight: 600;">Placement Drives</div>
+            <div style="font-size: 11px; color: var(--brand); font-weight: 700;">{{ upcoming_drives }} Upcoming</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--warn-50); color: var(--warn); width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-users"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 24px; font-weight: 800; color: var(--warn);">{{ total_applications }}</div>
+            <div class="stat-label" style="font-size: 12.5px; color: var(--muted); font-weight: 600;">Applications Received</div>
+            <div style="font-size: 11px; color: var(--muted); font-weight: 700;">{{ shortlisted_applications }} Shortlisted</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--success-50); color: var(--success); width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-award"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 24px; font-weight: 800; color: var(--success);">{{ placed_students_count }}</div>
+            <div class="stat-label" style="font-size: 12.5px; color: var(--muted); font-weight: 600;">Students Placed</div>
+            <div style="font-size: 11px; color: var(--success); font-weight: 800;">{{ placement_percentage }}% Placement Rate</div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Quick Links -->
+<div style="display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;">
+    <a href="{% url 'drive_list' %}" class="btn btn-ghost">
+        <svg class="icon icon-sm"><use href="#i-calendar"/></svg>
+        <span>All Placement Drives</span>
+    </a>
+    <a href="{% url 'company_list' %}" class="btn btn-ghost">
+        <svg class="icon icon-sm"><use href="#i-school"/></svg>
+        <span>Recruiting Companies</span>
+    </a>
+    <a href="{% url 'application_list' %}" class="btn btn-ghost">
+        <svg class="icon icon-sm"><use href="#i-users"/></svg>
+        <span>Candidate Applications</span>
+    </a>
+</div>
+
+<!-- Two-Column Layout: Recent Drives & Applications -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; margin-bottom: 24px;">
+    <!-- Active / Recent Drives Card -->
+    <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 15px; font-weight: 700; color: var(--ink);">Recent Placement Drives</h3>
+            <a href="{% url 'drive_list' %}" class="link-arrow">View all ›</a>
+        </div>
+        <div class="card-body flush">
+            {% if recent_drives %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Job & Company</th>
+                                <th>Package</th>
+                                <th>Drive Date</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in recent_drives %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 700; color: var(--ink);">{{ d.job_title }}</div>
+                                        <div class="p-sub muted">{{ d.company.name }} · {{ d.employment_type }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge gray" style="font-weight: 700;">{{ d.salary_package }}</span>
+                                    </td>
+                                    <td>{{ d.drive_date|date:"d M Y" }}</td>
+                                    <td>
+                                        <span class="badge {{ d.status_badge_class }}">{{ d.status }}</span>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <a href="{% url 'drive_detail' d.id %}" class="btn btn-ghost btn-sm">Details</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">
+                    <svg class="icon"><use href="#i-briefcase"/></svg>
+                    <b>No Drives Scheduled</b>Click "Schedule Drive" to register your first corporate campus drive.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Candidate Applications Card -->
+    <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 15px; font-weight: 700; color: var(--ink);">Latest Applications</h3>
+            <a href="{% url 'application_list' %}" class="link-arrow">All applications ›</a>
+        </div>
+        <div class="card-body flush">
+            {% if recent_applications %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Company</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in recent_applications %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 700; color: var(--ink);">{{ app.student.name }}</div>
+                                        <div class="p-sub muted">{{ app.student.roll_no }} · Yr {{ app.student.year }}</div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600; color: var(--ink);">{{ app.placement_drive.company.name }}</div>
+                                        <div class="p-sub muted">{{ app.placement_drive.job_title }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ app.status_badge_class }}">{{ app.status }}</span>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <a href="{% url 'application_detail' app.id %}" class="btn btn-primary btn-sm">Review</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">
+                    <svg class="icon"><use href="#i-users"/></svg>
+                    <b>No Applications Yet</b>Student applications will appear here once drives open.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Breakdown Statistics: Department-wise and Course-wise Selections -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--line);">
+            <h3 style="font-size: 15px; font-weight: 700; color: var(--ink);">School / Department Selections</h3>
+        </div>
+        <div class="card-body flush">
+            {% if dept_stats %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>School</th>
+                                <th class="num">Students Placed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ds in dept_stats %}
+                                <tr>
+                                    <td class="strong">{{ ds.student__department__name|default:"General" }}</td>
+                                    <td class="num"><span class="badge green" style="font-weight: 800;">{{ ds.total_placed }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="padding: 24px; text-align: center; color: var(--muted); font-size: 13px;">No departmental placements recorded yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--line);">
+            <h3 style="font-size: 15px; font-weight: 700; color: var(--ink);">Course / Degree Selections</h3>
+        </div>
+        <div class="card-body flush">
+            {% if course_stats %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Degree</th>
+                                <th class="num">Students Placed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cs in course_stats %}
+                                <tr>
+                                    <td class="strong">{{ cs.student__course__name|default:"General" }}</td>
+                                    <td class="num"><span class="badge green" style="font-weight: 800;">{{ cs.total_placed }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="padding: 24px; text-align: center; color: var(--muted); font-size: 13px;">No degree placements recorded yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

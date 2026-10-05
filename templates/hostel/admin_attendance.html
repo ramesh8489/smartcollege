@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Resident Attendance · Smart College{% endblock %}
+{% block topbar_title %}Hostel Attendance{% endblock %}
+
+{% block page_title %}Hostel Resident Attendance Roster{% endblock %}
+{% block page_sub %}
+    Daily roll call and night curfew attendance tracking for hostel residents.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_allocations' %}">&larr; Back to Allocations</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="grid grid-4 mb">
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--brand-600);">{{ total_residents }}</div>
+        <div class="stat-lbl">Active Residents ({{ marked_count }} Recorded)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--success, #16a34a);">{{ present_count }}</div>
+        <div class="stat-lbl">Present</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--danger, #dc2626);">{{ absent_count }}</div>
+        <div class="stat-lbl">Absent ({{ permission_count }} Perm, {{ leave_count }} Leave)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--ink);">{{ attendance_percentage }}%</div>
+        <div class="stat-lbl">Attendance Rate</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb" style="padding: 18px 24px;">
+    <form method="get" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="width: 170px;">
+            <label class="label" style="font-size: 12px;">Attendance Date</label>
+            <input type="date" name="date" value="{{ target_date|date:'Y-m-d' }}" class="input">
+        </div>
+
+        <div style="width: 220px;">
+            <label class="label" style="font-size: 12px;">Hostel</label>
+            <select name="hostel" class="select" onchange="this.form.submit()">
+                {% for h in hostels %}
+                    <option value="{{ h.id }}" {% if selected_hostel and selected_hostel.id == h.id %}selected{% endif %}>{{ h.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if blocks %}
+        <div style="width: 180px;">
+            <label class="label" style="font-size: 12px;">Block</label>
+            <select name="block" class="select" onchange="this.form.submit()">
+                <option value="">All Blocks</option>
+                {% for b in blocks %}
+                    <option value="{{ b.id }}" {% if selected_block == b.id|stringformat:'i' %}selected{% endif %}>{{ b.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        {% if rooms %}
+        <div style="width: 180px;">
+            <label class="label" style="font-size: 12px;">Room</label>
+            <select name="room" class="select" onchange="this.form.submit()">
+                <option value="">All Rooms</option>
+                {% for r in rooms %}
+                    <option value="{{ r.id }}" {% if selected_room == r.id|stringformat:'i' %}selected{% endif %}>Room {{ r.room_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <div>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-search"/></svg> Load Roster
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Attendance Marking Form -->
+{% if roster %}
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
+    <input type="hidden" name="hostel" value="{{ selected_hostel.id }}">
+    {% if selected_block %}<input type="hidden" name="block" value="{{ selected_block }}">{% endif %}
+    {% if selected_room %}<input type="hidden" name="room" value="{{ selected_room }}">{% endif %}
+
+    <div class="card">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-users"/></svg>
+                <span>Resident Roll Call for {{ target_date|date:"D, d M Y" }} ({{ selected_hostel.name }})</span>
+            </div>
+            <div>
+                <button type="button" class="btn btn-sm btn-ghost" onclick="markAll('PRESENT')">Mark All Present</button>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Resident</th>
+                        <th>Room / Bed</th>
+                        <th style="min-width: 320px;">Attendance Status</th>
+                        <th>Remarks / Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in roster %}
+                    <tr>
+                        <td>
+                            <div class="strong">{{ item.student.name }}</div>
+                            <div class="text-sm text-muted">Roll: {{ item.student.roll_no|default:"—" }}</div>
+                        </td>
+                        <td>
+                            <span class="badge blue">Room {{ item.room.room_number }}</span>
+                            <span class="badge gray">Bed {{ item.bed.bed_number }}</span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 14px; align-items: center;">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 13px;">
+                                    <input type="radio" name="status_{{ item.student.id }}" value="PRESENT" class="att-radio-present" {% if item.status == 'PRESENT' %}checked{% endif %}>
+                                    <span style="color: var(--success, #16a34a); font-weight: 500;">Present</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 13px;">
+                                    <input type="radio" name="status_{{ item.student.id }}" value="ABSENT" {% if item.status == 'ABSENT' %}checked{% endif %}>
+                                    <span style="color: var(--danger, #dc2626); font-weight: 500;">Absent</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 13px;">
+                                    <input type="radio" name="status_{{ item.student.id }}" value="PERMISSION" {% if item.status == 'PERMISSION' %}checked{% endif %}>
+                                    <span style="color: var(--warning, #d97706); font-weight: 500;">Permission</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 13px;">
+                                    <input type="radio" name="status_{{ item.student.id }}" value="LEAVE" {% if item.status == 'LEAVE' %}checked{% endif %}>
+                                    <span style="color: var(--brand-600); font-weight: 500;">Leave</span>
+                                </label>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="text" name="remarks_{{ item.student.id }}" value="{{ item.remarks }}" class="input input-sm" placeholder="Optional remarks...">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="padding: 20px 24px; display: flex; justify-content: flex-end; background: var(--surface-alt, #f8fafc); border-top: 1px solid var(--border);">
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-check"/></svg> Save & Confirm Attendance
+            </button>
+        </div>
+    </div>
+</form>
+{% else %}
+<div class="card" style="padding: 48px; text-align: center; color: var(--ink-muted);">
+    <p style="font-size: 15px; font-weight: 500;">No active residents found in the selected hostel/room filter.</p>
+    <p style="font-size: 13px;">Allocate students to rooms first to mark daily attendance.</p>
+</div>
+{% endif %}
+
+<script>
+function markAll(status) {
+    if (status === 'PRESENT') {
+        document.querySelectorAll('.att-radio-present').forEach(el => el.checked = true);
+    }
+}
+</script>
+{% endblock %}

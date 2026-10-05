@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Placement Analytics{% endblock %}
+{% block topbar_title %}Placement Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .chart-box { position: relative; height: 260px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block page_title %}Training & Placement Analytics{% endblock %}
+
+{% block page_sub %}
+Campus recruitment statistics, corporate engagement, and student career placement conversion &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Updated {{ scope.generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="/analytics/export/excel/?type=overall&{{ export_params }}">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg> Export Excel
+    </a>
+    <a class="btn btn-ghost" href="/analytics/export/pdf/?type=overall&{{ export_params }}" target="_blank">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> PDF Report
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "analytics/_nav_tabs.html" %}
+{% include "analytics/_filter_bar.html" %}
+
+{# Placement KPI Summary #}
+<div class="grid grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-briefcase"/></svg></div>
+        <div>
+            <div class="stat-val">{{ placements.placement_rate }}%</div>
+            <div class="stat-label">Institutional Placement Rate</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+        <div>
+            <div class="stat-val">{{ placements.students_selected }} / {{ placements.eligible_students }}</div>
+            <div class="stat-label">Placed / Eligible Students</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-award"/></svg></div>
+        <div>
+            <div class="stat-val">{{ placements.registered_students }}</div>
+            <div class="stat-label">Registered Placement Profiles</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-layers"/></svg></div>
+        <div>
+            <div class="stat-val">{{ placements.total_companies }} / {{ placements.total_drives }}</div>
+            <div class="stat-label">Hiring Companies / Drives</div>
+        </div>
+    </div>
+</div>
+
+{# Charts and Funnel #}
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-briefcase"/></svg> Recruitment Conversion Funnel</div>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="placementFunnelChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Selections Table / Empty State -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-award"/></svg> Top Corporate Recruiters</div>
+        </div>
+        <div class="card-body flush">
+            <table class="table">
+                <thead><tr><th>Company Name</th><th class="num">Candidates Selected</th></tr></thead>
+                <tbody>
+                    {% for c in placements.company_selections %}
+                    <tr>
+                        <td class="strong">{{ c.placement_drive__company__name }}</td>
+                        <td class="num"><b style="font-size: 14px; color: var(--success);">{{ c.placed }}</b></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2">
+                            <div class="empty">
+                                <svg class="icon"><use href="#i-briefcase"/></svg>
+                                <b>No Placement Offers Recorded</b>
+                                <span>Recruitment drives and offers have not yet commenced for the current cycle.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if not placements.has_data %}
+<div class="card mb">
+    <div class="card-body">
+        <div class="empty">
+            <svg class="icon"><use href="#i-briefcase"/></svg>
+            <b>No Placement Records Available</b>
+            <span>Placement profiles and application records will appear here as soon as placement drives are conducted.</span>
+            <div style="margin-top: 12px;">
+                <a href="/placements/" class="btn btn-primary btn-sm">Go to Placements Module &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{{ charts_json|json_script:"placement-charts-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const raw = document.getElementById("placement-charts-data");
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+
+    const ctx = document.getElementById("placementFunnelChart");
+    if (ctx) {
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: data.funnel.labels,
+                datasets: [{
+                    label: "Candidates",
+                    data: data.funnel.data,
+                    backgroundColor: ["#64748b", "#3b82f6", "#f59e0b", "#8b5cf6", "#10b981"],
+                    borderRadius: 6,
+                    maxBarThickness: 38
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

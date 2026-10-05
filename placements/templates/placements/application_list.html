@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Placement Applications Ledger · Smart College{% endblock %}
+{% block topbar_title %}Placements · Candidate Applications{% endblock %}
+
+{% block page_title %}Student Applications Ledger{% endblock %}
+{% block page_sub %}Review, filter, shortlist, and manage candidate submissions across all campus recruitment drives.{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <a href="{% url 'placements_dashboard' %}" class="btn btn-ghost">
+            ← Placement Hub
+        </a>
+        <a href="{% url 'drive_list' %}" class="btn btn-secondary">
+            <span>All Drives</span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<!-- Multi-Filter Header Card -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-body">
+        <form method="get" class="grid grid-4" style="gap: 14px; align-items: flex-end;">
+            <div class="field">
+                <label for="search_q" style="font-size: 12px; font-weight: 700;">Search Candidate / Roll No</label>
+                <input type="text" name="q" id="search_q" class="input" placeholder="Search name, roll no, company..." value="{{ search_q }}">
+            </div>
+
+            <div class="field">
+                <label for="filter_drive" style="font-size: 12px; font-weight: 700;">Placement Drive</label>
+                <select name="drive" id="filter_drive" class="select">
+                    <option value="">All Recruitment Drives</option>
+                    {% for d in drives %}
+                        <option value="{{ d.pk }}" {% if selected_drive == d.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ d.job_title }} ({{ d.company.name }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="filter_status" style="font-size: 12px; font-weight: 700;">Application Status</label>
+                <select name="status" id="filter_status" class="select">
+                    <option value="">All Statuses</option>
+                    {% for val, label in status_choices %}
+                        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="filter_course" style="font-size: 12px; font-weight: 700;">Degree / Programme</label>
+                <select name="course" id="filter_course" class="select">
+                    <option value="">All Degrees</option>
+                    {% for c in courses %}
+                        <option value="{{ c.pk }}" {% if selected_course == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="grid-column: span 4; display: flex; justify-content: flex-end; gap: 8px;">
+                {% if search_q or selected_drive or status_filter or selected_course %}
+                    <a href="{% url 'application_list' %}" class="btn btn-ghost">Reset Filters</a>
+                {% endif %}
+                <button type="submit" class="btn btn-primary" style="padding: 8px 24px;">
+                    <svg class="icon"><use href="#i-search"/></svg>
+                    <span>Filter Applications</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Applications Table Card -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-users"/></svg>
+            <span>Candidate Applications ({{ applications.count }})</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if applications %}
+            <table class="table" style="width: 100%; margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Programme / Year</th>
+                        <th>Company & Role</th>
+                        <th>Applied On</th>
+                        <th>Current Stage</th>
+                        <th>Status</th>
+                        <th>Resume</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: var(--text);">
+                                    <a href="{% url 'application_detail' app.pk %}" style="color: inherit; text-decoration: none;">
+                                        {{ app.student.name }}
+                                    </a>
+                                </div>
+                                <div class="muted" style="font-size: 11px;">Roll: {{ app.student.roll_no }}</div>
+                            </td>
+                            <td>
+                                <div>{{ app.student.course.name }}</div>
+                                <div class="muted" style="font-size: 11px;">Year {{ app.student.year }} • {{ app.student.department.name }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: var(--text);">{{ app.placement_drive.job_title }}</div>
+                                <div style="font-size: 11.5px; color: var(--brand);">{{ app.placement_drive.company.name }}</div>
+                            </td>
+                            <td style="font-size: 12px;">{{ app.application_date|date:"d M Y" }}</td>
+                            <td>
+                                <span class="badge slate" style="font-size: 11px;">
+                                    {{ app.current_round|default:"Application Screening" }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if app.status == 'Selected' %}green{% elif app.status == 'Shortlisted' or app.status == 'Interview' %}blue{% elif app.status == 'Rejected' %}rose{% else %}amber{% endif %}">
+                                    {{ app.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if app.resume %}
+                                    <a href="{% url 'download_resume' app.pk %}" target="_blank" class="btn btn-ghost" style="padding: 2px 8px; font-size: 11.5px;">
+                                        <svg class="icon" style="width: 12px; height: 12px;"><use href="#i-download"/></svg> Resume
+                                    </a>
+                                {% else %}
+                                    <span class="muted" style="font-size: 11px;">None</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'application_detail' app.pk %}" class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">
+                                    Manage Dossier →
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="padding: 48px; text-align: center;">
+                <svg class="icon" style="width: 44px; height: 44px; color: var(--muted); margin-bottom: 12px;"><use href="#i-users"/></svg>
+                <div style="font-size: 16px; font-weight: 700; color: var(--text);">No Applications Found</div>
+                <div class="muted" style="margin-top: 4px; font-size: 13px;">No candidate records match your current filter selections.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

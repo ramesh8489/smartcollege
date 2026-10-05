@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}My Submissions · Smart College{% endblock %}
+{% block topbar_title %}Assignments{% endblock %}
+
+{% block page_title %}My Assignment Submissions{% endblock %}
+{% block page_sub %}Complete historical archive of your submitted coursework, lab records, projects, scores, and faculty feedback.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'assignment_list' %}" class="btn btn-ghost">
+        ← Back to Active Assignments
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Statistics Cards -->
+<div class="grid grid-3 mb">
+    <div class="stat">
+        <div class="stat-ico">
+            <svg class="icon"><use href="#i-file"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ total_submissions }}</div>
+            <div class="stat-lbl">Total Uploaded Submissions</div>
+        </div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-ico" style="background: rgba(16, 185, 129, 0.12); color: var(--success);">
+            <svg class="icon"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ evaluated_count }}</div>
+            <div class="stat-lbl">Evaluated & Graded</div>
+        </div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-ico" style="background: rgba(245, 158, 11, 0.12); color: var(--warning);">
+            <svg class="icon"><use href="#i-clock"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ total_submissions|add:"-"|add:evaluated_count }}</div>
+            <div class="stat-lbl">Awaiting Evaluation</div>
+        </div>
+    </div>
+</div>
+
+<!-- Submissions Table Card -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-award"/></svg>
+            <span>Submission Records ({{ submissions|length }})</span>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Assignment & Type</th>
+                        <th>Subject & Faculty</th>
+                        <th>Submitted At</th>
+                        <th>Status</th>
+                        <th>Score & Grade</th>
+                        <th>Faculty Feedback</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in submissions %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'assignment_detail' sub.assignment.pk %}" style="font-weight: 700; color: var(--brand); text-decoration: none;">
+                                    {{ sub.assignment.title }}
+                                </a>
+                                <div style="margin-top: 3px;">
+                                    <span class="badge blue" style="font-size: 10px; padding: 2px 6px;">
+                                        {{ sub.assignment.assignment_type }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: var(--ink);">{{ sub.assignment.subject.name }}</div>
+                                <div class="muted" style="font-size: 11.5px;">{{ sub.assignment.faculty.name }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: var(--ink);">
+                                    {{ sub.submitted_at|date:"d M Y, h:i A" }}
+                                </div>
+                                <span class="badge {% if sub.is_late %}rose{% else %}green{% endif %}" style="font-size: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block;">
+                                    {% if sub.is_late %}Late Submission{% else %}On-Time{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if sub.status == 'Evaluated' %}
+                                    <span class="badge green">Evaluated</span>
+                                {% elif sub.status == 'Late' %}
+                                    <span class="badge rose">Late</span>
+                                {% elif sub.status == 'Returned' %}
+                                    <span class="badge amber">Returned</span>
+                                {% else %}
+                                    <span class="badge blue">Submitted</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.marks_obtained is not None %}
+                                    <div style="font-weight: 800; font-size: 14px; color: var(--ink);">
+                                        {{ sub.marks_obtained }} / {{ sub.assignment.max_marks }}
+                                    </div>
+                                    {% if sub.percentage >= 50 %}
+                                        <div style="font-size: 11px; font-weight: 600; color: var(--success);">
+                                            {{ sub.percentage }}%
+                                        </div>
+                                    {% else %}
+                                        <div style="font-size: 11px; font-weight: 600; color: var(--danger);">
+                                            {{ sub.percentage }}%
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="muted" style="font-size: 12px; font-style: italic;">Pending Grading</span>
+                                {% endif %}
+                            </td>
+                            <td style="max-width: 240px;">
+                                {% if sub.feedback %}
+                                    <div style="font-size: 12.5px; color: var(--ink); line-height: 1.4;">
+                                        {{ sub.feedback|truncatewords:15 }}
+                                    </div>
+                                {% else %}
+                                    <span class="muted" style="font-size: 11.5px; font-style: italic;">No feedback yet</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                    {% if sub.submission_file %}
+                                        <a href="{% url 'download_submission' sub.pk %}" class="btn btn-soft btn-sm" title="Download My Solution File">
+                                            <svg class="icon"><use href="#i-download"/></svg>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'assignment_detail' sub.assignment.pk %}" class="btn btn-ghost btn-sm" title="View Assignment">
+                                        <svg class="icon"><use href="#i-eye"/></svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 48px 16px;">
+                                <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--surface); color: var(--muted); margin-bottom: 12px;">
+                                    <svg class="icon" style="width: 24px; height: 24px;"><use href="#i-file"/></svg>
+                                </div>
+                                <div style="font-weight: 700; color: var(--ink); font-size: 15px;">No submissions found</div>
+                                <div class="muted" style="font-size: 13px; margin-top: 4px;">You haven't submitted any assignments or projects yet.</div>
+                                <a href="{% url 'assignment_list' %}" class="btn btn-primary btn-sm" style="margin-top: 14px;">
+                                    View Active Assignments
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

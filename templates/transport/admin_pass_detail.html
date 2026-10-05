@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pass {{ pass.pass_number }} · Smart College{% endblock %}
+{% block topbar_title %}Pass Credential Details{% endblock %}
+
+{% block page_title %}Transport Pass {{ pass.pass_number }}{% endblock %}
+{% block page_sub %}
+    Student: {{ pass.student.name }} (<code>{{ pass.student.roll_no }}</code>) &middot;
+    Status:
+    {% if pass.is_valid %}
+        <span class="badge green">Valid</span>
+    {% else %}
+        <span class="badge red">{{ pass.get_status_display }}</span>
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_pass_pdf' pass.pk %}">
+        <svg class="icon"><use href="#i-download"/></svg> Download PDF Pass
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_passes' %}">&larr; Back to Passes</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+    <div class="card" style="padding: 24px;">
+        <div class="card-head" style="margin-bottom: 20px;">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-bus"/></svg>
+                <span>Pass Identity Details</span>
+            </div>
+            <div style="font-family: monospace; font-size: 14px; font-weight: 700;">{{ pass.pass_number }}</div>
+        </div>
+
+        <div class="grid grid-2" style="gap: 16px; margin-bottom: 20px;">
+            <div>
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Student Passenger</div>
+                <div class="strong" style="font-size: 15px; margin-top: 2px;">{{ pass.student.name }}</div>
+                <div class="muted" style="font-size: 12px;">Roll: <code>{{ pass.student.roll_no }}</code></div>
+            </div>
+            <div>
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Course & Year</div>
+                <div style="font-size: 14px; margin-top: 2px;">{{ pass.student.course.name }} (Year {{ pass.student.year }})</div>
+            </div>
+            <div>
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Vehicle & Route</div>
+                <div style="font-size: 14px; margin-top: 2px; font-weight: 700;">
+                    {{ pass.allocation.vehicle.vehicle_number }} &middot; {{ pass.allocation.route.code }}
+                </div>
+            </div>
+            <div>
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Boarding Stop</div>
+                <div style="font-size: 14px; margin-top: 2px; font-weight: 700;">{{ pass.allocation.stop.stop_name }}</div>
+            </div>
+            <div>
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Timing</div>
+                <div style="font-size: 13.5px; margin-top: 2px;">
+                    Pickup: {{ pass.allocation.stop.pickup_time|time:"h:i A" }} &middot; Drop: {{ pass.allocation.stop.drop_time|time:"h:i A" }}
+                </div>
+            </div>
+            <div>
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Seat Number</div>
+                <div style="font-size: 14px; margin-top: 2px;">{{ pass.allocation.seat_number|default:"Open Seating" }}</div>
+            </div>
+            <div>
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Issue Date</div>
+                <div style="font-size: 14px; margin-top: 2px;">{{ pass.issue_date|date:"d M Y" }}</div>
+            </div>
+            <div>
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Expiry Date</div>
+                <div style="font-size: 14px; margin-top: 2px;">{{ pass.expiry_date|date:"d M Y" }}</div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 18px;">
+            <a href="{% url 'transport:admin_allocation_detail' pass.allocation.pk %}" class="btn btn-ghost">View Allocation</a>
+            <a href="{% url 'transport:admin_pass_pdf' pass.pk %}" class="btn btn-primary">
+                <svg class="icon"><use href="#i-download"/></svg> Export PDF Pass
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

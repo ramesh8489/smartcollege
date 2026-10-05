@@ -1,0 +1,73 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Smart College{% endblock %} · Smart College</title>
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+{% include "_icons.html" %}
+
+<div class="app">
+
+    <aside class="sidebar" id="sidebar">
+        <a class="brand" href="{{ nav_home }}">
+            <span class="brand-mark">🎓</span>
+            <span>
+                <div class="brand-name">Smart College</div>
+                <div class="brand-sub">Takshashila University</div>
+            </span>
+        </a>
+
+        <nav class="nav">
+            {% for group in nav_groups %}
+                {% if group.label %}<div class="nav-label">{{ group.label }}</div>{% endif %}
+                {% for item in group.items %}
+                    <a class="nav-link {% if item.active %}active{% endif %}" href="{{ item.url }}">
+                        <svg class="icon"><use href="#i-{{ item.icon }}"/></svg>
+                        <span>{{ item.label }}</span>
+                        {% if item.badge %}<span class="nav-badge">{{ item.badge }}</span>{% endif %}
+                    </a>
+                {% endfor %}
+            {% endfor %}
+        </nav>
+
+        <div class="sidebar-foot">
+            <div class="avatar">{{ nav_initial }}</div>
+            <div class="who">
+                <div class="who-name">{{ nav_display }}</div>
+                <div class="who-role">{{ nav_role_label }}</div>
+            </div>
+            <a class="logout" href="/accounts/logout/" title="Log out"><svg class="icon"><use href="#i-logout"/></svg></a>
+        </div>
+    </aside>
+
+    <div class="scrim" onclick="document.body.classList.remove('nav-open')"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <button class="menu-btn" type="button" aria-label="Open menu" onclick="document.body.classList.add('nav-open')">
+                <svg class="icon"><use href="#i-menu"/></svg>
+            </button>
+            <div class="topbar-title">{% block topbar_title %}Smart College{% endblock %}</div>
+        </div>
+
+        <main class="page">
+            <div class="page-head">
+                <div>
+                    <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+                    <div class="page-sub">{% block page_sub %}{% endblock %}</div>
+                </div>
+                <div class="head-actions">{% block page_actions %}{% endblock %}</div>
+            </div>
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

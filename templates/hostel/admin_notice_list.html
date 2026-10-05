@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Notices & Circulars · Smart College{% endblock %}
+{% block topbar_title %}Hostel Notices{% endblock %}
+
+{% block page_title %}Hostel Circulars & Bulletins{% endblock %}
+{% block page_sub %}
+    Broadcast official hostel circulars, mess menus, curfew guidelines, and urgent notifications to residents.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'hostel:admin_notice_create' %}">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Publish Hostel Notice
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="card mb" style="padding: 18px 24px;">
+    <form method="get" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="width: 260px;">
+            <label class="label" style="font-size: 12px;">Filter by Hostel</label>
+            <select name="hostel" class="select" onchange="this.form.submit()">
+                <option value="">All Assigned Hostels</option>
+                {% for h in hostels %}
+                    <option value="{{ h.id }}" {% if selected_hostel == h.id|stringformat:'i' %}selected{% endif %}>{{ h.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <a href="{% url 'hostel:admin_notices' %}" class="btn btn-ghost">Reset Filter</a>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-bell"/></svg>
+            <span>Published Hostel Notices</span>
+        </div>
+        <span class="badge gray">{{ notices|length }} Notices</span>
+    </div>
+
+    {% if notices %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Notice Title</th>
+                    <th>Target Hostel</th>
+                    <th>Priority</th>
+                    <th>Published Date</th>
+                    <th>Expiry Date</th>
+                    <th>Published By</th>
+                    <th class="num">Attachment</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in notices %}
+                <tr>
+                    <td>
+                        <div class="strong">{{ n.title }}</div>
+                        <div class="text-sm text-muted">{{ n.message|truncatechars:55 }}</div>
+                    </td>
+                    <td><span class="badge blue">{{ n.hostel.name }}</span></td>
+                    <td>
+                        {% if n.priority == 'URGENT' %}
+                            <span class="badge red">Urgent</span>
+                        {% elif n.priority == 'IMPORTANT' %}
+                            <span class="badge yellow">Important</span>
+                        {% else %}
+                            <span class="badge gray">Normal</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ n.publish_date|date:"d M Y" }}</td>
+                    <td>{{ n.expiry_date|date:"d M Y"|default:"Indefinite" }}</td>
+                    <td>{{ n.created_by.get_full_name|default:n.created_by.username }}</td>
+                    <td class="num">
+                        {% if n.attachment %}
+                            <a href="{{ n.attachment.url }}" target="_blank" class="btn btn-sm btn-ghost">
+                                <svg class="icon icon-sm"><use href="#i-download"/></svg> Attachment
+                            </a>
+                        {% else %}
+                            <span class="text-muted text-sm">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 48px; text-align: center; color: var(--ink-muted);">
+        <p style="font-size: 15px; font-weight: 500;">No notices published yet.</p>
+        <p style="font-size: 13px;">Click "Publish Hostel Notice" above to broadcast notifications to resident students.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

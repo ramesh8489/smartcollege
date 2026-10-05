@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action_title }} · Training & Placements{% endblock %}
+{% block topbar_title %}Placements · Companies{% endblock %}
+
+{% block page_title %}{{ action_title }}{% endblock %}
+{% block page_sub %}Register or update recruiting partner company profile, contact details, and hiring standards.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'company_list' %}" class="btn btn-ghost">
+        ← Back to Companies
+    </a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-briefcase"/></svg>
+                <span>{{ action_title }}</span>
+            </div>
+            {% if company %}
+                <span class="badge {% if company.status == 'Active' %}green{% else %}rose{% endif %}">
+                    {{ company.status }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+            {% if form.errors %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 20px; background: var(--surface);">
+                    <div style="font-weight: 700; color: var(--danger); margin-bottom: 6px;">Please correct the following errors:</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--danger);">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <!-- Section 1: Company Profile -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        1. Company Profile
+                    </div>
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.name.id_for_label }}">
+                                Company Name <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.name }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.industry.id_for_label }}">
+                                Industry / Sector <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.industry }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.website.id_for_label }}">
+                                Official Website URL
+                            </label>
+                            {{ form.website }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.status.id_for_label }}">
+                                Partnership Status <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.status }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.logo.id_for_label }}">
+                                Company Logo
+                            </label>
+                            {{ form.logo }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">PNG, JPG, or SVG company emblem</div>
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.description.id_for_label }}">
+                                Company Overview / Bio
+                            </label>
+                            {{ form.description }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Recruitment & Contact -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        2. HR & Campus Contact
+                    </div>
+                    <div class="grid grid-3" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.hr_contact_person.id_for_label }}">
+                                HR / Contact Person <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.hr_contact_person }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.contact_email.id_for_label }}">
+                                Contact Email <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.contact_email }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.contact_phone.id_for_label }}">
+                                Contact Phone <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.contact_phone }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.address.id_for_label }}">
+                                Office / Campus Recruitment Address
+                            </label>
+                            {{ form.address }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.minimum_qualification.id_for_label }}">
+                                Default Min Qualification
+                            </label>
+                            {{ form.minimum_qualification }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">e.g. B.Tech / BE / MCA</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line);">
+                    <a href="{% url 'company_list' %}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-primary" id="btn-save-company">
+                        <svg class="icon"><use href="#i-check"/></svg>
+                        <span>Save Company</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

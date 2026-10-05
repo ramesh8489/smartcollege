@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Leave Request{% endblock %}
+{% block topbar_title %}Leave Request{% endblock %}
+{% block page_title %}Faculty Leave Request{% endblock %}
+{% block page_sub %}Submit your leave request to the School Incharge for approval.{% endblock %}
+
+{% block content %}
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="split">
+    <div class="card">
+        <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-calendar"/></svg> New leave request</div></div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="stack">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="field"><label>Leave type</label><select class="select" name="leave_type"><option value="CASUAL">Casual Leave</option><option value="MEDICAL">Medical Leave</option><option value="OD">On Duty</option><option value="EMERGENCY">Emergency Leave</option></select></div>
+                    <div class="field"><label>From date</label><input class="input" type="date" name="from_date" required></div>
+                    <div class="field"><label>To date</label><input class="input" type="date" name="to_date" required></div>
+                </div>
+                <div class="field"><label>Supporting document (optional)</label><input class="input" type="file" name="supporting_document"></div>
+                <div class="field"><label>Reason</label><textarea class="textarea" name="reason" rows="5" required placeholder="Enter your leave reason"></textarea></div>
+                <button class="btn btn-primary" type="submit">Send to School Incharge</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-clock"/></svg> My leave requests</div></div>
+        <div class="card-body flush">
+            {% if requests %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Type</th><th>Dates</th><th>Reason</th><th>Status</th><th>Incharge comment</th></tr></thead>
+                    <tbody>
+                    {% for r in requests %}
+                    <tr>
+                        <td><span class="badge gray">{{ r.get_leave_type_display }}</span></td><td class="nowrap">{{ r.from_date|date:"d M Y" }} – {{ r.to_date|date:"d M Y" }}</td>
+                        <td>{{ r.reason }}</td>
+                        <td>
+                            {% if r.status == "APPROVED" %}<span class="badge">Approved & forwarded</span>
+                            {% elif r.status == "REJECTED" %}<span class="badge gray">Rejected</span>
+                            {% else %}<span class="badge violet">Pending</span>{% endif %}
+                        </td>
+                        <td>{{ r.incharge_comment|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty"><svg class="icon"><use href="#i-calendar"/></svg><b>No leave requests</b></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

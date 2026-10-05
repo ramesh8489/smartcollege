@@ -1,0 +1,704 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Operations Dashboard · Smart College ERP{% endblock %}
+{% block topbar_title %}Hostel Administration{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .hostel-grid-5 {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .chart-card-box {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+    @media (max-width: 1200px) {
+        .hostel-grid-5 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 768px) {
+        .hostel-grid-5 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 480px) {
+        .hostel-grid-5 {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}Hostel Operations &amp; Capacity Dashboard{% endblock %}
+
+{% block page_sub %}
+    {% if active_hostel %}
+        Scoping analytics for: <strong style="color: var(--brand);">{{ active_hostel.name }} ({{ active_hostel.code }})</strong>
+    {% else %}
+        Institutional accommodation analytics, room availability, resident roll calls, applications &amp; dues
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+    <!-- Hostel Filter Dropdown -->
+    <form method="get" action="{% url 'hostel:admin_dashboard' %}" style="display: inline-flex; align-items: center; gap: 6px; margin: 0;">
+        <select name="hostel" class="input" style="padding: 6px 12px; font-size: 13px;" onchange="this.form.submit()">
+            <option value="">All Assigned Hostels</option>
+            {% for h in all_hostels %}
+                <option value="{{ h.id }}" {% if active_hostel and active_hostel.id == h.id %}selected{% endif %}>
+                    {{ h.name }} ({{ h.code }})
+                </option>
+            {% endfor %}
+        </select>
+        {% if active_hostel %}
+            <a href="{% url 'hostel:admin_dashboard' %}" class="btn btn-ghost btn-sm" title="Clear filter">&times; Clear</a>
+        {% endif %}
+    </form>
+
+    <a class="btn btn-primary btn-sm" href="{% url 'hostel:admin_allocation_create' %}">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg> New Allocation
+    </a>
+    <a class="btn btn-soft btn-sm" href="{% url 'hostel:admin_applications' %}">
+        <svg class="icon icon-sm"><use href="#i-layers"/></svg> Applications ({{ kpi.pending_applications }})
+    </a>
+    <a class="btn btn-soft btn-sm" href="{% url 'hostel:admin_attendance' %}">
+        <svg class="icon icon-sm"><use href="#i-check"/></svg> Attendance
+    </a>
+    <a class="btn btn-soft btn-sm" href="{% url 'hostel:admin_fees' %}">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> Fee Dues
+    </a>
+    <a class="btn btn-soft btn-sm" href="{% url 'hostel:admin_complaints' %}">
+        <svg class="icon icon-sm"><use href="#i-shield"/></svg> Complaints ({{ kpi.open_complaints }})
+    </a>
+    <a class="btn btn-soft btn-sm" href="{% url 'hostel:admin_visitors' %}">
+        <svg class="icon icon-sm"><use href="#i-users"/></svg> Visitors
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- 10 REQUIRED KPI CARDS (PHASE 11) -->
+<div class="hostel-grid-5 mb">
+
+    <!-- 1. Total Hostels -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #e0f2fe; color: #0284c7;"><svg class="icon icon-lg"><use href="#i-home"/></svg></div>
+        <div>
+            <div class="stat-val">{{ kpi.total_hostels }}</div>
+            <div class="stat-label">Total Hostels</div>
+        </div>
+    </div>
+
+    <!-- 2. Total Rooms -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #f1f5f9; color: #334155;"><svg class="icon icon-lg"><use href="#i-layers"/></svg></div>
+        <div>
+            <div class="stat-val">{{ kpi.total_rooms }}</div>
+            <div class="stat-label">Total Rooms</div>
+        </div>
+    </div>
+
+    <!-- 3. Total Beds -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #ede9fe; color: #7c3aed;"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+        <div>
+            <div class="stat-val">{{ kpi.total_beds }}</div>
+            <div class="stat-label">Total Beds</div>
+        </div>
+    </div>
+
+    <!-- 4. Occupied Beds -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #fee2e2; color: #b91c1c;"><svg class="icon icon-lg"><use href="#i-user"/></svg></div>
+        <div>
+            <div class="stat-val" style="color: #b91c1c;">{{ kpi.occupied_beds }}</div>
+            <div class="stat-label">Occupied Beds</div>
+        </div>
+    </div>
+
+    <!-- 5. Available Beds -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #dcfce7; color: #15803d;"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div>
+            <div class="stat-val" style="color: #15803d;">{{ kpi.available_beds }}</div>
+            <div class="stat-label">Available Beds</div>
+        </div>
+    </div>
+
+    <!-- 6. Occupancy % -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #fef3c7; color: #b45309;"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+        <div>
+            <div class="stat-val">{{ kpi.occupancy_rate }}%</div>
+            <div class="stat-label">Occupancy Rate</div>
+        </div>
+    </div>
+
+    <!-- 7. Pending Applications -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #e0e7ff; color: #4338ca;"><svg class="icon icon-lg"><use href="#i-layers"/></svg></div>
+        <div>
+            <div class="stat-val">{{ kpi.pending_applications }}</div>
+            <div class="stat-label">Pending Applications</div>
+        </div>
+    </div>
+
+    <!-- 8. Active Residents -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #ccfbf1; color: #0f766e;"><svg class="icon icon-lg"><use href="#i-award"/></svg></div>
+        <div>
+            <div class="stat-val">{{ kpi.active_residents }}</div>
+            <div class="stat-label">Active Residents</div>
+        </div>
+    </div>
+
+    <!-- 9. Open Complaints -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #ffedd5; color: #c2410c;"><svg class="icon icon-lg"><use href="#i-shield"/></svg></div>
+        <div>
+            {% if kpi.open_complaints > 0 %}
+            <div class="stat-val" style="color: #c2410c;">{{ kpi.open_complaints }}</div>
+            {% else %}
+            <div class="stat-val">{{ kpi.open_complaints }}</div>
+            {% endif %}
+            <div class="stat-label">Open Complaints</div>
+        </div>
+    </div>
+
+    <!-- 10. Outstanding Hostel Fees -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #fee2e2; color: #dc2626;"><svg class="icon icon-lg"><use href="#i-file"/></svg></div>
+        <div>
+            <div class="stat-val" style="font-size: 20px;">₹{{ kpi.outstanding_fees|floatformat:0 }}</div>
+            <div class="stat-label">Outstanding Fees</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 5 CHARTS GRID (PHASE 11) -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 16px; margin-bottom: 20px;">
+
+    <!-- Chart 1: Hostel Occupancy Breakdown -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-chart"/></svg> 1. Hostel Occupancy (Occupied vs Available)
+            </div>
+            <span class="badge blue">Live DB</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-card-box">
+                <canvas id="chartHostelOccupancy"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Room Availability by Type -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-layers"/></svg> 2. Room Availability by Room Type
+            </div>
+            <span class="badge violet">Beds</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-card-box">
+                <canvas id="chartRoomAvailability"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 3: Application Status Distribution -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-layers"/></svg> 3. Application Pipeline Status
+            </div>
+            <a class="link-arrow" href="{% url 'hostel:admin_applications' %}">Manage ›</a>
+        </div>
+        <div class="card-body">
+            <div class="chart-card-box">
+                <canvas id="chartApplicationStatus"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Complaint Status & Category Breakdown -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-shield"/></svg> 4. Maintenance Complaints Breakdown
+            </div>
+            <a class="link-arrow" href="{% url 'hostel:admin_complaints' %}">Queue ›</a>
+        </div>
+        <div class="card-body">
+            <div class="chart-card-box">
+                <canvas id="chartComplaintStatus"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 5: Attendance Distribution -->
+    <div class="card" style="grid-column: 1 / -1;">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-check"/></svg> 5. Hostel Roll Call &amp; Attendance Distribution
+            </div>
+            <a class="link-arrow" href="{% url 'hostel:admin_attendance' %}">Roll Call History ›</a>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: center;">
+                <div class="chart-card-box" style="height: 220px;">
+                    <canvas id="chartAttendance"></canvas>
+                </div>
+                <div>
+                    <div style="font-weight: 700; margin-bottom: 8px; font-size: 14px;">Roll Call Discipline &amp; Compliance</div>
+                    <p class="muted" style="font-size: 13px; margin-bottom: 14px;">
+                        Nightly hostel attendance register status across all active residents in {{ active_hostel.name|default:"all hostels" }}.
+                        Absences and outpass permits are logged with warden stamps and timestamps.
+                    </p>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <a href="{% url 'hostel:admin_attendance' %}" class="btn btn-primary btn-sm">
+                            <svg class="icon icon-sm"><use href="#i-check"/></svg> Mark Tonight's Attendance
+                        </a>
+                        <a href="{% url 'hostel:admin_notices' %}" class="btn btn-ghost btn-sm">
+                            <svg class="icon icon-sm"><use href="#i-bell"/></svg> Broadcast Hostel Notice
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- DATA TABLES & OPERATIONAL QUEUES -->
+<div class="split">
+
+    <!-- LEFT COLUMN: Hostels Overview & Recent Applications -->
+    <div>
+
+        <!-- Hostels Summary Table -->
+        <div class="card mb">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-home"/></svg> Hostels Capacity &amp; Occupancy Overview
+                </div>
+                <a class="link-arrow" href="{% url 'hostel:admin_allocations' %}">All allocations ›</a>
+            </div>
+            <div class="card-body flush">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Hostel</th>
+                                <th>Type</th>
+                                <th style="text-align: right;">Rooms</th>
+                                <th style="text-align: right;">Beds</th>
+                                <th style="text-align: right;">Occupied</th>
+                                <th style="text-align: right;">Available</th>
+                                <th>Occupancy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in hostel_table_data %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700;">{{ row.hostel.name }}</div>
+                                    <div class="muted" style="font-size: 11.5px;">Code: {{ row.hostel.code }}</div>
+                                </td>
+                                <td>{{ row.hostel.get_hostel_type_display }}</td>
+                                <td style="text-align: right;">{{ row.total_rooms }}</td>
+                                <td style="text-align: right; font-weight: 600;">{{ row.total_beds }}</td>
+                                <td style="text-align: right; color: var(--warn); font-weight: 700;">{{ row.occupied_beds }}</td>
+                                <td style="text-align: right; color: var(--success); font-weight: 700;">{{ row.available_beds }}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="flex: 1; height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; min-width: 50px;">
+                                            {% if row.occupancy_rate > 90 %}
+                                            <div style="height: 100%; width: {{ row.occupancy_rate }}%; background: var(--warn);"></div>
+                                            {% else %}
+                                            <div style="height: 100%; width: {{ row.occupancy_rate }}%; background: var(--brand);"></div>
+                                            {% endif %}
+                                        </div>
+                                        <span style="font-size: 12px; font-weight: 700;">{{ row.occupancy_rate }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="muted" style="text-align: center; padding: 20px;">No hostel records configured.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Applications Queue -->
+        <div class="card mb">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-layers"/></svg> Applications Needing Review
+                </div>
+                <a class="link-arrow" href="{% url 'hostel:admin_applications' %}">View all ({{ kpi.pending_applications }}) ›</a>
+            </div>
+            <div class="card-body flush">
+                {% if recent_applications %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>App ID</th>
+                                <th>Hostel Pref</th>
+                                <th>Room Type</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in recent_applications %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700;">{{ app.student.name }}</div>
+                                    <div class="muted" style="font-size: 11.5px;">{{ app.student.roll_no }}</div>
+                                </td>
+                                <td style="font-family: monospace; font-size: 11.5px;">{{ app.application_id }}</td>
+                                <td>{{ app.hostel_preference.code|default:"Any" }}</td>
+                                <td>{{ app.get_room_type_preference_display }}</td>
+                                <td>
+                                    {% if app.status == "PENDING" %}
+                                        <span class="badge amber">Pending</span>
+                                    {% elif app.status == "UNDER_REVIEW" %}
+                                        <span class="badge blue">Under Review</span>
+                                    {% elif app.status == "APPROVED" %}
+                                        <span class="badge green">Approved</span>
+                                    {% else %}
+                                        <span class="badge slate">{{ app.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right;">
+                                    <a href="{% url 'hostel:admin_application_review' app.pk %}" class="btn btn-ghost btn-sm">Review ›</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty" style="padding: 20px;">
+                    <svg class="icon"><use href="#i-check"/></svg>
+                    <b>No Pending Applications</b>
+                    <span>All accommodation applications have been reviewed.</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Open Complaints & Recent Allocations -->
+    <div class="stack">
+
+        <!-- Open Maintenance Complaints Queue -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-shield"/></svg> Maintenance Queue
+                </div>
+                <a class="link-arrow" href="{% url 'hostel:admin_complaints' %}">All ({{ kpi.open_complaints }}) ›</a>
+            </div>
+            <div class="card-body flush">
+                {% if recent_complaints %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Issue</th>
+                                <th>Room</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in recent_complaints %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700;">{{ c.title|truncatechars:26 }}</div>
+                                    <div class="muted" style="font-size: 11px;">{{ c.get_category_display }}</div>
+                                </td>
+                                <td>Rm {{ c.room.room_number|default:"—" }}</td>
+                                <td>
+                                    {% if c.priority == "URGENT" %}
+                                        <span class="badge red">Urgent</span>
+                                    {% elif c.priority == "HIGH" %}
+                                        <span class="badge amber">High</span>
+                                    {% else %}
+                                        <span class="badge slate">{{ c.get_priority_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if c.status == "OPEN" %}
+                                        <span class="badge amber">Open</span>
+                                    {% elif c.status == "IN_PROGRESS" %}
+                                        <span class="badge violet">In Prog</span>
+                                    {% elif c.status == "RESOLVED" %}
+                                        <span class="badge green">Resolved</span>
+                                    {% else %}
+                                        <span class="badge slate">{{ c.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right;">
+                                    <a href="{% url 'hostel:admin_complaint_detail' c.pk %}" class="btn btn-ghost btn-sm">Manage ›</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty" style="padding: 20px;">
+                    <svg class="icon"><use href="#i-check"/></svg>
+                    <b>No Open Complaints</b>
+                    <span>All reported room issues are resolved.</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Room Allocations -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-home"/></svg> Recent Allocations
+                </div>
+                <a class="link-arrow" href="{% url 'hostel:admin_allocations' %}">All ›</a>
+            </div>
+            <div class="card-body flush">
+                {% if recent_allocations %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Hostel / Bed</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for al in recent_allocations %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700;">{{ al.student.name }}</div>
+                                    <div class="muted" style="font-size: 11px;">{{ al.student.roll_no }}</div>
+                                </td>
+                                <td>
+                                    <div>{{ al.hostel.code }} · Rm {{ al.room.room_number }}</div>
+                                    <div class="muted" style="font-size: 11px;">Bed {{ al.bed.bed_number }}</div>
+                                </td>
+                                <td class="muted" style="font-size: 12px;">{{ al.allocation_date|date:"d M" }}</td>
+                                <td>
+                                    {% if al.status == "ACTIVE" %}
+                                        <span class="badge green">Active</span>
+                                    {% elif al.status == "CHECKED_OUT" %}
+                                        <span class="badge slate">Checked Out</span>
+                                    {% elif al.status == "TRANSFERRED" %}
+                                        <span class="badge blue">Transferred</span>
+                                    {% else %}
+                                        <span class="badge red">{{ al.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty" style="padding: 20px;">
+                    <svg class="icon"><use href="#i-home"/></svg>
+                    <b>No Allocations Recorded</b>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const brandPrimary = "#4f46e5";
+    const brandSuccess = "#10b981";
+    const brandWarn = "#f59e0b";
+    const brandDanger = "#ef4444";
+    const brandInfo = "#0ea5e9";
+    const brandPurple = "#8b5cf6";
+    const brandSlate = "#64748b";
+
+    // 1. Hostel Occupancy Chart
+    const dHostel = {{ chart_hostel_occupancy|safe }};
+    const ctxHostel = document.getElementById("chartHostelOccupancy");
+    if (ctxHostel && dHostel.labels.length > 0) {
+        new Chart(ctxHostel, {
+            type: "bar",
+            data: {
+                labels: dHostel.labels,
+                datasets: [
+                    {
+                        label: "Occupied Beds",
+                        data: dHostel.occupied,
+                        backgroundColor: "#ef4444",
+                        borderRadius: 4,
+                    },
+                    {
+                        label: "Available Beds",
+                        data: dHostel.available,
+                        backgroundColor: "#10b981",
+                        borderRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { position: "top" }
+                }
+            }
+        });
+    }
+
+    // 2. Room Availability Chart
+    const dRoom = {{ chart_room_availability|safe }};
+    const ctxRoom = document.getElementById("chartRoomAvailability");
+    if (ctxRoom) {
+        new Chart(ctxRoom, {
+            type: "bar",
+            data: {
+                labels: dRoom.labels,
+                datasets: [
+                    {
+                        label: "Occupied",
+                        data: dRoom.occupied,
+                        backgroundColor: "#f59e0b",
+                        borderRadius: 4,
+                    },
+                    {
+                        label: "Available",
+                        data: dRoom.available,
+                        backgroundColor: "#3b82f6",
+                        borderRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { position: "top" }
+                }
+            }
+        });
+    }
+
+    // 3. Application Status Chart
+    const dApp = {{ chart_application_status|safe }};
+    const ctxApp = document.getElementById("chartApplicationStatus");
+    if (ctxApp) {
+        new Chart(ctxApp, {
+            type: "doughnut",
+            data: {
+                labels: dApp.labels,
+                datasets: [{
+                    data: dApp.counts,
+                    backgroundColor: ["#f59e0b", "#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#94a3b8"]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "right" }
+                }
+            }
+        });
+    }
+
+    // 4. Complaint Status & Category Chart
+    const dComp = {{ chart_complaint_status|safe }};
+    const ctxComp = document.getElementById("chartComplaintStatus");
+    if (ctxComp) {
+        new Chart(ctxComp, {
+            type: "bar",
+            data: {
+                labels: dComp.cat_labels,
+                datasets: [{
+                    label: "Complaints Count",
+                    data: dComp.cat_counts,
+                    backgroundColor: "#6366f1",
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // 5. Attendance Distribution Chart
+    const dAtt = {{ chart_attendance|safe }};
+    const ctxAtt = document.getElementById("chartAttendance");
+    if (ctxAtt) {
+        new Chart(ctxAtt, {
+            type: "doughnut",
+            data: {
+                labels: dAtt.labels,
+                datasets: [{
+                    data: dAtt.counts,
+                    backgroundColor: ["#10b981", "#ef4444", "#3b82f6", "#f59e0b"]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom" }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Application Dossier · {{ student.name }} · {{ drive.job_title }}{% endblock %}
+{% block topbar_title %}Placements · Candidate Dossier{% endblock %}
+
+{% block page_title %}{{ student.name }}{% endblock %}
+{% block page_sub %}Application for {{ drive.job_title }} at {{ drive.company.name }}{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        {% if is_officer %}
+            <a href="{% url 'application_list' %}?drive={{ drive.pk }}" class="btn btn-ghost">
+                ← Applicants List
+            </a>
+            <a href="{% url 'round_create' app.pk %}" class="btn btn-secondary" id="btn-schedule-round">
+                <svg class="icon"><use href="#i-calendar"/></svg>
+                <span>Schedule Interview Round</span>
+            </a>
+            {% if not result %}
+                <a href="{% url 'result_create' app.pk %}" class="btn btn-primary" id="btn-record-result">
+                    <svg class="icon"><use href="#i-check"/></svg>
+                    <span>Record Final Decision</span>
+                </a>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'student_placement_portal' %}" class="btn btn-ghost">
+                ← My Placement Portal
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+<!-- Final Placement Offer Banner if Selected -->
+{% if result %}
+    {% if result.result == 'Selected' %}
+        <div class="card" style="margin-bottom: 24px; border-left: 5px solid #10b981; background: rgba(16, 185, 129, 0.05);">
+            <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.15);">
+                        <svg class="icon" style="color: #10b981; width: 24px; height: 24px;">
+                            <use href="#i-check"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--text);">
+                            Final Decision: <span style="color: #10b981;">{{ result.result }}</span>
+                        </div>
+                        <div style="font-size: 13.5px; color: var(--text); margin-top: 4px;">
+                            Offered designation: <strong>{{ result.job_title }}</strong> • Compensation Package: <strong style="color: var(--brand);">{{ result.ctc }}</strong>
+                            {% if result.joining_date %} • Joining Date: <strong>{{ result.joining_date|date:"d M Y" }}</strong>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if result.offer_letter %}
+                    <a href="{% url 'download_offer_letter' result.pk %}" target="_blank" class="btn btn-primary" id="btn-download-offer">
+                        <svg class="icon"><use href="#i-download"/></svg>
+                        <span>Download Offer Letter</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="card" style="margin-bottom: 24px; border-left: 5px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
+            <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.15);">
+                        <svg class="icon" style="color: #ef4444; width: 24px; height: 24px;">
+                            <use href="#i-alert"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--text);">
+                            Final Decision: <span style="color: #ef4444;">{{ result.result }}</span>
+                        </div>
+                        <div style="font-size: 13.5px; color: var(--text); margin-top: 4px;">
+                            Decision concluded on {{ result.result_date|date:"d M Y" }}. Remarks: {{ result.remarks|default:"Completed drive evaluation process." }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endif %}
+
+<div class="grid grid-3" style="gap: 24px; align-items: start;">
+    <!-- Left Column: Candidate & Application Info -->
+    <div style="grid-column: span 1; display: flex; flex-direction: column; gap: 24px;">
+        <!-- Candidate Profile Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-users"/></svg>
+                    <span>Candidate Profile</span>
+                </div>
+                <span class="badge {% if app.status == 'Selected' %}green{% elif app.status == 'Shortlisted' or app.status == 'Interview' %}blue{% elif app.status == 'Rejected' %}rose{% else %}amber{% endif %}">
+                    {{ app.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div style="font-size: 16px; font-weight: 800; color: var(--text);">{{ student.name }}</div>
+                <div class="muted" style="font-size: 12px; margin-top: 2px;">Roll Number: <code>{{ student.roll_no }}</code></div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px; font-size: 13px;">
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Degree & Cohort</div>
+                        <div style="color: var(--text); font-weight: 600;">{{ student.course.name }}</div>
+                        <div class="muted">{{ student.department.name }} • Year {{ student.year }}</div>
+                    </div>
+
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Contact Information</div>
+                        <div style="color: var(--text);">{{ student.email }}</div>
+                        <div class="muted">{{ student.phone }}</div>
+                    </div>
+
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Application Submission</div>
+                        <div style="color: var(--text);">{{ app.application_date|date:"d M Y, h:i A" }}</div>
+                        <div class="muted" style="font-size: 11.5px;">Current Stage: <strong>{{ app.current_round|default:"Application Screening" }}</strong></div>
+                    </div>
+
+                    {% if app.remarks %}
+                        <div>
+                            <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Placement Officer Remarks</div>
+                            <div style="color: var(--text); font-style: italic; background: var(--surface); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); margin-top: 4px;">
+                                {{ app.remarks }}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Resume Download Box -->
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);">
+                    {% if app.resume %}
+                        <a href="{% url 'download_resume' app.pk %}" target="_blank" class="btn btn-secondary" style="width: 100%; justify-content: center;" id="btn-view-resume">
+                            <svg class="icon"><use href="#i-download"/></svg>
+                            <span>Download Candidate Resume</span>
+                        </a>
+                    {% else %}
+                        <div class="muted" style="font-size: 12px; text-align: center;">No custom resume uploaded.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Cover Letter Card -->
+        {% if app.cover_letter %}
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">
+                        <svg class="icon"><use href="#i-file"/></svg>
+                        <span>Cover Letter / Note</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-line;">
+                        {{ app.cover_letter }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Quick Status Update Card for Officer -->
+        {% if is_officer %}
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">
+                        <svg class="icon"><use href="#i-edit"/></svg>
+                        <span>Update Application Status</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'application_status_update' app.pk %}">
+                        {% csrf_token %}
+                        <div class="field" style="margin-bottom: 14px;">
+                            <label for="id_status" style="font-size: 12px; font-weight: 700;">Candidate Status</label>
+                            <select name="status" id="id_status" class="select">
+                                <option value="Applied" {% if app.status == 'Applied' %}selected{% endif %}>Applied</option>
+                                <option value="Shortlisted" {% if app.status == 'Shortlisted' %}selected{% endif %}>Shortlisted</option>
+                                <option value="Interview" {% if app.status == 'Interview' %}selected{% endif %}>Interview Scheduled</option>
+                                <option value="Selected" {% if app.status == 'Selected' %}selected{% endif %}>Selected</option>
+                                <option value="Not Selected" {% if app.status == 'Not Selected' %}selected{% endif %}>Not Selected</option>
+                                <option value="Rejected" {% if app.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                            </select>
+                        </div>
+
+                        <div class="field" style="margin-bottom: 14px;">
+                            <label for="id_remarks" style="font-size: 12px; font-weight: 700;">Officer Remarks</label>
+                            <input type="text" name="remarks" id="id_remarks" class="input" placeholder="e.g. Cleared technical screening..." value="{{ app.remarks }}">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;" id="btn-update-status">
+                            <span>Save Status & Notify</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Interview Rounds & Evaluation Pipeline -->
+    <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 24px;">
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-calendar"/></svg>
+                    <span>Evaluation & Interview Rounds ({{ rounds.count }})</span>
+                </div>
+                {% if is_officer %}
+                    <a href="{% url 'round_create' app.pk %}" class="btn btn-primary" style="font-size: 12px;">
+                        <svg class="icon"><use href="#i-plus"/></svg>
+                        <span>Schedule Round</span>
+                    </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if rounds %}
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        {% for r in rounds %}
+                            {% if r.result == 'Passed' or r.result == 'Selected' %}
+                                <div class="card" style="padding: 16px 20px; background: var(--surface); border-left: 4px solid #10b981;">
+                            {% elif r.result == 'Failed' %}
+                                <div class="card" style="padding: 16px 20px; background: var(--surface); border-left: 4px solid #ef4444;">
+                            {% else %}
+                                <div class="card" style="padding: 16px 20px; background: var(--surface); border-left: 4px solid #f59e0b;">
+                            {% endif %}
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 15px; font-weight: 800; color: var(--text);">
+                                                Round {{ r.round_number }}: {{ r.round_name }}
+                                            </span>
+                                            <span class="badge slate">{{ r.round_type }}</span>
+                                            <span class="badge {% if r.result == 'Passed' or r.result == 'Selected' %}green{% elif r.result == 'Failed' %}rose{% else %}amber{% endif %}">
+                                                {{ r.result }}
+                                            </span>
+                                        </div>
+
+                                        <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 12.5px; color: var(--text);">
+                                            <div>
+                                                <strong>Date & Time:</strong> {{ r.scheduled_date|date:"d M Y" }}{% if r.start_time %} at {{ r.start_time|time:"h:i A" }}{% endif %}
+                                            </div>
+                                            {% if r.location %}
+                                                <div><strong>Venue / Link:</strong> {{ r.location }}</div>
+                                            {% endif %}
+                                            {% if r.interviewer %}
+                                                <div><strong>Interviewer:</strong> {{ r.interviewer }}</div>
+                                            {% endif %}
+                                            {% if r.score %}
+                                                <div><strong>Score:</strong> <span style="font-weight: 700; color: var(--brand);">{{ r.score }}</span></div>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if r.remarks %}
+                                            <div class="muted" style="font-size: 12px; margin-top: 6px;">
+                                                Feedback: {{ r.remarks }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if is_officer %}
+                                        <div>
+                                            <a href="{% url 'round_update' r.pk %}" class="btn btn-ghost" style="font-size: 12px; padding: 4px 10px;" id="btn-edit-round-{{ r.pk }}">
+                                                <svg class="icon"><use href="#i-edit"/></svg>
+                                                <span>Update Outcome</span>
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="padding: 36px; text-align: center;">
+                        <svg class="icon" style="width: 40px; height: 40px; color: var(--muted); margin-bottom: 8px;"><use href="#i-calendar"/></svg>
+                        <div style="font-size: 15px; font-weight: 700; color: var(--text);">No Interview Rounds Scheduled</div>
+                        <div class="muted" style="margin-top: 4px; font-size: 12.5px;">Schedule technical, coding, or HR interview rounds above.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Drive Summary Reference Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-briefcase"/></svg>
+                    <span>Target Placement Drive Information</span>
+                </div>
+                <a href="{% url 'drive_detail' drive.pk %}" class="btn btn-ghost" style="font-size: 12px;">
+                    View Drive Spec →
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-3" style="gap: 16px;">
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Company</div>
+                        <div style="font-weight: 700; color: var(--text);">{{ drive.company.name }}</div>
+                        <div class="muted" style="font-size: 11.5px;">{{ drive.company.industry }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Role & Type</div>
+                        <div style="font-weight: 700; color: var(--brand);">{{ drive.job_title }}</div>
+                        <div class="muted" style="font-size: 11.5px;">{{ drive.get_employment_type_display }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Offered Package</div>
+                        <div style="font-weight: 800; color: var(--brand); font-size: 14px;">{{ drive.salary_package }}</div>
+                        <div class="muted" style="font-size: 11.5px;">Location: {{ drive.job_location }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

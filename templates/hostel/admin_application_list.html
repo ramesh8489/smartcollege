@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Application Review · Smart College{% endblock %}
+{% block topbar_title %}Hostel Applications{% endblock %}
+
+{% block page_title %}Hostel Applications Management{% endblock %}
+{% block page_sub %}
+    Review, filter, approve, waitlist, or reject student hostel accommodation applications.
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Filters -->
+<div class="card mb" style="padding: 18px 24px;">
+    <form method="get" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 220px;">
+            <label class="label" style="font-size: 12px;">Search Student / Roll No / ID</label>
+            <input type="text" name="q" value="{{ q }}" class="input" placeholder="Search applicant...">
+        </div>
+
+        <div style="width: 200px;">
+            <label class="label" style="font-size: 12px;">Status</label>
+            <select name="status" class="select">
+                <option value="">All Statuses</option>
+                {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="width: 220px;">
+            <label class="label" style="font-size: 12px;">Hostel</label>
+            <select name="hostel" class="select">
+                <option value="">All Hostels</option>
+                {% for h in hostels %}
+                    <option value="{{ h.id }}" {% if hostel_filter == h.id|stringformat:"i" %}selected{% endif %}>{{ h.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-search"/></svg> Filter
+            </button>
+            <a href="{% url 'hostel:admin_applications' %}" class="btn btn-ghost">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-home"/></svg>
+            <span>Applications ({{ page_obj.paginator.count }})</span>
+        </div>
+    </div>
+
+    {% if page_obj %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>App ID</th>
+                    <th>Applicant</th>
+                    <th>Roll No</th>
+                    <th>Preferred Hostel</th>
+                    <th>Room Type</th>
+                    <th>Applied Date</th>
+                    <th>Status</th>
+                    <th class="num">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in page_obj %}
+                <tr>
+                    <td><code>{{ app.application_id }}</code></td>
+                    <td class="strong">{{ app.student.name }}</td>
+                    <td><code>{{ app.student.roll_no }}</code></td>
+                    <td>{{ app.hostel_preference.name }}</td>
+                    <td>{{ app.get_room_type_preference_display }}</td>
+                    <td>{{ app.application_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if app.status == 'APPROVED' %}
+                            <span class="badge green">Approved</span>
+                        {% elif app.status == 'PENDING' %}
+                            <span class="badge amber">Pending</span>
+                        {% elif app.status == 'UNDER_REVIEW' %}
+                            <span class="badge violet">Under Review</span>
+                        {% elif app.status == 'WAITLISTED' %}
+                            <span class="badge gray">Waitlisted</span>
+                        {% elif app.status == 'REJECTED' %}
+                            <span class="badge red">Rejected</span>
+                        {% else %}
+                            <span class="badge gray">{{ app.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="num">
+                        <a class="btn btn-ghost btn-sm" href="{% url 'hostel:application_detail' app.pk %}">
+                            Review &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="card-foot" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px;">
+        <div class="muted" style="font-size: 13px;">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+        </div>
+        <div style="display: flex; gap: 6px;">
+            {% if page_obj.has_previous %}
+                <a class="btn btn-ghost btn-sm" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&hostel={{ hostel_filter }}&q={{ q }}">&larr; Prev</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a class="btn btn-ghost btn-sm" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&hostel={{ hostel_filter }}&q={{ q }}">Next &rarr;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty" style="padding: 48px; text-align: center;">
+        <svg class="icon icon-xl" style="color: var(--text-muted); width: 48px; height: 48px; margin-bottom: 12px;"><use href="#i-inbox"/></svg>
+        <h3 style="margin-bottom: 8px;">No Applications Matching Filter</h3>
+        <p class="muted">Try adjusting your search or status criteria.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

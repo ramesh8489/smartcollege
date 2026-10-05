@@ -1,0 +1,126 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Create account{% endblock %}
+
+{% block card %}
+    <h1>Create your account</h1>
+    <p class="lead">Register as a student or faculty member. An administrator will approve your account before you can sign in.</p>
+
+    {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    {% if success %}
+
+        <div class="alert alert-success">{{ success }}</div>
+        <a class="btn btn-primary btn-block" href="/accounts/login/" style="padding:12px">Back to sign in</a>
+
+    {% else %}
+
+    <form method="post" id="regForm">
+        {% csrf_token %}
+        <input type="hidden" name="role" id="roleInput" value="{{ values.role|default:'student' }}">
+
+        <div class="seg" role="tablist">
+            <button type="button" id="segStudent" onclick="setRole('student')">🎓 Student</button>
+            <button type="button" id="segFaculty" onclick="setRole('faculty')">👨‍🏫 Faculty</button>
+        </div>
+
+        <div class="stack">
+            <div class="field"><label for="name">Full name</label>
+                <input class="input" id="name" name="name" required value="{{ values.name|default:'' }}" placeholder="Your full name"></div>
+
+            <div class="field"><label for="email">Email</label>
+                <input class="input" id="email" name="email" type="email" required value="{{ values.email|default:'' }}" placeholder="you@example.com"></div>
+
+            <div class="field"><label for="department">School</label>
+                <select class="select" id="department" name="department" required></select></div>
+
+            <div class="field" id="courseField"><label for="course">Degree</label>
+                <select class="select" id="course" name="course"></select></div>
+
+            <div id="studentFields" class="stack">
+                <div class="field"><label for="sif_number">SIF number</label>
+                    <input class="input" id="sif_number" name="sif_number" value="{{ values.sif_number|default:'' }}" placeholder="University SIF number"></div>
+                <div class="form-grid" style="grid-template-columns:1fr 1fr">
+                    <div class="field"><label for="roll_no">Roll number</label>
+                        <input class="input" id="roll_no" name="roll_no" value="{{ values.roll_no|default:'' }}" placeholder="e.g. CS0010"></div>
+                    <div class="field"><label for="year">Year</label>
+                        <input class="input" id="year" name="year" type="number" min="1" max="5" value="{{ values.year|default:'' }}" placeholder="1–5"></div>
+                </div>
+            </div>
+
+            <div id="facultyFields">
+                <div class="field"><label for="faculty_id">Faculty ID</label>
+                    <input class="input" id="faculty_id" name="faculty_id" value="{{ values.faculty_id|default:'' }}" placeholder="e.g. F003"></div>
+            </div>
+
+            <div class="field"><label for="username">Username</label>
+                <input class="input" id="username" name="username" autocomplete="username" required value="{{ values.username|default:'' }}" placeholder="Choose a login username"></div>
+
+            <div class="form-grid" style="grid-template-columns:1fr 1fr">
+                <div class="field"><label for="password">Password</label>
+                    <input class="input" id="password" name="password" type="password" autocomplete="new-password" required placeholder="Min. 6 characters"></div>
+                <div class="field"><label for="confirm_password">Confirm</label>
+                    <input class="input" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required placeholder="Repeat password"></div>
+            </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:20px;padding:12px">Submit for approval</button>
+    </form>
+
+    <div class="auth-foot">Already registered? <a href="/accounts/login/"><b>Sign in</b></a></div>
+
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if not success %}
+{{ tree|json_script:"tree-data" }}
+<script>
+(function () {
+    var tree = JSON.parse(document.getElementById('tree-data').textContent);
+    var selDept = document.getElementById('department');
+    var selCourse = document.getElementById('course');
+    var initialDept = '{{ values.department|default:"" }}';
+    var initialCourse = '{{ values.course|default:"" }}';
+
+    function opt(v, l, sel, dis) {
+        var o = document.createElement('option'); o.value = v; o.textContent = l;
+        if (sel) o.selected = true; if (dis) o.disabled = true; return o;
+    }
+
+    function fillDepts() {
+        selDept.innerHTML = '';
+        selDept.appendChild(opt('', 'Select your school', !initialDept, true));
+        tree.forEach(function (s) { selDept.appendChild(opt(s.id, s.name, String(s.id) === initialDept)); });
+    }
+
+    function fillCourses() {
+        selCourse.innerHTML = '';
+        var s = tree.find(function (x) { return String(x.id) === selDept.value; });
+        selCourse.appendChild(opt('', s ? 'Select your degree' : 'Select a school first', !initialCourse));
+        if (s) s.courses.forEach(function (c) { selCourse.appendChild(opt(c.id, c.name, String(c.id) === initialCourse)); });
+    }
+
+    window.setRole = function (role) {
+        document.getElementById('roleInput').value = role;
+        var stu = role === 'student';
+        document.getElementById('segStudent').classList.toggle('on', stu);
+        document.getElementById('segFaculty').classList.toggle('on', !stu);
+        document.getElementById('studentFields').style.display = stu ? '' : 'none';
+        document.getElementById('courseField').style.display = stu ? '' : 'none';
+        document.getElementById('facultyFields').style.display = stu ? 'none' : '';
+        ['sif_number', 'roll_no', 'year', 'course'].forEach(function (id) { document.getElementById(id).required = stu; });
+        document.getElementById('faculty_id').required = !stu;
+    };
+
+    fillDepts();
+    selDept.value = initialDept;
+    fillCourses();
+    selDept.addEventListener('change', function () { initialCourse = ''; fillCourses(); });
+    setRole(document.getElementById('roleInput').value || 'student');
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transport Dashboard · Smart College{% endblock %}
+{% block topbar_title %}Campus Transport Management{% endblock %}
+
+{% block page_title %}Transport Operations Dashboard{% endblock %}
+{% block page_sub %}Real-time fleet monitoring, route seating occupancy, staff compliance, commuter attendance, and fee tracking.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_allocation_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> Allocate Student
+    </a>
+    <a class="btn btn-secondary" href="{% url 'transport:admin_attendance_mark' %}">
+        <svg class="icon"><use href="#i-check"/></svg> Mark Daily Attendance
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_reports_hub' %}">
+        <svg class="icon"><use href="#i-download"/></svg> Reports & Exports
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Alert Banners if any Compliance/Maintenance Attention Required -->
+{% if metrics.vehicles_expiring_soon > 0 or metrics.drivers_licence_alerts > 0 or metrics.pending_applications > 0 %}
+<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+    {% if metrics.pending_applications > 0 %}
+    <div class="card" style="padding: 12px 18px; border-left: 4px solid #f59e0b; background: #fffbeb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg class="icon" style="color: #d97706;"><use href="#i-inbox"/></svg>
+            <span style="font-weight: 600; color: #92400e;">{{ metrics.pending_applications }} pending student transport application(s) awaiting review.</span>
+        </div>
+        <a href="{% url 'transport:admin_applications' %}?status=PENDING" class="btn btn-ghost btn-sm" style="color: #92400e; border-color: #fcd34d;">Review Now &rarr;</a>
+    </div>
+    {% endif %}
+
+    {% if metrics.vehicles_expiring_soon > 0 %}
+    <div class="card" style="padding: 12px 18px; border-left: 4px solid #ef4444; background: #fef2f2; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg class="icon" style="color: #dc2626;"><use href="#i-shield"/></svg>
+            <span style="font-weight: 600; color: #991b1b;">{{ metrics.vehicles_expiring_soon }} vehicle(s) have insurance, fitness, or pollution certificates expiring soon or under maintenance.</span>
+        </div>
+        <a href="{% url 'transport:admin_vehicles' %}" class="btn btn-ghost btn-sm" style="color: #991b1b; border-color: #fca5a5;">Inspect Fleet &rarr;</a>
+    </div>
+    {% endif %}
+
+    {% if metrics.drivers_licence_alerts > 0 %}
+    <div class="card" style="padding: 12px 18px; border-left: 4px solid #dc2626; background: #fff1f2; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg class="icon" style="color: #e11d48;"><use href="#i-user"/></svg>
+            <span style="font-weight: 600; color: #9f1239;">{{ metrics.drivers_licence_alerts }} driver(s) have driving licences that are expired or expiring within 30 days.</span>
+        </div>
+        <a href="{% url 'transport:admin_drivers' %}" class="btn btn-ghost btn-sm" style="color: #9f1239; border-color: #fda4af;">Check Licences &rarr;</a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Primary KPI Metrics Grid -->
+<div class="grid grid-4" style="gap: 16px; margin-bottom: 24px;">
+    <!-- Vehicles -->
+    <div class="card" style="padding: 20px; border-top: 3px solid #2563eb;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Active Campus Fleet</div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--ink); margin-top: 4px;">{{ metrics.active_vehicles }} <span class="muted" style="font-size: 14px; font-weight: 500;">/ {{ metrics.total_vehicles }}</span></div>
+        <div class="muted" style="font-size: 12px; margin-top: 4px;">
+            {{ metrics.maintenance_vehicles }} in maintenance &middot; {{ metrics.total_drivers }} drivers
+        </div>
+    </div>
+
+    <!-- Routes & Stops -->
+    <div class="card" style="padding: 20px; border-top: 3px solid #7c3aed;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Active Routes & Stops</div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--ink); margin-top: 4px;">{{ metrics.active_routes }} <span class="muted" style="font-size: 14px; font-weight: 500;">Routes</span></div>
+        <div class="muted" style="font-size: 12px; margin-top: 4px;">
+            {{ metrics.total_stops }} pickup stops across city
+        </div>
+    </div>
+
+    <!-- Allocated Commuters -->
+    <div class="card" style="padding: 20px; border-top: 3px solid #059669;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Allocated Students</div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--ink); margin-top: 4px;">{{ metrics.total_students }}</div>
+        <div class="muted" style="font-size: 12px; margin-top: 4px;">
+            {{ metrics.active_passes }} digital passes active
+        </div>
+    </div>
+
+    <!-- Outstanding Fees -->
+    <div class="card" style="padding: 20px; border-top: 3px solid #d97706;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Fee Outstanding</div>
+        <div style="font-size: 28px; font-weight: 800; color: #d97706; margin-top: 4px;">₹{{ metrics.fees_summary.total_outstanding|floatformat:0 }}</div>
+        <div class="muted" style="font-size: 12px; margin-top: 4px;">
+            Collected: ₹{{ metrics.fees_summary.total_paid|floatformat:0 }} ({{ metrics.fees_summary.collection_rate }}%)
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Statistics Grid -->
+<div class="grid grid-4" style="gap: 16px; margin-bottom: 24px;">
+    <div class="card" style="padding: 16px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Today's Attendance</div>
+        <div style="font-size: 20px; font-weight: 800; color: #059669; margin-top: 2px;">
+            {{ metrics.today_present }} <span class="muted" style="font-size: 12px; font-weight: 500;">Present</span>
+        </div>
+        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">{{ metrics.today_absent }} absent today</div>
+    </div>
+
+    <div class="card" style="padding: 16px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Open Complaints</div>
+        {% if metrics.open_complaints > 0 %}
+        <div style="font-size: 20px; font-weight: 800; color: #dc2626; margin-top: 2px;">
+        {% else %}
+        <div style="font-size: 20px; font-weight: 800; color: #059669; margin-top: 2px;">
+        {% endif %}
+            {{ metrics.open_complaints }}
+        </div>
+        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">Service or route grievances</div>
+    </div>
+
+    <div class="card" style="padding: 16px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Pending Applications</div>
+        {% if metrics.pending_applications > 0 %}
+        <div style="font-size: 20px; font-weight: 800; color: #d97706; margin-top: 2px;">
+        {% else %}
+        <div style="font-size: 20px; font-weight: 800; color: #059669; margin-top: 2px;">
+        {% endif %}
+            {{ metrics.pending_applications }}
+        </div>
+        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">Awaiting seat allocation</div>
+    </div>
+
+    <div class="card" style="padding: 16px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Upcoming Maintenance</div>
+        <div style="font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 2px;">
+            {{ metrics.upcoming_maintenance }}
+        </div>
+        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">Scheduled in next 30 days</div>
+    </div>
+</div>
+
+<!-- Route Occupancy & Fleet Capacity Table -->
+<div class="card" style="padding: 24px; margin-bottom: 24px;">
+    <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-bus"/></svg>
+            <span>Route-wise Fleet Capacity & Seating Occupancy</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:admin_route_create' %}" class="btn btn-ghost btn-sm">+ Add Route</a>
+            <a href="{% url 'transport:admin_vehicle_create' %}" class="btn btn-ghost btn-sm">+ Add Vehicle</a>
+        </div>
+    </div>
+
+    {% if metrics.routes_roster %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Route</th>
+                    <th>Destination / Coverage</th>
+                    <th>Assigned Vehicle</th>
+                    <th>Stops</th>
+                    <th>Seating Capacity</th>
+                    <th>Allocated</th>
+                    <th>Available Seats</th>
+                    <th>Occupancy</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in metrics.routes_roster %}
+                <tr>
+                    <td class="strong">
+                        <a href="{% url 'transport:admin_route_detail' item.route.pk %}">{{ item.route.code }}</a>
+                    </td>
+                    <td>{{ item.route.start_point }} &rarr; {{ item.route.destination }}</td>
+                    <td>
+                        {% if item.vehicle %}
+                            <a href="{% url 'transport:admin_vehicle_detail' item.vehicle.pk %}"><strong>{{ item.vehicle.vehicle_number }}</strong></a>
+                            <div class="muted" style="font-size: 11px;">{{ item.vehicle.bus_name }}</div>
+                        {% else %}
+                            <span class="badge red">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.stops_count }}</td>
+                    <td>{{ item.capacity }}</td>
+                    <td><strong style="color: #2563eb;">{{ item.allocated }}</strong></td>
+                    <td>
+                        {% if item.available > 0 %}
+                            <span class="badge green">{{ item.available }} Free</span>
+                        {% else %}
+                            <span class="badge red">Full</span>
+                        {% endif %}
+                    </td>
+                    <td style="min-width: 140px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                {% if item.occupancy_pct >= 90 %}
+                                <div style="width: {{ item.occupancy_pct }}%; height: 100%; background: #dc2626;"></div>
+                                {% elif item.occupancy_pct >= 70 %}
+                                <div style="width: {{ item.occupancy_pct }}%; height: 100%; background: #d97706;"></div>
+                                {% else %}
+                                <div style="width: {{ item.occupancy_pct }}%; height: 100%; background: #16a34a;"></div>
+                                {% endif %}
+                            </div>
+                            <span style="font-size: 12px; font-weight: 700;">{{ item.occupancy_pct }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:admin_route_detail' item.route.pk %}" class="btn btn-ghost btn-sm">Manage &rarr;</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 30px; text-align: center; color: var(--muted);">
+        No routes registered yet. Create your first college bus route to begin.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Shortcuts and Module Management Panels -->
+<div class="grid grid-3" style="gap: 20px;">
+    <!-- Fleet & Routes -->
+    <div class="card" style="padding: 20px;">
+        <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+            <svg class="icon"><use href="#i-bus"/></svg>
+            <span>Fleet & Routes</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <a href="{% url 'transport:admin_vehicles' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-bus"/></svg> Vehicle & Fleet Inventory
+            </a>
+            <a href="{% url 'transport:admin_routes' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-layers"/></svg> Routes & Pickup Stops
+            </a>
+            <a href="{% url 'transport:admin_drivers' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-user"/></svg> Drivers & Licences
+            </a>
+            <a href="{% url 'transport:admin_conductors' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-users"/></svg> Conductors & Bus Staff
+            </a>
+        </div>
+    </div>
+
+    <!-- Operations & Commuters -->
+    <div class="card" style="padding: 20px;">
+        <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+            <svg class="icon"><use href="#i-users"/></svg>
+            <span>Operations & Commuters</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <a href="{% url 'transport:admin_applications' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-inbox"/></svg> Applications & Approvals
+            </a>
+            <a href="{% url 'transport:admin_allocations' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-check"/></svg> Student Bus Allocations
+            </a>
+            <a href="{% url 'transport:admin_passes' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-download"/></svg> Issued Transport Passes
+            </a>
+            <a href="{% url 'transport:admin_attendance' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-calendar"/></svg> Daily Commute Attendance
+            </a>
+        </div>
+    </div>
+
+    <!-- Maintenance, Safety & Fees -->
+    <div class="card" style="padding: 20px;">
+        <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+            <svg class="icon"><use href="#i-shield"/></svg>
+            <span>Maintenance, Safety & Fees</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <a href="{% url 'transport:admin_maintenance' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-clock"/></svg> Fleet Service & Maintenance
+            </a>
+            <a href="{% url 'transport:admin_complaints' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-edit"/></svg> Complaints & Grievances
+            </a>
+            <a href="{% url 'transport:admin_incidents' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-shield"/></svg> Transport Safety Incidents
+            </a>
+            <a href="{% url 'transport:admin_fees' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left;">
+                <svg class="icon icon-sm"><use href="#i-file"/></svg> Transport Fee Management
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

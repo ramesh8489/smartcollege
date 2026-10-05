@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Transport Pass · Smart College{% endblock %}
+{% block topbar_title %}Official Transport Pass{% endblock %}
+
+{% block page_title %}Digital Transport Pass{% endblock %}
+{% block page_sub %}Institutional bus boarding credential for daily campus transit.{% endblock %}
+
+{% block page_actions %}
+    {% if pass and pass.is_valid %}
+        <a class="btn btn-primary" href="{% url 'transport:student_pass_pdf' %}">
+            <svg class="icon"><use href="#i-download"/></svg> Download PDF Pass
+        </a>
+    {% endif %}
+    <a class="btn btn-ghost" href="{% url 'transport:student_portal' %}">&larr; Transport Portal</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+    {% if pass %}
+    <!-- Pass Card Visual -->
+    <div class="card" style="padding: 0; overflow: hidden; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); border: 1px solid var(--border);">
+        <!-- Card Header Banner -->
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 24px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 700;">Smart College &middot; Commuter ID</div>
+                    <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">Student Bus Pass</div>
+                    <div style="font-size: 12px; color: #cbd5e1; margin-top: 2px;">Takshashila University Campus Fleet</div>
+                </div>
+                <div style="text-align: right;">
+                    {% if pass.is_valid %}
+                        <span class="badge green" style="font-size: 11px; padding: 6px 12px; font-weight: 700; letter-spacing: 0.5px;">ACTIVE PASS</span>
+                    {% else %}
+                        <span class="badge red" style="font-size: 11px; padding: 6px 12px;">{{ pass.get_status_display|upper }}</span>
+                    {% endif %}
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; font-family: monospace;">{{ pass.pass_number }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Body -->
+        <div style="padding: 24px; background: var(--surface);">
+            <div style="display: grid; grid-template-columns: 100px 1fr; gap: 20px; align-items: start; margin-bottom: 20px;">
+                <!-- Student Avatar/Photo Box -->
+                <div style="width: 100px; height: 110px; border-radius: 8px; background: #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
+                    <svg class="icon" style="width: 48px; height: 48px; color: #94a3b8;"><use href="#i-user"/></svg>
+                    <span style="font-size: 10px; color: #64748b; margin-top: 4px; font-weight: 600;">PHOTO</span>
+                </div>
+
+                <!-- Info Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase;">Passenger Name</div>
+                        <div class="strong" style="font-size: 15px; margin-top: 2px;">{{ student.name }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase;">Roll Number</div>
+                        <div style="font-size: 15px; font-weight: 700; margin-top: 2px;"><code>{{ student.roll_no }}</code></div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase;">Program / Course</div>
+                        <div style="font-size: 13.5px; margin-top: 2px;">{{ student.course.name|default:"General Program" }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase;">Academic Session</div>
+                        <div style="font-size: 13.5px; margin-top: 2px;">{{ pass.academic_year }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transit Route Details Block -->
+            <div style="background: var(--surface-2); border-radius: 10px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
+                <div class="grid grid-3" style="gap: 14px;">
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase;">Assigned Vehicle</div>
+                        <div style="font-size: 16px; font-weight: 800; color: #2563eb; margin-top: 2px;">
+                            {{ pass.allocation.vehicle.vehicle_number }}
+                        </div>
+                        <div class="muted" style="font-size: 11px;">{{ pass.allocation.vehicle.registration_number }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase;">Route Code</div>
+                        <div style="font-size: 16px; font-weight: 800; color: var(--ink); margin-top: 2px;">
+                            {{ pass.allocation.route.code }}
+                        </div>
+                        <div class="muted" style="font-size: 11px;">{{ pass.allocation.route.name }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; text-transform: uppercase;">Assigned Seat</div>
+                        <div style="font-size: 16px; font-weight: 800; color: var(--ink); margin-top: 2px;">
+                            {{ pass.allocation.seat_number|default:"Open Seating" }}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <span class="muted" style="font-size: 12px;">Boarding Stop:</span>
+                        <strong style="font-size: 13.5px; margin-left: 4px;">{{ pass.allocation.stop.stop_name }}</strong>
+                    </div>
+                    <div style="display: flex; gap: 14px; font-size: 12.5px;">
+                        <span>Pickup: <strong>{{ pass.allocation.stop.pickup_time|time:"h:i A" }}</strong></span>
+                        <span>Drop: <strong>{{ pass.allocation.stop.drop_time|time:"h:i A" }}</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barcode & Validity Footer -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 16px;">
+                <div>
+                    <div class="muted" style="font-size: 11px;">Pass Validity:</div>
+                    <div style="font-size: 13px; font-weight: 600;">{{ pass.issue_date|date:"d M Y" }} to {{ pass.expiry_date|date:"d M Y" }}</div>
+                </div>
+
+                <!-- Barcode visual simulation -->
+                <div style="text-align: right;">
+                    <div style="font-family: monospace; letter-spacing: 3px; font-size: 16px; color: var(--ink);">||| | |||| | |||||| |</div>
+                    <div class="muted" style="font-size: 9.5px; font-family: monospace;">{{ pass.pass_number }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Instructions -->
+    <div class="card" style="padding: 16px; margin-top: 20px; font-size: 12.5px; color: var(--muted); text-align: center;">
+        ℹ️ Please present this pass on your mobile device or print a physical copy. Passes must be renewed annually at the transport desk.
+    </div>
+
+    {% else %}
+    <div class="card" style="padding: 40px; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 10px;">🎫</div>
+        <h3>No Active Pass Issued</h3>
+        <p class="muted" style="margin-bottom: 20px;">You do not currently possess an active bus pass. Once your transport application is approved and allocated, your pass will appear here automatically.</p>
+        <a class="btn btn-primary" href="{% url 'transport:application_apply' %}">Apply for Transport</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

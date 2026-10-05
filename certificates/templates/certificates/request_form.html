@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Request Institutional Certificate · Smart College{% endblock %}
+{% block topbar_title %}New Certificate Request{% endblock %}
+
+{% block page_title %}Submit Certificate Request{% endblock %}
+{% block page_sub %}Request bonafide, course completion, conduct, transfer or other official college certificates.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'certificates_student_portal' %}" class="btn btn-ghost">
+        ← Back to Portal
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 680px; margin: 0 auto;">
+
+    <!-- Student Academic Summary Banner -->
+    <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(29, 78, 216, 0.06) 0%, rgba(99, 102, 241, 0.04) 100%); border-left: 4px solid var(--brand);">
+        <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <div style="font-weight: 800; font-size: 16px; color: var(--text);">{{ student.name }}</div>
+                <div class="muted" style="font-size: 13px; margin-top: 2px;">
+                    Roll No: <strong>{{ student.roll_no }}</strong> · SIF: <strong>{{ student.sif_number|default:"N/A" }}</strong>
+                </div>
+                <div class="muted" style="font-size: 12.5px; margin-top: 2px;">
+                    {{ student.course.name|default:"General Degree" }} · {{ student.department.name }} · Year {{ student.year }}
+                </div>
+            </div>
+            <div>
+                <span class="badge green" style="font-size: 12px;">Active Student</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Form Card -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-award"/></svg>
+                <span>Certificate Request Form</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div style="background: rgba(239, 68, 68, 0.08); border-left: 4px solid var(--danger); padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
+                        {% for err in form.non_field_errors %}
+                            <div style="color: var(--danger); font-size: 13.5px; font-weight: 600;">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div style="display: flex; flex-direction: column; gap: 18px;">
+                    <div>
+                        <label for="{{ form.certificate_type.id_for_label }}" style="font-weight: 700; font-size: 13px; margin-bottom: 6px; display: block;">
+                            Certificate Type <span style="color: var(--danger);">*</span>
+                        </label>
+                        {{ form.certificate_type }}
+                        {% if form.certificate_type.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.certificate_type.errors.0 }}</div>
+                        {% endif %}
+                        <div class="muted" style="font-size: 11.5px; margin-top: 4px;">
+                            Select the certificate you require. Only currently active certificates can be requested.
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.purpose.id_for_label }}" style="font-weight: 700; font-size: 13px; margin-bottom: 6px; display: block;">
+                            Purpose of Request <span style="color: var(--danger);">*</span>
+                        </label>
+                        {{ form.purpose }}
+                        {% if form.purpose.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.purpose.errors.0 }}</div>
+                        {% endif %}
+                        <div class="muted" style="font-size: 11.5px; margin-top: 4px;">
+                            e.g. Higher studies admission, Education loan application, Passport verification, Embassy visa interview
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.additional_remarks.id_for_label }}" style="font-weight: 700; font-size: 13px; margin-bottom: 6px; display: block;">
+                            Additional Remarks / Notes (Optional)
+                        </label>
+                        {{ form.additional_remarks }}
+                        {% if form.additional_remarks.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.additional_remarks.errors.0 }}</div>
+                        {% endif %}
+                        <div class="muted" style="font-size: 11.5px; margin-top: 4px;">
+                            Any special instructions, urgency notices, or extra details for the issuing authority.
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; padding: 12px 14px; border-radius: 6px; font-size: 12px; color: #92400e;">
+                        <strong>Processing Note:</strong> Most institutional certificates are reviewed and generated within 1 to 2 working days. Once generated, an official signed PDF with a verification QR code will be ready for download in your portal.
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+                        <a href="{% url 'certificates_student_portal' %}" class="btn btn-ghost">Cancel</a>
+                        <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+                            Submit Request →
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

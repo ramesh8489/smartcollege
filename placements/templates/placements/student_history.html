@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Placement History & Records · Smart College{% endblock %}
+{% block topbar_title %}Placements · Student History{% endblock %}
+
+{% block page_title %}Career Placement Journey{% endblock %}
+{% block page_sub %}Complete chronology of drives attended, evaluations completed, interview outcomes, and final campus selections.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'student_placement_portal' %}" class="btn btn-ghost">
+        ← Back to Placement Portal
+    </a>
+{% endblock %}
+
+{% block content %}
+<!-- Section 1: Final Placement Decisions & Offers -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-check"/></svg>
+            <span>Final Placement Results & Appointments</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if results %}
+            <table class="table" style="width: 100%; margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Offered Role</th>
+                        <th>Engagement</th>
+                        <th>Compensation (CTC)</th>
+                        <th>Joining Date</th>
+                        <th>Decision Date</th>
+                        <th>Result</th>
+                        <th style="text-align: right;">Offer Letter</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in results %}
+                        <tr>
+                            <td style="font-weight: 700; color: var(--text);">{{ res.company.name }}</td>
+                            <td>{{ res.job_title }}</td>
+                            <td><span class="badge slate">{{ res.get_placement_type_display }}</span></td>
+                            <td style="font-weight: 800; color: var(--brand);">{{ res.ctc }}</td>
+                            <td>{{ res.joining_date|date:"d M Y"|default:"TBD" }}</td>
+                            <td style="font-size: 12px;">{{ res.result_date|date:"d M Y" }}</td>
+                            <td>
+                                <span class="badge {% if res.result == 'Selected' %}green{% else %}rose{% endif %}">
+                                    {{ res.result }}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                {% if res.offer_letter %}
+                                    <a href="{% url 'download_offer_letter' res.pk %}" target="_blank" class="btn btn-primary" style="padding: 2px 10px; font-size: 11.5px;">
+                                        <svg class="icon" style="width: 12px; height: 12px;"><use href="#i-download"/></svg> Offer Letter
+                                    </a>
+                                {% else %}
+                                    <span class="muted" style="font-size: 11px;">Not uploaded</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="padding: 32px; text-align: center;" class="muted">
+                No final placement outcomes published yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Section 2: Complete Evaluation Rounds Attended -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+            <span>Rounds & Interviews Completed ({{ rounds.count }})</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if rounds %}
+            <table class="table" style="width: 100%; margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Company & Drive</th>
+                        <th>Round Title</th>
+                        <th>Round Type</th>
+                        <th>Date & Time</th>
+                        <th>Venue / Mode</th>
+                        <th>Score</th>
+                        <th>Round Outcome</th>
+                        <th>Feedback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rounds %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: var(--text);">{{ r.application.placement_drive.company.name }}</div>
+                                <div class="muted" style="font-size: 11px;">{{ r.application.placement_drive.job_title }}</div>
+                            </td>
+                            <td style="font-weight: 600;">{{ r.round_name }}</td>
+                            <td><span class="badge slate">{{ r.round_type }}</span></td>
+                            <td style="font-size: 12px;">{{ r.scheduled_date|date:"d M Y" }}{% if r.start_time %} ({{ r.start_time|time:"h:i A" }}){% endif %}</td>
+                            <td style="font-size: 12px;">{{ r.location|default:"College Campus" }}</td>
+                            <td><span style="font-weight: 700; color: var(--brand);">{{ r.score|default:"-" }}</span></td>
+                            <td>
+                                <span class="badge {% if r.result == 'Passed' or r.result == 'Selected' %}green{% elif r.result == 'Failed' %}rose{% else %}amber{% endif %}">
+                                    {{ r.result }}
+                                </span>
+                            </td>
+                            <td class="muted" style="font-size: 11.5px; max-width: 200px;">
+                                {{ r.remarks|default:"No remarks" }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="padding: 32px; text-align: center;" class="muted">
+                No interview or evaluation rounds recorded yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Section 3: Applications Ledger -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-file"/></svg>
+            <span>All Submitted Drive Applications ({{ applications.count }})</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if applications %}
+            <table class="table" style="width: 100%; margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Company & Role</th>
+                        <th>Applied On</th>
+                        <th>Package (CTC)</th>
+                        <th>Current Stage</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: var(--text);">{{ app.placement_drive.company.name }}</div>
+                                <div class="muted" style="font-size: 11.5px;">{{ app.placement_drive.job_title }}</div>
+                            </td>
+                            <td style="font-size: 12px;">{{ app.application_date|date:"d M Y, h:i A" }}</td>
+                            <td style="font-weight: 600; color: var(--brand);">{{ app.placement_drive.salary_package }}</td>
+                            <td><span class="badge slate">{{ app.current_round|default:"Screening" }}</span></td>
+                            <td>
+                                <span class="badge {% if app.status == 'Selected' %}green{% elif app.status == 'Shortlisted' or app.status == 'Interview' %}blue{% elif app.status == 'Rejected' %}rose{% else %}amber{% endif %}">
+                                    {{ app.get_status_display }}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'application_detail' app.pk %}" class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">
+                                    View Dossier →
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="padding: 32px; text-align: center;" class="muted">
+                No applications submitted yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

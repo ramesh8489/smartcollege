@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block topbar_title %}Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block page_sub %}Your faculty record on file.{% endblock %}
+
+{% block content %}
+
+<div class="card mb">
+    <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-user"/></svg> {{ faculty.name }}</div></div>
+    <div class="card-body">
+        <div class="kv">
+            <div class="kv-item"><div class="kv-k">Faculty ID</div><div class="kv-v">{{ faculty.faculty_id }}</div></div>
+            <div class="kv-item"><div class="kv-k">Email</div><div class="kv-v">{{ faculty.email }}</div></div>
+            <div class="kv-item"><div class="kv-k">School</div><div class="kv-v">{{ faculty.department.name }}</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-book"/></svg> My subjects</div></div>
+    <div class="card-body flush">
+        {% if subjects %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Subject</th><th>Code</th><th>School</th></tr></thead>
+                <tbody>
+                {% for s in subjects %}
+                    <tr><td class="strong">{{ s.name }}</td><td>{{ s.code }}</td><td class="muted">{{ s.department.name }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty"><svg class="icon"><use href="#i-book"/></svg><b>No subjects assigned</b>Ask the admin to assign you a subject.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,7 @@
+SmartCollege Academic Assignment Guidelines
+Title: Assignment 1: Object-Oriented System Analysis & UML Diagrams
+Course: M.Sc Computer Science (AI & Data Science)
+Subject: Cloud Computing & DevOps
+Max Marks: 40
+
+Please follow the department code formatting guidelines.

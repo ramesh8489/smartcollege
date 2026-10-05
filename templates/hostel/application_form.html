@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Apply for Hostel Accommodation · Smart College{% endblock %}
+{% block topbar_title %}Hostel Application{% endblock %}
+
+{% block page_title %}Hostel Accommodation Application{% endblock %}
+{% block page_sub %}
+    Submit a formal hostel request. Your application will be reviewed by the hostel warden and administration.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:application_list' %}">
+        &larr; Back to Applications
+    </a>
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+    <!-- Main Form -->
+    <div class="card" style="padding: 28px;">
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="card mb" style="padding: 12px 18px; border-left: 4px solid var(--danger); background: var(--danger-50, #fef2f2); color: var(--danger, #dc2626);">
+                    {% for err in form.non_field_errors %}
+                        <div>{{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="field">
+                    <label class="label">Student Applicant</label>
+                    <input type="text" class="input" value="{{ student.name }} ({{ student.roll_no }}) · {{ student.course }}" disabled style="background: var(--surface-2); font-weight: 500;">
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_hostel_preference">Preferred Hostel <span style="color: var(--danger);">*</span></label>
+                    {{ form.hostel_preference }}
+                    {% if form.hostel_preference.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.hostel_preference.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="field">
+                        <label class="label" for="id_room_type_preference">Room Type Preference <span style="color: var(--danger);">*</span></label>
+                        {{ form.room_type_preference }}
+                        {% if form.room_type_preference.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.room_type_preference.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="id_academic_year">Academic Session / Year <span style="color: var(--danger);">*</span></label>
+                        {{ form.academic_year }}
+                        {% if form.academic_year.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.academic_year.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_reason">Reason for Hostel Request</label>
+                    {{ form.reason }}
+                    <div class="muted" style="font-size: 12px; margin-top: 4px;">Mention your hometown distance, academic commitments, or transportation factors.</div>
+                    {% if form.reason.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.reason.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_remarks">Special Remarks / Dietary Needs</label>
+                    {{ form.remarks }}
+                    {% if form.remarks.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.remarks.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="icon icon-sm"><use href="#i-check"/></svg> Submit Application
+                    </button>
+                    <a class="btn btn-ghost" href="{% url 'hostel:application_list' %}">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Instructions Sidebar -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 12px;">
+                <svg class="icon"><use href="#i-shield"/></svg>
+                <span>Hostel Policy Notice</span>
+            </div>
+            <ul style="font-size: 13px; color: var(--ink-2); line-height: 1.6; padding-left: 18px; margin: 0;">
+                <li>Allocation is subject to bed availability and room vacancy.</li>
+                <li>Priority is evaluated based on distance from home and academic standing.</li>
+                <li>Hostel fees must be settled upon approval prior to bed check-in.</li>
+                <li>Hostel discipline and curfew guidelines apply to all residents.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

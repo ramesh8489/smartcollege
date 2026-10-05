@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block topbar_title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block page_sub %}Your Smart College alerts and workflow updates.{% endblock %}
+{% block page_actions %}{% if notifications %}<form method="post">{% csrf_token %}<button class="btn btn-ghost" type="submit">Mark all as read</button></form>{% endif %}{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body flush">
+{% for n in notifications %}
+<div class="note" style="margin:0;border-radius:0;border-left:4px solid {% if not n.is_read %}var(--accent){% else %}transparent{% endif %}">
+<div style="display:flex;justify-content:space-between;gap:12px"><div><h3>{{ n.title }}</h3><p>{{ n.message }}</p></div><div class="meta nowrap">{{ n.created_at|date:"d M Y, g:i A" }}</div></div>
+{% if n.link %}<a class="btn btn-ghost btn-sm" href="{{ n.link }}">Open</a>{% endif %}
+</div>
+{% empty %}<div class="empty"><svg class="icon"><use href="#i-bell"/></svg><b>No notifications</b>You're all caught up.</div>{% endfor %}
+</div></div>
+{% endblock %}

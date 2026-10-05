@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Fleet Servicing{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Log vehicle workshop services, tyre changes, insurance renewals, and fitness certifications.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_maintenance' %}">&larr; Back to Maintenance</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please review the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_vehicle">Select Vehicle / Bus *</label>
+                    {{ form.vehicle }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_maintenance_type">Maintenance Category *</label>
+                    {{ form.maintenance_type }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_service_date">Service Date *</label>
+                    {{ form.service_date }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_next_service_date">Next Due Date (optional)</label>
+                    {{ form.next_service_date }}
+                </div>
+            </div>
+
+            <div class="grid grid-3" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_cost">Service Cost (₹) *</label>
+                    {{ form.cost }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_odometer_reading">Odometer Reading (km)</label>
+                    {{ form.odometer_reading }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_status">Status *</label>
+                    {{ form.status }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_service_provider">Service Provider / Workshop</label>
+                    {{ form.service_provider }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_invoice_number">Invoice / Bill Number</label>
+                    {{ form.invoice_number }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label strong" for="id_description">Service Description / Work Done *</label>
+                {{ form.description }}
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label class="form-label strong" for="id_remarks">Internal Notes</label>
+                {{ form.remarks }}
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Save Maintenance Record
+                </button>
+                <a href="{% url 'transport:admin_maintenance' %}" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

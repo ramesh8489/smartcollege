@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Safety Incidents & Breakdown Log · Smart College{% endblock %}
+{% block topbar_title %}Safety Incidents{% endblock %}
+
+{% block page_title %}Transport Safety & Breakdown Incidents{% endblock %}
+{% block page_sub %}Log institutional vehicle breakdowns, road accidents, delays, and emergency responses.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_incident_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> Log Incident / Breakdown
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    {% if incidents %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Incident ID</th>
+                    <th>Date</th>
+                    <th>Bus / Vehicle</th>
+                    <th>Route</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                    <th>Action Taken</th>
+                    <th>Reported By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inc in incidents %}
+                <tr>
+                    <td><code>{{ inc.incident_id }}</code></td>
+                    <td>{{ inc.date|date:"d M Y" }}</td>
+                    <td>
+                        {% if inc.vehicle %}
+                            <a href="{% url 'transport:admin_vehicle_detail' inc.vehicle.pk %}">
+                                <strong>{{ inc.vehicle.vehicle_number }}</strong>
+                            </a>
+                        {% else %}
+                            <span class="muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if inc.route %}
+                            <code>{{ inc.route.code }}</code>
+                        {% else %}
+                            <span class="muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if inc.severity == 'SEVERE' %}
+                            <span class="badge red">Severe</span>
+                        {% elif inc.severity == 'MAJOR' %}
+                            <span class="badge amber">Major</span>
+                        {% else %}
+                            <span class="badge blue">Minor</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if inc.status == 'OPEN' %}
+                            <span class="badge amber">Open</span>
+                        {% elif inc.status == 'INVESTIGATING' %}
+                            <span class="badge blue">Investigating</span>
+                        {% else %}
+                            <span class="badge green">Closed</span>
+                        {% endif %}
+                    </td>
+                    <td style="max-width: 260px;">{{ inc.description|truncatechars:70 }}</td>
+                    <td style="max-width: 220px;">{{ inc.action_taken|default:"-"|truncatechars:60 }}</td>
+                    <td>{{ inc.reported_by.get_full_name|default:inc.reported_by.username|default:"System" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 40px; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 8px;">🛡️</div>
+        <h3>Zero Safety Incidents Logged</h3>
+        <p class="muted" style="margin-bottom: 16px;">No breakdowns, accidents, or transit delays have been recorded.</p>
+        <a class="btn btn-primary" href="{% url 'transport:admin_incident_create' %}">Log New Incident</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

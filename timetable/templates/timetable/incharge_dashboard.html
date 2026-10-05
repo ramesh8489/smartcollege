@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Timetable Builder{% endblock %}
+{% block topbar_title %}Timetable Builder{% endblock %}
+{% block page_title %}Timetable Builder{% endblock %}
+{% block page_sub %}{{ department.name }} · School Incharge: {{ incharge.faculty.name }}{% endblock %}
+
+{% block content %}
+
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="grid-2 mb">
+
+    <div class="card">
+        <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-plus"/></svg> Add a class</div></div>
+        <div class="card-body">
+            <form method="post" class="form-row" style="display:flex;flex-wrap:wrap;gap:12px;align-items:end">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_class">
+                <div class="field" style="flex:2;min-width:180px">
+                    <label>Course</label>
+                    <select class="select" name="course" required>
+                        <option value="" disabled selected>Select course</option>
+                        {% for c in courses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="field" style="min-width:100px">
+                    <label>Year</label>
+                    <input class="input" type="number" name="year" min="1" max="5" placeholder="e.g. 1" required>
+                </div>
+                <button class="btn btn-primary" type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-calendar"/></svg> Assign a slot</div></div>
+        <div class="card-body">
+            <form method="post" class="stack">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_slot">
+
+                <div class="form-grid">
+                    <div class="field"><label>Day</label>
+                        <select class="select" name="day_of_week" required>
+                            <option value="MON">Monday</option><option value="TUE">Tuesday</option><option value="WED">Wednesday</option>
+                            <option value="THU">Thursday</option><option value="FRI">Friday</option><option value="SAT">Saturday</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Period</label>
+                        <select class="select" name="period" required>
+                            {% for p in periods %}<option value="{{ p.id }}">P{{ p.period_number }} ({{ p.start_time|time:"g:i A" }})</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="field"><label>Class</label>
+                        <select class="select" name="school_class" required>
+                            <option value="" disabled selected>Select class</option>
+                            {% for sc in school_classes %}<option value="{{ sc.id }}">{{ sc }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="field"><label>Subject</label>
+                        <select class="select" name="subject" required>
+                            <option value="" disabled selected>Select subject</option>
+                            {% for s in subjects %}<option value="{{ s.id }}">{{ s.name }} ({{ s.code }})</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="field"><label>Faculty</label>
+                        <select class="select" name="faculty" required>
+                            <option value="" disabled selected>Select faculty</option>
+                            {% for f in faculty_members %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" type="submit" style="align-self:start"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Assign</button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<div class="card">
+    <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-layers"/></svg> Current timetable</div></div>
+    <div class="card-body flush">
+        {% if timetable_slots %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Day</th><th>Period</th><th>Class</th><th>Subject</th><th>Faculty</th><th></th></tr></thead>
+                <tbody>
+                {% for slot in timetable_slots %}
+                    <tr>
+                        <td class="nowrap">{{ slot.get_day_of_week_display }}</td>
+                        <td class="nowrap">P{{ slot.period.period_number }}</td>
+                        <td>{{ slot.school_class }}</td>
+                        <td>{{ slot.subject.name }}</td>
+                        <td>{{ slot.faculty.name }}</td>
+                        <td class="right">
+                            <form class="inline-form" method="post" action="/timetable/incharge/delete-slot/{{ slot.id }}/" onsubmit="return confirm('Remove this slot?')">
+                                {% csrf_token %}<button class="btn btn-danger-soft btn-sm" type="submit"><svg class="icon icon-sm"><use href="#i-trash"/></svg></button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty"><svg class="icon"><use href="#i-calendar"/></svg><b>No timetable slots yet</b>Add classes and assign faculty using the forms above.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

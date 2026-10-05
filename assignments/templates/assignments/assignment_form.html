@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Assignments{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Configure assignment specifications, target academic cohort, deadlines, instructions, and reference material.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'assignment_list' %}" class="btn btn-ghost">
+        ← Back to Assignments
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 900px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-file"/></svg>
+                <span>Assignment Parameters</span>
+            </div>
+            {% if assignment %}
+                <span class="badge {% if assignment.is_active %}green{% else %}rose{% endif %}">
+                    {% if assignment.is_active %}Currently Active{% else %}Inactive{% endif %}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+            {% if form.errors %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 20px; background: var(--surface);">
+                    <div style="font-weight: 700; color: var(--danger); margin-bottom: 6px;">Please correct the following errors:</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--danger);">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <!-- Section 1: Basic Information -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        1. General Details
+                    </div>
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.title.id_for_label }}">
+                                Assignment Title <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.title }}
+                            <div class="muted" style="font-size: 11.5px;">E.g. Mini-Project: Distributed Database Architecture with Sharding</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.assignment_type.id_for_label }}">
+                                Assignment Type <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.assignment_type }}
+                            <div class="muted" style="font-size: 11.5px;">Select type (Assignment, Homework, Project, Lab Record, Seminar, Case Study)</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.subject.id_for_label }}">
+                                Subject <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.subject }}
+                            <div class="muted" style="font-size: 11.5px;">Authorized academic subject</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Target Degree, Year & Semester -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        2. Target Cohort
+                    </div>
+                    <div class="grid grid-4" style="gap: 16px;">
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.course.id_for_label }}">
+                                Degree / Programme <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.course }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.year.id_for_label }}">
+                                Year <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.year }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.semester.id_for_label }}">
+                                Semester <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.semester }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.academic_year.id_for_label }}">
+                                Academic Year <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.academic_year }}
+                            <div class="muted" style="font-size: 11.5px;">Format: e.g. 2026-2027</div>
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.max_marks.id_for_label }}">
+                                Maximum Marks <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.max_marks }}
+                            <div class="muted" style="font-size: 11.5px;">Scoring scale (e.g. 10, 25, 50, 100)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Timeline & Schedule -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        3. Schedule & Deadlines
+                    </div>
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.assigned_date.id_for_label }}">
+                                Assigned Date <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.assigned_date }}
+                            <div class="muted" style="font-size: 11.5px;">Date when task is opened</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.submission_deadline.id_for_label }}">
+                                Submission Deadline <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.submission_deadline }}
+                            <div class="muted" style="font-size: 11.5px;">Date and exact cutoff time for student submissions</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Specifications & File Attachment -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        4. Guidance & Reference Material
+                    </div>
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.attachment.id_for_label }}">
+                                Assignment Question / Reference Material File
+                            </label>
+                            {{ form.attachment }}
+                            <div class="muted" style="font-size: 11.5px;">Accepted formats: PDF, DOC, DOCX, ZIP, PPT, PPTX, TXT (Max 15MB)</div>
+                            {% if assignment and assignment.attachment %}
+                                <div style="margin-top: 6px; font-size: 12px; color: var(--brand);">
+                                    Current file: <strong>{{ assignment.attachment.name }}</strong>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.description.id_for_label }}">
+                                Overview & Description
+                            </label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.instructions.id_for_label }}">
+                                Submission Guidelines & Instructions
+                            </label>
+                            {{ form.instructions }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2; display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                            {{ form.is_active }}
+                            <label for="{{ form.is_active.id_for_label }}" style="margin: 0; cursor: pointer; font-weight: 600;">
+                                Mark assignment as active and visible to students
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit / Cancel Actions -->
+                <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid var(--line);">
+                    <a href="{% url 'assignment_list' %}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="icon"><use href="#i-check"/></svg>
+                        <span>{{ action }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

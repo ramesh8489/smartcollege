@@ -1,0 +1,649 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+{% block page_title %}Welcome back, {{ student.name }}{% endblock %}
+{% block page_sub %}{{ student.course.name|default:"—" }} · {{ student.department.name }} · Year {{ student.year }}{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="/analytics/my/"><svg class="icon icon-sm"><use href="#i-chart"/></svg> View My Analytics</a>
+    <a class="btn btn-soft" href="/reports/student/attendance/excel/"><svg class="icon icon-sm"><use href="#i-download"/></svg> Attendance</a>
+    <a class="btn btn-soft" href="/reports/student/marks/excel/"><svg class="icon icon-sm"><use href="#i-download"/></svg> Marks</a>
+    <a class="btn btn-ghost" href="/reports/student/attendance/pdf/"><svg class="icon icon-sm"><use href="#i-file"/></svg> Attendance PDF</a>
+    <a class="btn btn-ghost" href="/reports/student/marks/pdf/"><svg class="icon icon-sm"><use href="#i-file"/></svg> Marks PDF</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- AI & Personal Analytics Promo Card -->
+<div class="card mb" style="background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%); border: 1px solid #c7d2fe; display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <div class="stat-ico" style="background: #ffffff; color: var(--brand); box-shadow: var(--shadow-sm); width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;"><svg class="icon"><use href="#i-chart"/></svg></div>
+        <div>
+            <div style="font-weight: 800; font-size: 14.5px; color: var(--ink);">AI & Personal Academic Analytics</div>
+            <div class="muted" style="font-size: 12px;">Comprehensive self-analytics across your attendance, exam results, fees, library, and placements.</div>
+        </div>
+    </div>
+    <a href="/analytics/my/" class="btn btn-primary btn-sm">View My Analytics &rarr;</a>
+</div>
+
+<div class="grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-calendar"/></svg></div>
+        <div><div class="stat-val">{{ total_classes }}</div><div class="stat-label">Total classes</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div><div class="stat-val">{{ present_classes }}</div><div class="stat-label">Present</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+        <div><div class="stat-val">{{ attendance_percentage }}%</div><div class="stat-label">Overall attendance</div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-book"/></svg></div>
+        <div><div class="stat-val">{{ marks_summary|length }}</div><div class="stat-label">Subjects</div></div>
+    </div>
+</div>
+
+<div class="split">
+
+    <div>
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><svg class="icon"><use href="#i-chart"/></svg> Subject-wise attendance</div>
+                <a class="link-arrow" href="/students/attendance-history/">Full history ›</a>
+            </div>
+            <div class="card-body flush">
+                {% if subject_attendance %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Subject</th><th class="num">Present</th><th class="num">Total</th><th style="min-width:170px">Attendance</th></tr></thead>
+                        <tbody>
+                        {% for row in subject_attendance %}
+                            <tr>
+                                <td class="strong">{{ row.subject.name }}<div class="p-sub muted">{{ row.subject.code }}</div></td>
+                                <td class="num">{{ row.present }}</td>
+                                <td class="num">{{ row.total }}</td>
+                                <td>
+                                    {% if row.percentage >= 75 %}{% include "_meter.html" with pct=row.percentage cls="good" %}
+                                    {% elif row.percentage >= 60 %}{% include "_meter.html" with pct=row.percentage cls="mid" %}
+                                    {% else %}{% include "_meter.html" with pct=row.percentage cls="low" %}{% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="empty"><svg class="icon"><use href="#i-calendar"/></svg><b>No attendance yet</b>Your attendance will appear here once classes start.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><svg class="icon"><use href="#i-award"/></svg> Marks summary</div>
+                <a class="link-arrow" href="/students/marks-history/">Full history ›</a>
+            </div>
+            <div class="card-body flush">
+                {% if marks_summary %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Subject</th><th class="num">Total</th><th class="num">%</th><th>Grade</th></tr></thead>
+                        <tbody>
+                        {% for item in marks_summary %}
+                            <tr>
+                                <td class="strong">{{ item.mark.subject.name }}<div class="p-sub muted">{{ item.mark.subject.code }}</div></td>
+                                <td class="num">{{ item.total }}/120</td>
+                                <td class="num">{{ item.percentage }}%</td>
+                                <td><span class="badge {% if item.grade == 'F' %}red{% elif item.grade == 'A+' or item.grade == 'A' %}green{% else %}amber{% endif %}">{{ item.grade }}</span></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="empty"><svg class="icon"><use href="#i-award"/></svg><b>No marks yet</b>Your marks haven't been entered yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Exam Results Section (New) -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-award"/></svg>
+                    <span>Exam Results</span>
+                </div>
+                <a class="link-arrow" href="{% url 'student_exam_results' %}">Full results report ›</a>
+            </div>
+            <div class="card-body flush">
+                {% if student_exam_reports %}
+                    {% for report in student_exam_reports %}
+                    <div style="padding: 12px 18px; background: var(--surface-2); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: var(--ink); font-size: 13.5px;">{{ report.exam.name }}</strong>
+                            <div class="muted" style="font-size: 11.5px;">{{ report.exam.exam_type }} · {{ report.exam.academic_year }}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span class="badge" style="font-weight: 700;">Overall: {{ report.overall_percentage }}%</span>
+                            <span class="badge {% if report.overall_result == 'Pass' %}green{% else %}red{% endif %}" style="font-weight: 800;">Overall: {{ report.overall_result }}</span>
+                        </div>
+                    </div>
+                    <div class="table-wrap" style="border-bottom: 1px solid var(--line);">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Exam / Subject</th>
+                                    <th class="num">Max</th>
+                                    <th class="num">Obtained</th>
+                                    <th class="num">%</th>
+                                    <th style="text-align: center;">Grade</th>
+                                    <th style="text-align: center;">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in report.marks %}
+                                <tr>
+                                    <td class="strong">
+                                        {{ m.subject.name }}
+                                        <div class="p-sub muted">{{ m.subject.code }} · {{ report.exam.name }}</div>
+                                    </td>
+                                    <td class="num">{{ m.max_marks }}</td>
+                                    <td class="num" style="font-weight: 700;">{{ m.marks_obtained }}</td>
+                                    <td class="num">{{ m.percentage }}%</td>
+                                    <td style="text-align: center;">
+                                        <span class="badge {% if m.grade == 'F' or m.grade == 'AB' %}red{% elif m.grade == 'O' or m.grade == 'A+' or m.grade == 'A' %}green{% else %}amber{% endif %}">{{ m.grade }}</span>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <span class="badge {% if m.result_status == 'Pass' %}green{% else %}red{% endif %}">{{ m.result_status }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty">
+                        <svg class="icon"><use href="#i-award"/></svg>
+                        <b>No Exam Results Yet</b>Your examination results will be displayed here once published.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Assignments & Coursework Section -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-file"/></svg>
+                    <span>Assignments & Coursework</span>
+                </div>
+                <a class="link-arrow" href="{% url 'assignment_list' %}">View all assignments ›</a>
+            </div>
+            <div class="card-body flush">
+                {% if student_assignments_list %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Assignment Title</th>
+                                <th>Subject & Faculty</th>
+                                <th>Deadline</th>
+                                <th>Status</th>
+                                <th>Marks</th>
+                                <th>Feedback</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in student_assignments_list %}
+                            <tr>
+                                <td class="strong">
+                                    <a href="{% url 'assignment_detail' item.assignment.pk %}" style="color: var(--brand); text-decoration: none;">
+                                        {{ item.assignment.title }}
+                                    </a>
+                                    <div class="p-sub muted">{{ item.assignment.assignment_type }}</div>
+                                </td>
+                                <td>
+                                    <div class="strong">{{ item.assignment.subject.name }}</div>
+                                    <div class="p-sub muted">{{ item.assignment.faculty.name }}</div>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 600; color: var(--ink);">{{ item.assignment.submission_deadline|date:"d M Y" }}</div>
+                                    <div class="p-sub muted">{{ item.assignment.submission_deadline|date:"h:i A" }}</div>
+                                </td>
+                                <td>
+                                    {% if item.status == 'Evaluated' %}
+                                        <span class="badge green">Evaluated</span>
+                                    {% elif item.status == 'Submitted' %}
+                                        <span class="badge blue">Submitted</span>
+                                    {% elif item.status == 'Late' %}
+                                        <span class="badge rose">Late</span>
+                                    {% elif item.status == 'Returned' %}
+                                        <span class="badge amber">Returned</span>
+                                    {% else %}
+                                        <span class="badge gray">Not Submitted</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.marks is not None %}
+                                        <div style="font-weight: 800; font-size: 13.5px; color: var(--ink);">
+                                            {{ item.marks }} / {{ item.assignment.max_marks }}
+                                        </div>
+                                    {% else %}
+                                        <span class="muted" style="font-size: 12px; font-style: italic;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td style="max-width: 180px;">
+                                    {% if item.feedback %}
+                                        <div style="font-size: 12px; color: var(--ink); line-height: 1.3;">
+                                            {{ item.feedback|truncatewords:8 }}
+                                        </div>
+                                    {% else %}
+                                        <span class="muted" style="font-size: 12px; font-style: italic;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right;">
+                                    <a href="{% url 'assignment_detail' item.assignment.pk %}" class="btn btn-soft btn-sm" style="padding: 4px 10px; font-size: 12px;">
+                                        {% if item.submission %}View{% else %}Submit{% endif %}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="empty">
+                        <svg class="icon"><use href="#i-file"/></svg>
+                        <b>No Assignments Found</b>You do not have any active assignments or projects assigned at this time.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Student Leave Management Section -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-calendar"/></svg> Leave Management
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a class="btn btn-primary btn-sm" id="btn-dash-apply-leave" href="{% url 'apply_leave' %}">
+                        <svg class="icon icon-sm"><use href="#i-plus"/></svg>
+                        <span>Apply Leave</span>
+                    </a>
+                    <a class="link-arrow" href="{% url 'leave_list' %}">All leaves ›</a>
+                </div>
+            </div>
+
+            <!-- Mini Summary Counter Row -->
+            <div style="padding: 12px 20px; background: var(--surface-2); border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px;">
+                <div>Total: <b>{{ leave_total_requests }}</b></div>
+                <div style="color: var(--warn);">Pending: <b>{{ leave_pending_requests }}</b></div>
+                <div style="color: var(--success);">Approved: <b>{{ leave_approved_requests }}</b></div>
+                <div style="color: var(--danger);">Rejected: <b>{{ leave_rejected_requests }}</b></div>
+            </div>
+
+            <div class="card-body flush">
+                {% if recent_student_leaves %}
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>Duration</th>
+                                    <th>Dates</th>
+                                    <th>Applied On</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for l in recent_student_leaves %}
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: 700; color: var(--ink);">{{ l.leave_type }}</div>
+                                            <div class="p-sub muted">{{ l.reason|truncatewords:6 }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge gray">{{ l.number_of_days }}d</span>
+                                        </td>
+                                        <td>
+                                            <div style="font-size: 12.5px;">{{ l.from_date|date:"d M" }} &rarr; {{ l.to_date|date:"d M Y" }}</div>
+                                        </td>
+                                        <td class="muted">{{ l.applied_date|date:"d M Y" }}</td>
+                                        <td>
+                                            <span class="badge {{ l.status_badge_class }}">{{ l.status }}</span>
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <a href="{% url 'leave_detail' l.id %}" class="btn btn-ghost btn-sm" id="btn-dash-view-leave-{{ l.id }}">
+                                                View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty">
+                        <svg class="icon"><use href="#i-calendar"/></svg>
+                        <b>No Leave Requests</b>You have not submitted any leave applications yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Training & Placement Management Section -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-briefcase"/></svg> Training & Placement Portal
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a class="btn btn-primary btn-sm" id="btn-dash-placement-portal" href="{% url 'student_placement_portal' %}">
+                        <svg class="icon icon-sm"><use href="#i-briefcase"/></svg>
+                        <span>Open Placement Portal</span>
+                    </a>
+                    <a class="link-arrow" href="{% url 'student_placement_history' %}">My history ›</a>
+                </div>
+            </div>
+
+            <!-- Mini Summary Counter Row -->
+            <div style="padding: 12px 20px; background: var(--surface-2); border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px;">
+                <div>Active Drives: <b>{{ placement_open_drives_count }}</b></div>
+                <div style="color: var(--brand);">Applications: <b>{{ placement_my_applications_count }}</b></div>
+                <div style="color: var(--warn);">Shortlisted / Rounds: <b>{{ placement_shortlisted_count }}</b></div>
+                <div style="color: var(--success);">Offers Received: <b>{{ placement_offers_count }}</b></div>
+            </div>
+
+            <div class="card-body flush">
+                {% if placement_recent_drives %}
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Company & Role</th>
+                                    <th>Package</th>
+                                    <th>Type</th>
+                                    <th>Deadline</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for d in placement_recent_drives %}
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: 700; color: var(--ink);">{{ d.company.name }}</div>
+                                            <div class="p-sub muted">{{ d.job_title }}</div>
+                                        </td>
+                                        <td style="font-weight: 700; color: var(--brand);">{{ d.salary_package }}</td>
+                                        <td><span class="badge slate">{{ d.get_employment_type_display }}</span></td>
+                                        <td class="muted">{{ d.application_deadline|date:"d M Y" }}</td>
+                                        <td style="text-align: right;">
+                                            <a href="{% url 'drive_detail' d.pk %}" class="btn btn-ghost btn-sm">
+                                                View & Apply ›
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty">
+                        <svg class="icon"><use href="#i-briefcase"/></svg>
+                        <b>No Active Drives</b>No placement drives currently accepting applications.
+                    </div>
+                {% endif %}
+        <!-- Certificates & Document Management Section -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-award"/></svg> Certificates & Document Management
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a class="btn btn-primary btn-sm" id="btn-dash-cert-portal" href="{% url 'certificates_student_portal' %}">
+                        <svg class="icon icon-sm"><use href="#i-plus"/></svg>
+                        <span>Request Certificate</span>
+                    </a>
+                    <a class="btn btn-secondary btn-sm" href="{% url 'student_documents_portal' %}">
+                        <svg class="icon icon-sm"><use href="#i-file"/></svg>
+                        <span>My Documents</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Mini Summary Counter Row -->
+            <div style="padding: 12px 20px; background: var(--surface-2); display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px;">
+                <div>Certificate Requests: <b>{{ cert_requests_count }}</b></div>
+                <div style="color: var(--warn);">Pending Review: <b>{{ cert_pending_count }}</b></div>
+                <div style="color: var(--success);">Approved / Ready: <b>{{ cert_approved_count }}</b></div>
+                <div>Uploaded Documents: <b>{{ docs_total_count }}</b></div>
+                <div style="color: var(--warn);">Docs Awaiting Verification: <b>{{ docs_pending_count }}</b></div>
+            </div>
+        </div>
+
+        <!-- HOSTEL ACCOMMODATION PORTAL CARD (PHASE 10) -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-home"/></svg> Hostel Accommodation &amp; Portal
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a class="btn btn-primary btn-sm" href="/hostel/">
+                        <span>Go to Hostel Portal &rarr;</span>
+                    </a>
+                    {% if not hostel_summary.allocation %}
+                    <a class="btn btn-soft btn-sm" href="{% url 'hostel:application_create' %}">
+                        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Apply
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Current Allocation Banner / Info -->
+            {% if hostel_summary.allocation %}
+            <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+            {% else %}
+            <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--surface-2);">
+            {% endif %}
+                {% if hostel_summary.allocation %}
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <div style="display: inline-block; font-size: 11px; font-weight: 700; color: #16a34a; background: #dcfce7; padding: 2px 8px; border-radius: 999px; text-transform: uppercase;">
+                            Active Allocation
+                        </div>
+                        <h3 style="margin: 6px 0 4px 0; font-size: 17px; font-weight: 800; color: var(--ink);">
+                            {{ hostel_summary.allocation.hostel.name }}
+                        </h3>
+                        <div class="muted" style="font-size: 13px;">
+                            {{ hostel_summary.allocation.block.name }} &middot; {{ hostel_summary.allocation.floor.name }} &middot; 
+                            <b style="color: var(--brand);">Room {{ hostel_summary.allocation.room.room_number }}</b> ({{ hostel_summary.allocation.room.get_room_type_display }}) &middot; 
+                            <b style="color: #0284c7;">Bed {{ hostel_summary.allocation.bed.bed_number }}</b>
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 12px; color: var(--muted);">
+                        <div>Allocated: <b>{{ hostel_summary.allocation.allocation_date|date:"d M Y" }}</b></div>
+                        <div>Expected Checkout: <b>{{ hostel_summary.allocation.expected_checkout_date|date:"d M Y"|default:"Active session" }}</b></div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-weight: 700; color: var(--ink); font-size: 14.5px;">No Active Hostel Room Allocation</div>
+                        <div class="muted" style="font-size: 12.5px;">Apply for campus hostel accommodation or view status of your pending requests.</div>
+                    </div>
+                    <a href="{% url 'hostel:application_create' %}" class="btn btn-primary btn-sm">
+                        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Apply for Hostel
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 5 Phase 10 Metrics Sub-Grid: Fees, Attendance, Complaints, Applications, Notices -->
+            <div style="padding: 16px 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 16px;">
+                    
+                    <!-- Fees -->
+                    <div style="background: var(--surface-2); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #2563eb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="muted" style="font-size: 11.5px; text-transform: uppercase; font-weight: 700;">Hostel Fees</span>
+                            <a href="{% url 'hostel:student_fees' %}" style="font-size: 11px;">View ›</a>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--ink); margin-top: 4px;">
+                            ₹{{ hostel_summary.fees.outstanding|floatformat:0 }}
+                        </div>
+                        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">
+                            Total: ₹{{ hostel_summary.fees.total_fees|floatformat:0 }} &middot; Paid: ₹{{ hostel_summary.fees.total_paid|floatformat:0 }}
+                        </div>
+                    </div>
+
+                    <!-- Attendance -->
+                    <div style="background: var(--surface-2); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #7c3aed;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="muted" style="font-size: 11.5px; text-transform: uppercase; font-weight: 700;">Hostel Attendance</span>
+                            <a href="{% url 'hostel:student_attendance' %}" style="font-size: 11px;">History ›</a>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--ink); margin-top: 4px;">
+                            {% if hostel_summary.attendance.percentage is not None %}{{ hostel_summary.attendance.percentage }}%{% else %}—{% endif %}
+                        </div>
+                        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">
+                            Present: {{ hostel_summary.attendance.present }} &middot; Absent: {{ hostel_summary.attendance.absent }}
+                        </div>
+                    </div>
+
+                    <!-- Complaints -->
+                    <div style="background: var(--surface-2); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #f59e0b;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="muted" style="font-size: 11.5px; text-transform: uppercase; font-weight: 700;">Complaints</span>
+                            <a href="{% url 'hostel:student_complaint_list' %}" style="font-size: 11px;">Manage ›</a>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--ink); margin-top: 4px;">
+                            {{ hostel_summary.complaints.open }} Open
+                        </div>
+                        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">
+                            In Progress: {{ hostel_summary.complaints.in_progress }} &middot; Resolved: {{ hostel_summary.complaints.resolved }}
+                        </div>
+                    </div>
+
+                    <!-- Applications -->
+                    <div style="background: var(--surface-2); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #10b981;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="muted" style="font-size: 11.5px; text-transform: uppercase; font-weight: 700;">Applications</span>
+                            <a href="{% url 'hostel:application_list' %}" style="font-size: 11px;">List ›</a>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--ink); margin-top: 4px;">
+                            {{ hostel_summary.applications.total }} Total
+                        </div>
+                        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">
+                            Pending: {{ hostel_summary.applications.pending }} &middot; Approved: {{ hostel_summary.applications.approved }} &middot; Rejected: {{ hostel_summary.applications.rejected }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Hostel Bulletins / Notices Preview -->
+                {% if hostel_summary.notices %}
+                <div style="border-top: 1px dashed var(--border); padding-top: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-weight: 700; font-size: 13px; color: var(--ink); display: flex; align-items: center; gap: 6px;">
+                            <svg class="icon icon-sm"><use href="#i-bell"/></svg> Latest Hostel Notices
+                        </div>
+                        <a href="{% url 'hostel:student_notices' %}" class="link-arrow" style="font-size: 12px;">All notices ›</a>
+                    </div>
+                    {% for n in hostel_summary.notices|slice:":2" %}
+                        <div style="padding: 8px 12px; background: var(--surface-2); border-radius: 6px; margin-bottom: 6px; font-size: 12.5px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 600;">{{ n.title }}</span>
+                                <span class="muted" style="font-size: 11.5px;"> · {{ n.publish_date|date:"d M" }}</span>
+                            </div>
+                            {% if n.priority == "URGENT" %}
+                                <span class="badge red">Urgent</span>
+                            {% elif n.priority == "IMPORTANT" %}
+                                <span class="badge amber">Important</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- TRANSPORT & BUS COMMUTE PORTAL CARD -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-bus"/></svg> Transport &amp; Commute Portal
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a class="btn btn-primary btn-sm" href="{% url 'transport:student_portal' %}">
+                        <span>Go to Transport Portal &rarr;</span>
+                    </a>
+                    <a class="btn btn-soft btn-sm" href="{% url 'transport:student_apply' %}">
+                        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Apply
+                    </a>
+                </div>
+            </div>
+            <div style="padding: 16px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-weight: 700; color: var(--ink); font-size: 14.5px;">College Fleet &amp; Commuter Services</div>
+                        <div class="muted" style="font-size: 12.5px;">Track bus routes, pickup stops, download your digital bus pass, view commute roll call, and manage transport fees.</div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <a href="{% url 'transport:student_pass' %}" class="btn btn-ghost btn-sm">
+                            <svg class="icon icon-sm"><use href="#i-award"/></svg> My Bus Pass
+                        </a>
+                        <a href="{% url 'transport:student_fees' %}" class="btn btn-ghost btn-sm">
+                            <svg class="icon icon-sm"><use href="#i-file"/></svg> Transport Fees
+                        </a>
+                        <a href="{% url 'transport:student_attendance' %}" class="btn btn-ghost btn-sm">
+                            <svg class="icon icon-sm"><use href="#i-calendar"/></svg> Attendance
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="stack">
+
+        <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-user"/></svg> My details</div></div>
+            <div class="card-body">
+                <div class="kv" style="grid-template-columns:1fr">
+                    <div class="kv-item"><div class="kv-k">Roll number</div><div class="kv-v">{{ student.roll_no }}</div></div>
+                    <div class="kv-item"><div class="kv-k">SIF number</div><div class="kv-v">{{ student.sif_number|default:"—" }}</div></div>
+                    <div class="kv-item"><div class="kv-k">School</div><div class="kv-v">{{ student.department.name }}</div></div>
+                    <div class="kv-item"><div class="kv-k">Degree</div><div class="kv-v">{{ student.course.name|default:"—" }}</div></div>
+                </div>
+                <a class="btn btn-ghost btn-block" style="margin-top:14px" href="/students/profile/">View full profile</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-bell"/></svg> Latest circulars</div></div>
+            <div class="card-body">
+                {% for c in recent_circulars %}
+                    <div class="note" style="margin-bottom:10px">
+                        <h3 style="font-size:13.5px">{{ c.title }}</h3>
+                        <div class="meta">{{ c.posted_at|date:"d M" }}</div>
+                        <p style="font-size:12.5px">{{ c.message|truncatechars:110 }}</p>
+                    </div>
+                {% empty %}
+                    <div class="muted" style="font-size:13px">No circulars posted yet.</div>
+                {% endfor %}
+                <a class="link-arrow" href="/timetable/circulars/">See all circulars ›</a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

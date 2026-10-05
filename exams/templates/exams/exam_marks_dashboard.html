@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Exam Marks Management · Smart College{% endblock %}
+{% block topbar_title %}Exam Marks Management{% endblock %}
+
+{% block page_title %}
+    {% if is_faculty and not is_admin %}
+        My Assigned Exam Marks
+    {% else %}
+        Examination Marks & Results
+    {% endif %}
+{% endblock %}
+
+{% block page_sub %}
+    {% if is_faculty and not is_admin %}
+        View and manage examination marks for your assigned subjects and courses.
+    {% else %}
+        Comprehensive examination marks repository, student scores, grades, and result evaluation.
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <a href="{% url 'exam_list' %}" class="btn btn-ghost">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+            <span>All Exams</span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% else %}var(--success){% endif %}; margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 600; color: {% if message.tags == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+                    {{ message }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Quick Statistics Bar -->
+<div class="grid grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico">
+            <svg class="icon"><use href="#i-award"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ total_marks }}</div>
+            <div class="stat-label">Marks Evaluated</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green">
+            <svg class="icon"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ pass_marks }}</div>
+            <div class="stat-label">Passed</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico rose">
+            <svg class="icon"><use href="#i-x"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ fail_marks }}</div>
+            <div class="stat-label">Failed</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber">
+            <svg class="icon"><use href="#i-clock"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{{ absent_marks }}</div>
+            <div class="stat-label">Absent</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-filter"/></svg>
+            <span>Filter Examination Marks</span>
+        </div>
+        {% if filters.q or filters.exam or filters.subject or filters.result %}
+            <a href="{% url 'exam_marks_dashboard' %}" class="btn btn-ghost btn-sm">Clear Filters</a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'exam_marks_dashboard' %}" class="grid grid-4" style="gap: 14px; align-items: flex-end;">
+            <div class="field">
+                <label for="q">Search Student / Subject</label>
+                <input type="text" id="q" name="q" value="{{ filters.q }}" class="input" placeholder="Roll No, name, code...">
+            </div>
+
+            <div class="field">
+                <label for="exam">Examination Session</label>
+                <select id="exam" name="exam" class="select">
+                    <option value="">All Exams</option>
+                    {% for e in exams %}
+                        <option value="{{ e.id }}" {% if filters.exam == e.id|stringformat:"s" %}selected{% endif %}>
+                            {{ e.name }} ({{ e.exam_type }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="subject">Subject</label>
+                <select id="subject" name="subject" class="select">
+                    <option value="">All Subjects</option>
+                    {% for sub in subjects %}
+                        <option value="{{ sub.id }}" {% if filters.subject == sub.id|stringformat:"s" %}selected{% endif %}>
+                            {{ sub.name }} ({{ sub.code }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="result">Result Status</label>
+                <select id="result" name="result" class="select">
+                    <option value="">All Results</option>
+                    <option value="Pass" {% if filters.result == 'Pass' %}selected{% endif %}>Pass Only</option>
+                    <option value="Fail" {% if filters.result == 'Fail' %}selected{% endif %}>Fail Only</option>
+                    <option value="Absent" {% if filters.result == 'Absent' %}selected{% endif %}>Absent</option>
+                </select>
+            </div>
+
+            <div style="grid-column: span 4; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary" style="padding: 9px 20px;">
+                    <svg class="icon"><use href="#i-filter"/></svg>
+                    <span>Apply Filters</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Marks Records Table -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-award"/></svg>
+            <span>Student Marks Records</span>
+        </div>
+        <span class="badge">{{ marks|length }} Record{{ marks|length|pluralize }} Shown</span>
+    </div>
+
+    <div class="card-body flush">
+        {% if marks %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Roll No & Student</th>
+                        <th>Exam Session</th>
+                        <th>Subject</th>
+                        <th style="text-align: right;">Marks Obtained</th>
+                        <th style="text-align: right;">Max</th>
+                        <th style="text-align: center;">%</th>
+                        <th style="text-align: center;">Grade</th>
+                        <th style="text-align: center;">Grade Point</th>
+                        <th style="text-align: center;">Result</th>
+                        <th>Remarks</th>
+                        {% if is_admin %}
+                            <th style="text-align: right;">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in marks %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--ink);">{{ m.student.name }}</strong>
+                            <div class="muted" style="font-size: 11.5px;">{{ m.student.roll_no }} · {{ m.student.course.name }}</div>
+                        </td>
+                        <td>
+                            <a href="{% url 'exam_detail' m.exam.pk %}" style="font-weight: 600; text-decoration: none;">
+                                {{ m.exam.name }}
+                            </a>
+                            <div class="muted" style="font-size: 11px;">{{ m.exam.exam_type }} · {{ m.exam.academic_year }}</div>
+                        </td>
+                        <td>
+                            <strong>{{ m.subject.name }}</strong>
+                            <div class="muted" style="font-size: 11px;">{{ m.subject.code }}</div>
+                        </td>
+                        <td style="text-align: right;">
+                            {% if m.result_status == "Absent" %}
+                                <span class="muted" style="font-style: italic;">Absent</span>
+                            {% else %}
+                                <strong style="font-size: 14px;">{{ m.marks_obtained }}</strong>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;" class="muted">
+                            {{ m.max_marks }}
+                        </td>
+                        <td style="text-align: center; font-weight: 700;">
+                            {% if m.result_status == "Absent" %}
+                                0.0%
+                            {% else %}
+                                {{ m.percentage }}%
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="badge {% if m.grade == 'F' or m.grade == 'AB' %}red{% elif m.grade == 'O' or m.grade == 'A+' or m.grade == 'A' %}green{% else %}amber{% endif %}">
+                                {{ m.grade }}
+                            </span>
+                        </td>
+                        <td style="text-align: center; font-weight: 600;">
+                            {{ m.grade_point }}
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="badge {% if m.result_status == 'Pass' %}green{% else %}red{% endif %}">
+                                {{ m.result_status }}
+                            </span>
+                        </td>
+                        <td class="muted" style="font-size: 12px;">
+                            {{ m.remarks|default:"—" }}
+                        </td>
+                        {% if is_admin %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{% url 'exam_mark_edit' m.pk %}" class="btn btn-sm btn-ghost" title="Edit Mark">
+                                <svg class="icon-sm"><use href="#i-edit"/></svg>
+                            </a>
+                            <a href="{% url 'exam_mark_delete' m.pk %}" class="btn btn-sm btn-danger-soft" title="Delete Mark">
+                                <svg class="icon-sm"><use href="#i-trash"/></svg>
+                            </a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty" style="padding: 48px 20px; text-align: center;">
+                <div style="font-size: 38px; margin-bottom: 10px;">📊</div>
+                <div style="font-size: 15px; font-weight: 700; color: var(--ink);">No Examination Marks Found</div>
+                <div class="muted" style="max-width: 440px; margin: 4px auto 16px; font-size: 13px;">
+                    No student marks match the selected filters. To enter marks, visit any scheduled exam and click "Enter Marks".
+                </div>
+                <a href="{% url 'exam_list' %}" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-calendar"/></svg>
+                    <span>Browse Exam Sessions</span>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

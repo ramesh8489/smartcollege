@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Allocate Hostel Bed · Smart College{% endblock %}
+{% block topbar_title %}Hostel Bed Allocation{% endblock %}
+
+{% block page_title %}Allocate Student to Bed{% endblock %}
+{% block page_sub %}
+    Assign an approved student resident to an available bed in a room. Bed and room occupancy status will automatically update.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_allocations' %}">
+        &larr; Back to Allocations
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--danger);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start;">
+    <!-- Allocation Form -->
+    <div class="card" style="padding: 28px;">
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="card mb" style="padding: 12px 18px; border-left: 4px solid var(--danger); background: var(--danger-50, #fef2f2); color: var(--danger, #dc2626);">
+                    {% for err in form.non_field_errors %}
+                        <div>{{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="field">
+                    <label class="label" for="id_student">Select Student <span style="color: var(--danger);">*</span></label>
+                    {{ form.student }}
+                    <div class="muted" style="font-size: 12px; margin-top: 4px;">Only active students without existing active hostel allocations are listed.</div>
+                    {% if form.student.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.student.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_hostel">Hostel <span style="color: var(--danger);">*</span></label>
+                    {{ form.hostel }}
+                    {% if form.hostel.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.hostel.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="field">
+                        <label class="label" for="id_room">Room (with Vacancy) <span style="color: var(--danger);">*</span></label>
+                        {{ form.room }}
+                        {% if form.room.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.room.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="id_bed">Available Bed <span style="color: var(--danger);">*</span></label>
+                        {{ form.bed }}
+                        {% if form.bed.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.bed.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                    <div class="field">
+                        <label class="label" for="id_academic_year">Academic Session</label>
+                        {{ form.academic_year }}
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="id_allocation_date">Allocation Date <span style="color: var(--danger);">*</span></label>
+                        {{ form.allocation_date }}
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="id_expected_checkout_date">Expected Checkout</label>
+                        {{ form.expected_checkout_date }}
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_remarks">Administrative Remarks / Inventory</label>
+                    {{ form.remarks }}
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="icon icon-sm"><use href="#i-check"/></svg> Confirm Bed Allocation
+                    </button>
+                    <a class="btn btn-ghost" href="{% url 'hostel:admin_allocations' %}">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Vacancy Reference Guide -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 12px;">
+                <svg class="icon"><use href="#i-layers"/></svg>
+                <span>Current Room Vacancies</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; max-height: 480px; overflow-y: auto;">
+                {% for r in rooms %}
+                <div style="padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface);">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <b style="font-size: 13.5px;">Rm {{ r.room_number }} · {{ r.hostel.code }}</b>
+                        <span class="badge {% if r.available_beds_count > 0 %}green{% else %}red{% endif %}" style="font-size: 11px;">
+                            {{ r.available_beds_count }} Available
+                        </span>
+                    </div>
+                    <div class="muted" style="font-size: 12px; margin-top: 3px;">
+                        {{ r.block.name }} &middot; {{ r.get_room_type_display }}
+                    </div>
+                    <div style="display: flex; gap: 12px; margin-top: 6px; font-size: 11.5px;">
+                        <span>Capacity: <b>{{ r.capacity }}</b></span>
+                        <span>Occupied: <b>{{ r.occupied_beds_count }}</b></span>
+                        <span>Available: <b>{{ r.available_beds_count }}</b></span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="muted" style="font-size: 13px;">No vacant rooms currently registered.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

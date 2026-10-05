@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assignment.title }} · Assignment Details{% endblock %}
+{% block topbar_title %}Assignment Details{% endblock %}
+
+{% block page_title %}{{ assignment.title }}{% endblock %}
+{% block page_sub %}{{ assignment.subject.name }} ({{ assignment.subject.code }}) · {{ assignment.course.name }} · Year {{ assignment.year }}, Sem {{ assignment.semester }}{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <a href="{% url 'assignment_list' %}" class="btn btn-ghost">
+            ← All Assignments
+        </a>
+        {% if not is_student %}
+            {% if is_admin or assignment.faculty == faculty %}
+                <a href="{% url 'assignment_edit' assignment.pk %}" class="btn btn-soft">
+                    <svg class="icon"><use href="#i-edit"/></svg>
+                    <span>Edit Assignment</span>
+                </a>
+                <a href="{% url 'assignment_delete' assignment.pk %}" class="btn btn-danger-soft">
+                    <svg class="icon"><use href="#i-trash"/></svg>
+                    <span>Delete</span>
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--danger);">
+                        {{ message }}
+                    </div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--success); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--success);">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Assignment Overview & Parameter Cards -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-file"/></svg>
+            <span>Assignment Specifications</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="badge" style="background: var(--brand-50); color: var(--brand-700); font-weight: 800;">
+                {{ assignment.assignment_type }}
+            </span>
+            {% if assignment.is_deadline_passed %}
+                <span class="badge red">Closed (Deadline Passed)</span>
+            {% else %}
+                <span class="badge amber">{{ assignment.time_remaining_display }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="grid grid-4" style="gap: 16px;">
+            <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Faculty In-charge</div>
+                <div style="font-size: 15px; font-weight: 700; color: var(--ink); margin-top: 4px;">{{ assignment.faculty.name }}</div>
+                <div class="muted" style="font-size: 11.5px;">{{ assignment.faculty.department.name }}</div>
+            </div>
+
+            <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Maximum Marks</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--brand); margin-top: 2px;">
+                    {{ assignment.max_marks }} <span style="font-size: 13px; font-weight: 500; color: var(--muted);">Points</span>
+                </div>
+                <div class="muted" style="font-size: 11.5px;">Evaluation Base</div>
+            </div>
+
+            <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Assigned Date</div>
+                <div style="font-size: 14.5px; font-weight: 700; color: var(--ink); margin-top: 4px;">
+                    {{ assignment.assigned_date|date:"d M Y" }}
+                </div>
+                <div class="muted" style="font-size: 11.5px;">{{ assignment.academic_year }}</div>
+            </div>
+
+            <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Submission Deadline</div>
+                {% if assignment.is_deadline_passed %}
+                    <div style="font-size: 14px; font-weight: 700; color: var(--danger); margin-top: 4px;">
+                        {{ assignment.submission_deadline|date:"d M Y, h:i A" }}
+                    </div>
+                {% else %}
+                    <div style="font-size: 14px; font-weight: 700; color: var(--brand); margin-top: 4px;">
+                        {{ assignment.submission_deadline|date:"d M Y, h:i A" }}
+                    </div>
+                {% endif %}
+                <div class="muted" style="font-size: 11.5px;">
+                    {% if assignment.is_deadline_passed %}Submissions closed{% else %}{{ assignment.time_remaining_display }}{% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if assignment.description %}
+            <div style="margin-top: 18px;">
+                <div class="muted" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Description / Problem Statement</div>
+                <div style="font-size: 14px; color: var(--ink); line-height: 1.6; white-space: pre-line;">{{ assignment.description }}</div>
+            </div>
+        {% endif %}
+
+        {% if assignment.instructions %}
+            <div style="margin-top: 16px; padding: 14px 16px; background: var(--surface-2); border-left: 4px solid var(--brand); border-radius: var(--radius-sm);">
+                <div style="font-size: 12px; font-weight: 800; color: var(--ink); text-transform: uppercase; margin-bottom: 4px;">
+                    Instructions & Submission Guidelines
+                </div>
+                <div style="font-size: 13.5px; color: var(--ink-2); line-height: 1.6; white-space: pre-line;">{{ assignment.instructions }}</div>
+            </div>
+        {% endif %}
+
+        {% if assignment.attachment %}
+            <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface-2); border: 1px dashed var(--line); border-radius: var(--radius-sm);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="font-size: 24px;">📎</div>
+                    <div>
+                        <strong style="font-size: 13.5px; color: var(--ink);">Reference Attachment / Material</strong>
+                        <div class="muted" style="font-size: 11.5px;">Uploaded by faculty for this assignment</div>
+                    </div>
+                </div>
+                <a href="{% url 'download_assignment_material' assignment.pk %}" class="btn btn-sm btn-primary">
+                    <svg class="icon-sm"><use href="#i-download"/></svg>
+                    <span>Download Material</span>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- STUDENT VIEW: My Submission Status & Upload Form -->
+{% if is_student %}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-check"/></svg>
+            <span>My Submission Status</span>
+        </div>
+        {% if submission %}
+            <span class="badge {{ submission.badge_class }}" style="font-size: 12.5px; padding: 5px 12px; font-weight: 800;">
+                {{ submission.status }}
+            </span>
+        {% else %}
+            {% if assignment.is_deadline_passed %}
+                <span class="badge red">Not Submitted (Deadline Passed)</span>
+            {% else %}
+                <span class="badge amber">Pending Submission</span>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="card-body">
+        {% if submission %}
+            <div class="grid grid-3 mb" style="gap: 16px;">
+                <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Submitted File</div>
+                    <div style="margin-top: 6px;">
+                        <a href="{% url 'download_submission' submission.pk %}" class="btn btn-sm btn-soft">
+                            <svg class="icon-sm"><use href="#i-download"/></svg>
+                            <span>{{ submission.file_basename }}</span>
+                        </a>
+                    </div>
+                    <div class="muted" style="font-size: 11px; margin-top: 4px;">Uploaded on {{ submission.submitted_at|date:"d M Y, h:i A" }}</div>
+                </div>
+
+                <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Submission Status</div>
+                    <div style="font-size: 16px; font-weight: 700; margin-top: 4px;">
+                        <span class="badge {{ submission.badge_class }}">{{ submission.status }}</span>
+                    </div>
+                    {% if submission.status == 'Late' %}
+                        <div class="muted" style="font-size: 11px; color: var(--danger); margin-top: 4px;">Submitted after official deadline</div>
+                    {% endif %}
+                </div>
+
+                <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Marks / Evaluation</div>
+                    {% if submission.marks_obtained is not None %}
+                        <div style="font-size: 20px; font-weight: 800; color: var(--brand); margin-top: 2px;">
+                            {{ submission.marks_obtained }} <span style="font-size: 13px; font-weight: 500; color: var(--muted);">/ {{ assignment.max_marks }}</span>
+                        </div>
+                        <div style="font-weight: 700; font-size: 12px; color: var(--success);">
+                            {{ submission.percentage }}% Cleared
+                        </div>
+                    {% else %}
+                        <div style="font-size: 14px; font-weight: 600; color: var(--muted); margin-top: 4px;">
+                            Pending Faculty Evaluation
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if submission.feedback %}
+                <div style="padding: 14px 16px; background: var(--brand-50); border-radius: var(--radius-sm); border-left: 4px solid var(--brand); margin-bottom: 20px;">
+                    <div style="font-size: 11.5px; font-weight: 800; color: var(--brand-900); text-transform: uppercase; margin-bottom: 4px;">
+                        Faculty Feedback & Remarks
+                    </div>
+                    <div style="font-size: 13.5px; color: var(--ink); line-height: 1.6; white-space: pre-line;">{{ submission.feedback }}</div>
+                    {% if submission.evaluated_by %}
+                        <div class="muted" style="font-size: 11px; margin-top: 6px;">Evaluated by {{ submission.evaluated_by.get_full_name|default:submission.evaluated_by.username }} on {{ submission.evaluated_at|date:"d M Y" }}</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if submission.student_remarks %}
+                <div class="muted" style="font-size: 12.5px; margin-bottom: 18px;">
+                    <strong>My Remarks:</strong> {{ submission.student_remarks }}
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <!-- Upload Form -->
+        {% if not assignment.is_deadline_passed or submission %}
+            <div style="border-top: 1px solid var(--line); padding-top: 18px;">
+                <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">
+                    {% if submission %}Update / Replace Submission{% else %}Submit Solution File{% endif %}
+                </h3>
+
+                {% if assignment.is_deadline_passed %}
+                    <div class="card" style="padding: 10px 14px; background: var(--surface-2); font-size: 12.5px; color: var(--danger); margin-bottom: 12px;">
+                        ⚠️ The official deadline has passed. Modifying your submission now will update the timestamp and remain marked as Late.
+                    </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ submission_form.submission_file.id_for_label }}">
+                                Upload Solution File <span style="color:var(--danger)">*</span>
+                            </label>
+                            {{ submission_form.submission_file }}
+                            <div class="muted" style="font-size: 11px;">Supported: PDF, Word (.docx), Zip, Python (.py, .ipynb), Images. Max 15MB.</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ submission_form.student_remarks.id_for_label }}">
+                                Student Remarks / Notes
+                            </label>
+                            {{ submission_form.student_remarks }}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+                        <button type="submit" class="btn btn-primary" style="padding: 10px 22px;">
+                            <svg class="icon"><use href="#i-check"/></svg>
+                            <span>{% if submission %}Update Submission{% else %}Submit Assignment{% endif %}</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <div class="empty" style="padding: 30px 10px; text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 6px;">⏳</div>
+                <div style="font-weight: 700; color: var(--danger);">Submission Deadline Closed</div>
+                <div class="muted" style="font-size: 12.5px; margin-top: 4px;">
+                    The deadline for this assignment was {{ assignment.submission_deadline|date:"d M Y, h:i A" }}. New submissions are no longer accepted.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- FACULTY / ADMIN VIEW: Enrolled Students Submissions Roster -->
+{% if not is_student %}
+{% if is_admin or is_faculty %}
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-users"/></svg>
+            <span>Student Submissions Roster</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <span class="badge" style="background: var(--surface-2); font-weight: 700;">
+                {{ submitted_count }} / {{ enrolled_count }} Submitted
+            </span>
+            <span class="badge green" style="font-weight: 700;">
+                {{ evaluated_count }} Evaluated
+            </span>
+        </div>
+    </div>
+
+    <div class="card-body flush">
+        {% if submissions_list %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Roll No & Student</th>
+                        <th>Status</th>
+                        <th>Submitted File</th>
+                        <th>Submitted Date</th>
+                        <th style="text-align: right;">Marks Obtained</th>
+                        <th style="text-align: right;">%</th>
+                        <th>Feedback</th>
+                        <th style="text-align: right;">Evaluation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in submissions_list %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--ink);">{{ row.student.name }}</strong>
+                            <div class="muted" style="font-size: 11.5px;">{{ row.student.roll_no }} · SIF: {{ row.student.sif_number|default:"—" }}</div>
+                        </td>
+                        <td>
+                            {% if row.submission %}
+                                <span class="badge {{ row.submission.badge_class }}">
+                                    {{ row.submission.status }}
+                                </span>
+                            {% else %}
+                                <span class="badge">Not Submitted</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.submission and row.submission.submission_file %}
+                                <a href="{% url 'download_submission' row.submission.pk %}" class="btn btn-sm btn-ghost" title="Download File">
+                                    <svg class="icon-sm"><use href="#i-download"/></svg>
+                                    <span>{{ row.submission.file_basename|truncatechars:22 }}</span>
+                                </a>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.submission %}
+                                <div style="font-weight: 600; white-space: nowrap;">
+                                    {{ row.submission.submitted_at|date:"d M Y" }}
+                                </div>
+                                <div class="muted" style="font-size: 11px;">{{ row.submission.submitted_at|date:"h:i A" }}</div>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            {% if row.submission and row.submission.marks_obtained is not None %}
+                                <strong style="font-size: 14px;">{{ row.submission.marks_obtained }}</strong> / {{ assignment.max_marks }}
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            {% if row.submission and row.submission.percentage is not None %}
+                                <strong style="color: var(--brand);">{{ row.submission.percentage }}%</strong>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="muted" style="font-size: 12px; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ row.feedback }}">
+                            {{ row.feedback|default:"—" }}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            {% if row.submission %}
+                                <a href="{% url 'evaluate_submission' row.submission.pk %}" class="btn btn-sm btn-primary">
+                                    <svg class="icon-sm"><use href="#i-edit"/></svg>
+                                    <span>{% if row.submission.marks_obtained is not None %}Re-evaluate{% else %}Evaluate{% endif %}</span>
+                                </a>
+                            {% else %}
+                                <span class="muted" style="font-size: 12px;">Awaiting file</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty" style="padding: 36px 20px; text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 6px;">👥</div>
+                <div style="font-weight: 700;">No Enrolled Students</div>
+                <div class="muted" style="font-size: 12px;">No approved students are enrolled in {{ assignment.course.name }} (Year {{ assignment.year }}).</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% endblock %}

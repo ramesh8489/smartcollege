@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+{% block page_title %}Welcome, {{ faculty.name }}{% endblock %}
+{% block page_sub %}{{ faculty.department.name }} · {{ faculty.faculty_id }}{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="/analytics/faculty/"><svg class="icon icon-sm"><use href="#i-chart"/></svg> Class Analytics</a>
+    <a class="btn btn-primary" href="/faculty/attendance/"><svg class="icon icon-sm"><use href="#i-check"/></svg> Mark Attendance</a>
+    <a class="btn btn-soft" href="/faculty/marks/"><svg class="icon icon-sm"><use href="#i-edit"/></svg> Enter Marks</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Faculty Analytics Hub Card -->
+<div class="card mb" style="background: linear-gradient(135deg, #f0fdf4 0%, #eef2ff 100%); border: 1px solid #bbf7d0; display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <div class="stat-ico" style="background: #ffffff; color: var(--brand); box-shadow: var(--shadow-sm); width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;"><svg class="icon"><use href="#i-chart"/></svg></div>
+        <div>
+            <div style="font-weight: 800; font-size: 14.5px; color: var(--ink);">Faculty Teaching & Class Analytics</div>
+            <div class="muted" style="font-size: 12px;">Detailed subject performance diagnostics, student attendance compliance, and teaching workload.</div>
+        </div>
+    </div>
+    <a href="/analytics/faculty/" class="btn btn-primary btn-sm">Class Analytics &rarr;</a>
+</div>
+
+<div class="grid-4 mb">
+    <div class="stat"><div class="stat-ico"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+        <div><div class="stat-val">{{ total_students }}</div><div class="stat-label">School students</div></div></div>
+    <div class="stat"><div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-book"/></svg></div>
+        <div><div class="stat-val">{{ total_subjects }}</div><div class="stat-label">My subjects</div></div></div>
+    <div class="stat"><div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div><div class="stat-val">{{ average_attendance }}%</div><div class="stat-label">Average attendance</div></div></div>
+    <div class="stat"><div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-award"/></svg></div>
+        <div><div class="stat-val">{{ average_marks }}%</div><div class="stat-label">Average marks</div></div></div>
+</div>
+
+<div class="split">
+
+    <div class="card">
+        <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-chart"/></svg> Subject-wise performance</div></div>
+        <div class="card-body flush">
+            {% if subject_statistics %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Subject</th><th style="min-width:150px">Attendance</th><th style="min-width:150px">Avg marks</th></tr></thead>
+                    <tbody>
+                    {% for s in subject_statistics %}
+                        <tr>
+                            <td class="strong">{{ s.subject.name }}<div class="p-sub muted">{{ s.subject.code }}</div></td>
+                            <td>{% if s.attendance_percentage >= 75 %}{% include "_meter.html" with pct=s.attendance_percentage cls="good" %}{% elif s.attendance_percentage >= 60 %}{% include "_meter.html" with pct=s.attendance_percentage cls="mid" %}{% else %}{% include "_meter.html" with pct=s.attendance_percentage cls="low" %}{% endif %}</td>
+                            <td>{% if s.marks_percentage >= 75 %}{% include "_meter.html" with pct=s.marks_percentage cls="good" %}{% elif s.marks_percentage >= 60 %}{% include "_meter.html" with pct=s.marks_percentage cls="mid" %}{% else %}{% include "_meter.html" with pct=s.marks_percentage cls="low" %}{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="empty"><svg class="icon"><use href="#i-book"/></svg><b>No subjects yet</b>Ask the admin to assign you a subject.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Assignments & Coursework Management Card -->
+    <div class="card" style="margin-top: 20px;">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-file"/></svg>
+                <span>Assignments & Coursework</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <a class="btn btn-primary btn-sm" href="{% url 'assignment_create' %}" style="padding: 4px 10px; font-size: 12px;">
+                    <svg class="icon"><use href="#i-plus"/></svg>
+                    <span>Create</span>
+                </a>
+                <a class="link-arrow" href="{% url 'assignment_list' %}">Manage all ›</a>
+            </div>
+        </div>
+
+        <!-- Quick Summary Stats Strip -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line);">
+            <div style="background: var(--surface); padding: 10px 14px; text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700;">Assignments</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--ink);">{{ total_assignments_count }}</div>
+            </div>
+            <div style="background: var(--surface); padding: 10px 14px; text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700;">Submissions</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--brand);">{{ total_assignment_submissions }}</div>
+            </div>
+            <div style="background: var(--surface); padding: 10px 14px; text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700;">Pending Grading</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--warning);">{{ total_pending_submissions }}</div>
+            </div>
+            <div style="background: var(--surface); padding: 10px 14px; text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700;">Evaluated</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--success);">{{ total_evaluated_submissions }}</div>
+            </div>
+        </div>
+
+        <div class="card-body flush">
+            {% if faculty_assignments_summary %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Assignment Title</th>
+                            <th>Subject & Course</th>
+                            <th>Deadline</th>
+                            <th class="num">Submissions</th>
+                            <th class="num">Pending</th>
+                            <th class="num">Evaluated</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in faculty_assignments_summary|slice:":5" %}
+                        <tr>
+                            <td class="strong">
+                                <a href="{% url 'assignment_detail' item.assignment.pk %}" style="color: var(--brand); text-decoration: none;">
+                                    {{ item.assignment.title }}
+                                </a>
+                                <div class="p-sub muted">{{ item.assignment.assignment_type }}</div>
+                            </td>
+                            <td>
+                                <div class="strong">{{ item.assignment.subject.name }}</div>
+                                <div class="p-sub muted">{{ item.assignment.course.name }} (Yr {{ item.assignment.year }})</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: var(--ink);">{{ item.assignment.submission_deadline|date:"d M Y" }}</div>
+                                <div class="p-sub muted">{{ item.assignment.submission_deadline|date:"h:i A" }}</div>
+                            </td>
+                            <td class="num">
+                                <span class="badge blue">{{ item.submissions_count }}</span>
+                            </td>
+                            <td class="num">
+                                <span class="badge {% if item.pending_count > 0 %}amber{% else %}gray{% endif %}">{{ item.pending_count }}</span>
+                            </td>
+                            <td class="num">
+                                <span class="badge {% if item.evaluated_count > 0 %}green{% else %}gray{% endif %}">{{ item.evaluated_count }}</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'assignment_detail' item.assignment.pk %}" class="btn btn-soft btn-sm" style="padding: 4px 10px; font-size: 12px;">
+                                    Roster & Grade
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="empty">
+                    <svg class="icon"><use href="#i-file"/></svg>
+                    <b>No Assignments Created</b>Click "Create" to assign your first homework, project, lab record, or seminar.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Student Leave Management Section (Faculty) -->
+    <div class="card" style="margin-top: 20px;">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-calendar"/></svg> Student Leave Approvals
+            </div>
+            <a class="link-arrow" href="{% url 'faculty_leave_list' %}">Manage leaves ›</a>
+        </div>
+
+        <!-- Quick Summary Stats Strip -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line);">
+            <div style="background: var(--surface); padding: 10px 14px; text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700;">Pending Review</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--warn);">{{ student_leaves_pending_count }}</div>
+            </div>
+            <div style="background: var(--surface); padding: 10px 14px; text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700;">Approved / Endorsed</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--success);">{{ student_leaves_approved_count }}</div>
+            </div>
+            <div style="background: var(--surface); padding: 10px 14px; text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 700;">Rejected</div>
+                <div style="font-size: 18px; font-weight: 800; color: var(--danger);">{{ student_leaves_rejected_count }}</div>
+            </div>
+        </div>
+
+        <div class="card-body flush">
+            {% if recent_pending_student_leaves %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Course / Yr</th>
+                                <th>Leave Type</th>
+                                <th>Duration</th>
+                                <th>Dates</th>
+                                <th>Reason</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for l in recent_pending_student_leaves %}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 700; color: var(--ink);">{{ l.student.name }}</div>
+                                        <div class="p-sub muted">{{ l.student.roll_no }}</div>
+                                    </td>
+                                    <td>{{ l.student.course.name|default:"General" }} - Yr {{ l.student.year }}</td>
+                                    <td>
+                                        <span style="font-weight: 700; color: var(--ink-2);">{{ l.leave_type }}</span>
+                                    </td>
+                                    <td><span class="badge gray">{{ l.number_of_days }}d</span></td>
+                                    <td>{{ l.from_date|date:"d M" }} &rarr; {{ l.to_date|date:"d M Y" }}</td>
+                                    <td style="max-width: 180px;">
+                                        <div style="font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            {{ l.reason }}
+                                        </div>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <a href="{% url 'leave_detail' l.id %}" class="btn btn-primary btn-sm" id="btn-faculty-dash-review-{{ l.id }}" style="padding: 4px 10px; font-size: 12px;">
+                                            Review
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">
+                    <svg class="icon"><use href="#i-calendar"/></svg>
+                    <b>No Pending Student Leaves</b>There are currently no student leave requests awaiting your review.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="stack">
+
+    <!-- Upcoming Deadlines Card -->
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-clock"/></svg>
+                <span>Upcoming Deadlines</span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% for item in upcoming_deadlines %}
+                <div style="padding: 10px 0; border-bottom: 1px solid var(--line);">
+                    <a href="{% url 'assignment_detail' item.assignment.pk %}" style="font-weight: 700; color: var(--ink); text-decoration: none; font-size: 13.5px; display: block;">
+                        {{ item.assignment.title }}
+                    </a>
+                    <div class="muted" style="font-size: 12px; margin-top: 2px;">
+                        {{ item.assignment.subject.name }} · {{ item.assignment.course.name }}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                        <span class="badge amber" style="font-size: 11px;">
+                            Due: {{ item.assignment.submission_deadline|date:"d M, h:i A" }}
+                        </span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--brand);">
+                            {{ item.submissions_count }} submitted
+                        </span>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="muted" style="font-size: 13px;">No upcoming assignment deadlines.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+        <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-calendar"/></svg> Schedule</div></div>
+            <div class="card-body stack">
+                <a class="btn btn-ghost btn-block" href="/timetable/my-timetable/"><svg class="icon icon-sm"><use href="#i-calendar"/></svg> My weekly timetable</a>
+                {% if is_incharge %}
+                    <a class="btn btn-soft btn-block" href="/timetable/incharge/"><svg class="icon icon-sm"><use href="#i-layers"/></svg> Timetable Builder (School Incharge)</a>
+                {% endif %}
+                <a class="btn btn-ghost btn-block" href="/timetable/circulars/"><svg class="icon icon-sm"><use href="#i-bell"/></svg> Circulars</a>
+                <a class="btn btn-ghost btn-block" href="/faculty/profile/"><svg class="icon icon-sm"><use href="#i-user"/></svg> My profile</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-bell"/></svg> Latest circulars</div></div>
+            <div class="card-body">
+                {% for c in recent_circulars %}
+                    <div class="note" style="margin-bottom:10px">
+                        <h3 style="font-size:13.5px">{{ c.title }}</h3>
+                        <div class="meta">{{ c.posted_at|date:"d M" }}</div>
+                        <p style="font-size:12.5px">{{ c.message|truncatechars:110 }}</p>
+                    </div>
+                {% empty %}
+                    <div class="muted" style="font-size:13px">No circulars posted yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hostel Reports &amp; Exports · Smart College{% endblock %}
+{% block topbar_title %}Hostel Reports{% endblock %}
+
+{% block page_title %}Hostel Audit Reports &amp; Data Exports{% endblock %}
+{% block page_sub %}
+    Generate audit-ready spreadsheets and formatted PDF rosters for hostel capacity, resident allotments, nightly roll calls, fees, maintenance, and visitor logs.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_dashboard' %}">&larr; Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Scope / Filter Bar -->
+<div class="card mb" style="padding: 18px 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <svg class="icon icon-md" style="color: var(--brand);"><use href="#i-filter"/></svg>
+            <div>
+                <label for="hostel-filter" style="font-size: 13px; font-weight: 600; color: var(--ink); display: block;">Report Scope &amp; Target Hostel</label>
+                <div style="font-size: 11.5px; color: var(--muted);">Select a specific hostel or download aggregated reports across all assigned facilities.</div>
+            </div>
+        </div>
+        <div style="min-width: 250px;">
+            <select id="hostel-filter" class="select" style="width: 100%;">
+                <option value="">All Assigned Hostels</option>
+                {% for h in hostels %}
+                    <option value="{{ h.id }}">{{ h.name }} ({{ h.code }})</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Reports Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;">
+    {% for r in reports %}
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid var(--brand-600); transition: transform 0.2s, box-shadow 0.2s;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge blue" style="font-size: 11px; padding: 2px 8px;">{{ r.badge }}</span>
+                <span style="font-family: monospace; font-size: 11px; color: var(--muted); text-transform: uppercase;">ID: {{ r.id }}</span>
+            </div>
+            <h3 style="font-size: 16.5px; font-weight: 700; color: var(--ink); margin: 0 0 8px 0;">
+                {{ r.name }}
+            </h3>
+            <p style="font-size: 13px; color: var(--muted); line-height: 1.45; margin: 0 0 16px 0;">
+                {{ r.desc }}
+            </p>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 12px; display: flex; gap: 10px;">
+            <a href="{% url r.excel_url %}" class="btn btn-outline export-link export-excel" style="flex: 1; justify-content: center; font-size: 12.5px; font-weight: 600; color: #16a34a; border-color: #86efac;" title="Download spreadsheet">
+                <svg class="icon icon-sm"><use href="#i-file"/></svg> Excel (.xlsx)
+            </a>
+            <a href="{% url r.pdf_url %}" class="btn btn-outline export-link export-pdf" style="flex: 1; justify-content: center; font-size: 12.5px; font-weight: 600; color: #dc2626; border-color: #fca5a5;" title="Download printable PDF">
+                <svg class="icon icon-sm"><use href="#i-printer"/></svg> PDF (.pdf)
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var select = document.getElementById("hostel-filter");
+        var links = document.querySelectorAll(".export-link");
+
+        function updateExportUrls() {
+            var hostelId = select.value;
+            links.forEach(function(link) {
+                var url = new URL(link.href, window.location.origin);
+                if (hostelId) {
+                    url.searchParams.set("hostel", hostelId);
+                } else {
+                    url.searchParams.delete("hostel");
+                }
+                link.href = url.pathname + url.search;
+            });
+        }
+
+        select.addEventListener("change", updateExportUrls);
+        updateExportUrls();
+    });
+</script>
+{% endblock %}

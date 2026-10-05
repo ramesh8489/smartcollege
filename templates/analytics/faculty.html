@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Faculty Workload Analytics{% endblock %}
+{% block topbar_title %}Faculty Workload{% endblock %}
+
+{% block page_title %}Faculty Workload & Performance Analytics{% endblock %}
+
+{% block page_sub %}
+Faculty teaching load, weekly timetable allocations, attendance delivery, and student mastery &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Updated {{ scope.generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="/analytics/export/excel/?type=faculty&{{ export_params }}">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg> Export Faculty Excel
+    </a>
+    <a class="btn btn-ghost" href="/analytics/export/pdf/?type=faculty&{{ export_params }}" target="_blank">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> PDF Report
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "analytics/_nav_tabs.html" %}
+{% include "analytics/_filter_bar.html" %}
+
+{# Faculty KPI summary #}
+<div class="grid grid-3 mb">
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+        <div>
+            <div class="stat-val">{{ faculty_data.total_faculty }}</div>
+            <div class="stat-label">Total Faculty Roster</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div>
+            <div class="stat-val">{{ faculty_data.active_faculty }}</div>
+            <div class="stat-label">Active Teaching Staff</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-award"/></svg></div>
+        <div>
+            <div class="stat-val">{{ faculty_data.by_school|length }}</div>
+            <div class="stat-label">Schools / Academic Departments</div>
+        </div>
+    </div>
+</div>
+
+{# Faculty Workload Table #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-award"/></svg>
+            <span>Teaching Workload & Student Engagement Diagnostics</span>
+        </div>
+        <span class="badge gray">{{ faculty_data.workload_table|length }} Faculty Member(s)</span>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Faculty Member</th>
+                        <th>School / Dept</th>
+                        <th>Assigned Subjects</th>
+                        <th class="num">Weekly Periods</th>
+                        <th class="num">Students Handled</th>
+                        <th class="num">Attendance Taken</th>
+                        <th class="num">Student Avg Mark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in page_obj %}
+                    <tr>
+                        <td class="strong">
+                            <div class="person">
+                                <div class="avatar" style="width: 32px; height: 32px; font-size: 12px; background: linear-gradient(135deg, #3b82f6, #6366f1);">
+                                    {{ item.name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <div class="p-name">{{ item.name }}</div>
+                                    <div class="p-sub">{{ item.designation }} &middot; <code>{{ item.faculty_id }}</code></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ item.department }}</td>
+                        <td>
+                            <div style="font-size: 12.5px; font-weight: 600;">{{ item.subjects_count }} Subject(s)</div>
+                            <div class="muted" style="font-size: 11px;">
+                                {% for s in item.subjects_names|slice:":3" %}
+                                    <span>{{ s }}{% if not forloop.last %}, {% endif %}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="num">
+                            <b style="font-size: 15px; color: var(--brand-700);">{{ item.weekly_periods }}</b>
+                            <span class="muted" style="font-size: 11px;">/week</span>
+                        </td>
+                        <td class="num">
+                            <span class="badge gray" style="font-size: 12px; font-weight: 700;">{{ item.students_handled }}</span>
+                        </td>
+                        <td class="num">{{ item.attendance_taken }}</td>
+                        <td class="num">
+                            {% if item.avg_student_performance is not None %}
+                                <span class="badge {% if item.avg_student_performance >= 75 %}violet{% elif item.avg_student_performance >= 50 %}green{% else %}amber{% endif %}" style="font-size: 12px;">
+                                    {{ item.avg_student_performance }}%
+                                </span>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty">
+                                <svg class="icon"><use href="#i-award"/></svg>
+                                <b>No Faculty Records Found</b>
+                                <span>No teaching staff match the active filters.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Pagination #}
+        {% if page_obj.has_other_pages %}
+        <div class="pagination">
+            <span class="muted">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <div class="pages">
+                {% if page_obj.has_previous %}
+                    <a class="page-btn" href="?page={{ page_obj.previous_page_number }}{% if export_params %}&{{ export_params }}{% endif %}">&larr;</a>
+                {% endif %}
+                <span class="page-btn active">{{ page_obj.number }}</span>
+                {% if page_obj.has_next %}
+                    <a class="page-btn" href="?page={{ page_obj.next_page_number }}{% if export_params %}&{{ export_params }}{% endif %}">&rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

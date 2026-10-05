@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transport Passes · Smart College{% endblock %}
+{% block topbar_title %}Pass Roster{% endblock %}
+
+{% block page_title %}Transport Passes Registry{% endblock %}
+{% block page_sub %}Issued digital bus passes, validity dates, QR verification tokens, and PDF downloads.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    <!-- Filter Toolbar -->
+    <form method="get" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search pass no, student name, roll no..." class="form-control" style="max-width: 320px;">
+        <select name="status" class="form-control" style="max-width: 180px;">
+            <option value="">All Statuses</option>
+            <option value="ACTIVE" {% if status == 'ACTIVE' %}selected{% endif %}>Active</option>
+            <option value="EXPIRED" {% if status == 'EXPIRED' %}selected{% endif %}>Expired</option>
+            <option value="CANCELLED" {% if status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+        </select>
+        <button type="submit" class="btn btn-ghost">
+            <svg class="icon icon-sm"><use href="#i-filter"/></svg> Filter
+        </button>
+        {% if q or status %}
+            <a href="{% url 'transport:admin_passes' %}" class="btn btn-ghost" style="color: var(--muted);">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if page_obj %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Pass Number</th>
+                    <th>Roll No</th>
+                    <th>Student Name</th>
+                    <th>Bus</th>
+                    <th>Route</th>
+                    <th>Boarding Stop</th>
+                    <th>Issue Date</th>
+                    <th>Expiry Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in page_obj %}
+                <tr>
+                    <td><code><a href="{% url 'transport:admin_pass_detail' p.pk %}">{{ p.pass_number }}</a></code></td>
+                    <td><code>{{ p.student.roll_no }}</code></td>
+                    <td class="strong">{{ p.student.name }}</td>
+                    <td>{{ p.allocation.vehicle.vehicle_number }}</td>
+                    <td>{{ p.allocation.route.code }}</td>
+                    <td>{{ p.allocation.stop.stop_name }}</td>
+                    <td>{{ p.issue_date|date:"d M Y" }}</td>
+                    <td>{{ p.expiry_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if p.is_valid %}
+                            <span class="badge green">Valid</span>
+                        {% else %}
+                            <span class="badge red">{{ p.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 6px;">
+                            <a href="{% url 'transport:admin_pass_detail' p.pk %}" class="btn btn-ghost btn-sm">View</a>
+                            <a href="{% url 'transport:admin_pass_pdf' p.pk %}" class="btn btn-ghost btn-sm" title="Download PDF Pass">PDF</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}" class="btn btn-ghost btn-sm">&larr; Prev</a>
+        {% endif %}
+        <span class="muted" style="align-self: center; font-size: 13px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}" class="btn btn-ghost btn-sm">Next &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🎫</div>
+        <h3>No Passes Found</h3>
+        <p class="muted">No transport passes match your search.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

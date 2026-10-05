@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Student Leaves · Smart College{% endblock %}
+{% block topbar_title %}Student Leaves Review{% endblock %}
+
+{% block page_title %}Student Leave Approvals{% endblock %}
+{% block page_sub %}
+    Review, endorse, or reject leave applications submitted by students in your assigned subjects and department.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="/faculty/">
+        &larr; Faculty Dashboard
+    </a>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--danger);">{{ message }}</div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--success); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--success);">{{ message }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Quick KPI Cards -->
+<div class="stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--warn-50); color: var(--warn); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-clock"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--warn);">{{ pending_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Pending Review</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--success-50); color: var(--success); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--success);">{{ approved_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Forwarded / Approved</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--danger-50); color: var(--danger); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-trash"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--danger);">{{ rejected_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Rejected Requests</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs & Search -->
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
+    <div style="display: flex; gap: 6px; background: var(--surface-2); padding: 4px; border-radius: 10px; border: 1px solid var(--line);">
+        <a href="?tab=pending{% if search_q %}&q={{ search_q }}{% endif %}" class="btn btn-sm {% if tab == 'pending' %}btn-primary{% else %}btn-ghost{% endif %}">
+            Awaiting My Review ({{ pending_count }})
+        </a>
+        <a href="?tab=approved{% if search_q %}&q={{ search_q }}{% endif %}" class="btn btn-sm {% if tab == 'approved' %}btn-primary{% else %}btn-ghost{% endif %}">
+            Approved ({{ approved_count }})
+        </a>
+        <a href="?tab=rejected{% if search_q %}&q={{ search_q }}{% endif %}" class="btn btn-sm {% if tab == 'rejected' %}btn-primary{% else %}btn-ghost{% endif %}">
+            Rejected ({{ rejected_count }})
+        </a>
+    </div>
+
+    <form method="get" action="." style="display: flex; gap: 8px;">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <input type="text" name="q" value="{{ search_q }}" placeholder="Search by student name or roll..." class="input" style="width: 250px; padding: 7px 12px;">
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        {% if search_q %}
+            <a href="?tab={{ tab }}" class="btn btn-ghost btn-sm">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Leave Items Card -->
+<div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);">
+    {% if tab == 'pending' %}
+        {% if pending_leaves %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Class / School</th>
+                            <th>Leave Type</th>
+                            <th>Duration</th>
+                            <th>Dates</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Quick Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in pending_leaves %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700; color: var(--ink);">{{ l.student.name }}</div>
+                                    <div style="font-size: 12px; color: var(--muted);">{{ l.student.roll_no }}</div>
+                                </td>
+                                <td>
+                                    <div style="font-size: 13px; font-weight: 600; color: var(--ink);">{{ l.student.course.name|default:"General" }} - Yr {{ l.student.year }}</div>
+                                    <div style="font-size: 11.5px; color: var(--muted);">{{ l.student.department.name }}</div>
+                                </td>
+                                <td>
+                                    <span style="font-weight: 700; color: var(--ink-2);">{{ l.leave_type }}</span>
+                                    {% if l.supporting_document %}
+                                        <div>
+                                            <a href="{% url 'download_leave_document' l.id %}" target="_blank" style="font-size: 11px; color: var(--brand); font-weight: 600;">
+                                                View Attachment
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge gray">{{ l.number_of_days }} day{% if l.number_of_days > 1 %}s{% endif %}</span>
+                                </td>
+                                <td>
+                                    <div style="font-size: 12.5px;">{{ l.from_date|date:"d M" }} &rarr; {{ l.to_date|date:"d M Y" }}</div>
+                                </td>
+                                <td style="max-width: 200px;">
+                                    <div style="font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ l.reason }}">
+                                        {{ l.reason }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge {{ l.status_badge_class }}">{{ l.status }}</span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 6px;">
+                                        <a href="{% url 'leave_detail' l.id %}" class="btn btn-primary btn-sm" id="btn-review-{{ l.id }}">
+                                            Review
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="padding: 48px; text-align: center; color: var(--muted);">
+                <div style="font-size: 32px; margin-bottom: 8px;">✓</div>
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px;">All Caught Up!</h4>
+                <p style="font-size: 13.5px;">No pending student leave requests require your review at this time.</p>
+            </div>
+        {% endif %}
+
+    {% elif tab == 'approved' %}
+        {% if approved_leaves %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Class</th>
+                            <th>Leave Type</th>
+                            <th>Duration</th>
+                            <th>Dates</th>
+                            <th>Current Status</th>
+                            <th>Faculty Remarks</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in approved_leaves %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700; color: var(--ink);">{{ l.student.name }}</div>
+                                    <div style="font-size: 12px; color: var(--muted);">{{ l.student.roll_no }}</div>
+                                </td>
+                                <td>{{ l.student.course.name|default:"General" }} - Yr {{ l.student.year }}</td>
+                                <td>{{ l.leave_type }}</td>
+                                <td><span class="badge gray">{{ l.number_of_days }}d</span></td>
+                                <td>{{ l.from_date|date:"d M" }} &rarr; {{ l.to_date|date:"d M Y" }}</td>
+                                <td><span class="badge {{ l.status_badge_class }}">{{ l.status }}</span></td>
+                                <td style="max-width: 200px; font-size: 12.5px; color: var(--ink-2);">{{ l.faculty_remarks|default:"—" }}</td>
+                                <td>
+                                    <a href="{% url 'leave_detail' l.id %}" class="btn btn-ghost btn-sm">Details</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="padding: 48px; text-align: center; color: var(--muted);">
+                No approved leave records found.
+            </div>
+        {% endif %}
+
+    {% else %}
+        {% if rejected_leaves %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Class</th>
+                            <th>Leave Type</th>
+                            <th>Duration</th>
+                            <th>Dates</th>
+                            <th>Status</th>
+                            <th>Rejection Remarks</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in rejected_leaves %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700; color: var(--ink);">{{ l.student.name }}</div>
+                                    <div style="font-size: 12px; color: var(--muted);">{{ l.student.roll_no }}</div>
+                                </td>
+                                <td>{{ l.student.course.name|default:"General" }} - Yr {{ l.student.year }}</td>
+                                <td>{{ l.leave_type }}</td>
+                                <td><span class="badge gray">{{ l.number_of_days }}d</span></td>
+                                <td>{{ l.from_date|date:"d M" }} &rarr; {{ l.to_date|date:"d M Y" }}</td>
+                                <td><span class="badge red">{{ l.status }}</span></td>
+                                <td style="max-width: 220px; font-size: 12.5px; color: var(--danger);">{{ l.faculty_remarks|default:"—" }}</td>
+                                <td>
+                                    <a href="{% url 'leave_detail' l.id %}" class="btn btn-ghost btn-sm">Details</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="padding: 48px; text-align: center; color: var(--muted);">
+                No rejected leave records found.
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+{% endblock %}

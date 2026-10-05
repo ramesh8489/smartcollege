@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Route {{ route.code }} · Smart College{% endblock %}
+{% block topbar_title %}Route Specifications{% endblock %}
+
+{% block page_title %}{{ route.code }} &middot; {{ route.name }}{% endblock %}
+{% block page_sub %}
+    Coverage: {{ route.start_point }} &rarr; {{ route.destination }} &middot;
+    Status:
+    {% if route.is_active %}
+        <span class="badge green">Active</span>
+    {% else %}
+        <span class="badge gray">Inactive</span>
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-secondary" href="{% url 'transport:admin_route_update' route.pk %}">
+        <svg class="icon"><use href="#i-edit"/></svg> Edit Route
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_routes' %}">&larr; Back to Routes</a>
+{% endblock %}
+
+{% block content %}
+<!-- Route Summary Grid -->
+<div class="grid grid-4" style="gap: 16px; margin-bottom: 24px;">
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Assigned Bus</div>
+        <div style="font-size: 20px; font-weight: 800; color: #2563eb; margin-top: 4px;">
+            {% if route.assigned_vehicle %}
+                <a href="{% url 'transport:admin_vehicle_detail' route.assigned_vehicle.pk %}">{{ route.assigned_vehicle.vehicle_number }}</a>
+            {% else %}
+                <span class="badge red">None</span>
+            {% endif %}
+        </div>
+        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">
+            {% if route.assigned_vehicle %}{{ route.assigned_vehicle.bus_name }}{% else %}Unassigned{% endif %}
+        </div>
+    </div>
+
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Total Stops</div>
+        <div style="font-size: 22px; font-weight: 800; color: var(--ink); margin-top: 4px;">{{ stops.count }}</div>
+        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">Pickup & drop stations</div>
+    </div>
+
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Active Students</div>
+        <div style="font-size: 22px; font-weight: 800; color: #059669; margin-top: 4px;">{{ allocations.count }}</div>
+        <div class="muted" style="font-size: 11.5px; margin-top: 2px;">Allocated passengers</div>
+    </div>
+
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Seating Available</div>
+        {% if route.assigned_vehicle and route.assigned_vehicle.available_seats > 0 %}
+        <div style="font-size: 22px; font-weight: 800; color: #059669; margin-top: 4px;">
+            {{ route.assigned_vehicle.available_seats }} <span class="muted" style="font-size: 12px; font-weight: 500;">/ {{ route.assigned_vehicle.seating_capacity }}</span>
+        </div>
+        {% elif route.assigned_vehicle %}
+        <div style="font-size: 22px; font-weight: 800; color: #dc2626; margin-top: 4px;">
+            0 <span class="muted" style="font-size: 12px; font-weight: 500;">/ {{ route.assigned_vehicle.seating_capacity }}</span>
+        </div>
+        {% else %}
+        <div style="font-size: 22px; font-weight: 800; color: #dc2626; margin-top: 4px;">
+            -
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+    <!-- Main Column: Ordered Stops -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <div class="card" style="padding: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-layers"/></svg>
+                    <span>Route Stops & Timetable ({{ stops.count }})</span>
+                </div>
+                <a href="{% url 'transport:admin_stop_create' route.pk %}" class="btn btn-primary btn-sm">+ Add Stop</a>
+            </div>
+
+            {% if stops %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Stop Name</th>
+                            <th>Code</th>
+                            <th>Morning Pickup</th>
+                            <th>Evening Drop</th>
+                            <th>Distance</th>
+                            <th>Fare</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in stops %}
+                        <tr>
+                            <td><span class="badge gray">{{ s.stop_order }}</span></td>
+                            <td class="strong">{{ s.stop_name }}</td>
+                            <td><code>{{ s.stop_code|default:"-" }}</code></td>
+                            <td>{{ s.pickup_time|time:"h:i A" }}</td>
+                            <td>{{ s.drop_time|time:"h:i A" }}</td>
+                            <td>{% if s.distance_km %}{{ s.distance_km }} km{% else %}-{% endif %}</td>
+                            <td>₹{{ s.fare_amount|floatformat:2 }}</td>
+                            <td>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="{% url 'transport:admin_stop_update' s.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                                    <form method="post" action="{% url 'transport:admin_stop_delete' s.pk %}" onsubmit="return confirm('Remove stop {{ s.stop_name }}?');" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-ghost btn-sm" style="color: #dc2626;">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 30px; text-align: center; color: var(--muted);">
+                No stops added to this route yet. Click "+ Add Stop" to configure pickup points.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Allocated Students Table -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-users"/></svg>
+                    <span>Allocated Students on Route {{ route.code }} ({{ allocations.count }})</span>
+                </div>
+                <a href="{% url 'transport:admin_allocation_create' %}?route={{ route.id }}" class="btn btn-ghost btn-sm">+ Allocate Student</a>
+            </div>
+
+            {% if allocations %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Roll No</th>
+                            <th>Student Name</th>
+                            <th>Stop</th>
+                            <th>Bus</th>
+                            <th>Seat</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in allocations %}
+                        <tr>
+                            <td><code>{{ a.student.roll_no }}</code></td>
+                            <td class="strong">{{ a.student.name }}</td>
+                            <td>{{ a.stop.stop_name }}</td>
+                            <td>{{ a.vehicle.vehicle_number }}</td>
+                            <td><span class="badge gray">{{ a.seat_number|default:"Open" }}</span></td>
+                            <td>
+                                <a href="{% url 'transport:admin_allocation_detail' a.pk %}" class="btn btn-ghost btn-sm">Details</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 24px; text-align: center; color: var(--muted); font-size: 13px;">
+                No students currently allocated to this route.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Operating Staff Card -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+                <svg class="icon"><use href="#i-user"/></svg>
+                <span>Operating Crew</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+                <div>
+                    <div class="muted" style="font-size: 11px; text-transform: uppercase;">Assigned Driver</div>
+                    {% if driver %}
+                        <div class="strong" style="font-size: 14px; margin-top: 2px;">{{ driver.name }}</div>
+                        <div class="muted" style="font-size: 11.5px;">Phone: {{ driver.phone }} &middot; Lic: {{ driver.licence_number }}</div>
+                    {% else %}
+                        <div class="muted" style="font-style: italic; margin-top: 2px;">No driver linked to bus.</div>
+                    {% endif %}
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 10px;">
+                    <div class="muted" style="font-size: 11px; text-transform: uppercase;">Assigned Conductor(s)</div>
+                    {% if conductors %}
+                        {% for c in conductors %}
+                            <div class="strong" style="margin-top: 4px;">{{ c.name }}</div>
+                            <div class="muted" style="font-size: 11.5px;">Phone: {{ c.phone }}</div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="muted" style="font-style: italic; margin-top: 2px;">No conductors assigned.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Description Card -->
+        {% if route.description %}
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 10px; font-size: 13.5px;">Route Description</div>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin: 0;">{{ route.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Log Hostel Complaint · Smart College{% endblock %}
+{% block topbar_title %}Log Complaint{% endblock %}
+
+{% block page_title %}Report Hostel Maintenance Issue{% endblock %}
+{% block page_sub %}
+    Submit electrical, plumbing, carpentry, cleaning, internet, or room repair requests to the hostel warden.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:student_complaint_list' %}">&larr; Back to Complaints</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if allocation %}
+<div class="card mb" style="max-width: 680px; margin: 0 auto 20px; padding: 16px 20px; background: var(--surface-alt, #f8fafc);">
+    <div style="font-size: 13px; color: var(--ink);">
+        Reporting for your active accommodation: <strong>{{ allocation.hostel.name }}</strong> · Room <strong>{{ allocation.room.room_number }}</strong> (Bed {{ allocation.bed.bed_number }})
+    </div>
+</div>
+{% endif %}
+
+<div class="card" style="max-width: 680px; margin: 0 auto; padding: 28px 32px;">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div style="background: var(--danger-subtle, #fef2f2); border-left: 4px solid var(--danger, #dc2626); padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
+                {% for err in form.non_field_errors %}
+                    <div style="color: var(--danger, #dc2626); font-weight: 500;">{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label class="label">{{ form.category.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.category.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div>
+                <label class="label">{{ form.priority.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.priority }}
+                {% if form.priority.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.priority.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="label">{{ form.title.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.title.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="label">{{ form.description.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.description.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label class="label">{{ form.attachment.label }} (Optional Photo / Document)</label>
+            {{ form.attachment }}
+            {% if form.attachment.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.attachment.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <a href="{% url 'hostel:student_complaint_list' %}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-check"/></svg> Submit Complaint Ticket
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

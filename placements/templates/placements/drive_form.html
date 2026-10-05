@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action_title }} · Training & Placements{% endblock %}
+{% block topbar_title %}Placements · Recruitment Drives{% endblock %}
+
+{% block page_title %}{{ action_title }}{% endblock %}
+{% block page_sub %}Configure recruitment drive parameters, eligibility thresholds, salary packages, and timeline.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'drive_list' %}" class="btn btn-ghost">
+        ← Back to Drives
+    </a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-calendar"/></svg>
+                <span>{{ action_title }}</span>
+            </div>
+            {% if drive %}
+                <span class="badge {% if drive.status == 'Open' %}green{% elif drive.status == 'Completed' %}blue{% else %}amber{% endif %}">
+                    {{ drive.status }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+            {% if form.errors %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 20px; background: var(--surface);">
+                    <div style="font-weight: 700; color: var(--danger); margin-bottom: 6px;">Please correct the following errors:</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--danger);">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <!-- Section 1: Job Specification -->
+                <div style="margin-bottom: 28px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        1. Job Role & Corporate Partner
+                    </div>
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.company.id_for_label }}">
+                                Recruiting Company <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.company }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.job_title.id_for_label }}">
+                                Job Title / Role <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.job_title }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.employment_type.id_for_label }}">
+                                Employment Type <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.employment_type }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.job_location.id_for_label }}">
+                                Work Location <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.job_location }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.salary_package.id_for_label }}">
+                                Salary Package / CTC Display <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.salary_package }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">e.g. 7.5 LPA or 40,000/month stipend</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.salary_lpa.id_for_label }}">
+                                CTC in LPA (Numeric for analytics)
+                            </label>
+                            {{ form.salary_lpa }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.job_description.id_for_label }}">
+                                Job Description & Key Responsibilities
+                            </label>
+                            {{ form.job_description }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Automated Eligibility Rules -->
+                <div style="margin-bottom: 28px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        2. Automated Eligibility Criteria
+                    </div>
+                    <div class="grid grid-3" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.minimum_percentage.id_for_label }}">
+                                Minimum Aggregate % <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.minimum_percentage }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">Evaluated against student exams/marks</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.maximum_backlogs.id_for_label }}">
+                                Max Standing Backlogs <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.maximum_backlogs }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">0 = No current standing arrears</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.eligible_year.id_for_label }}">
+                                Eligible Year of Study <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.eligible_year }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">4 for Final Year, 0 for All Years</div>
+                        </div>
+
+                        <div class="field" style="grid-column: span 1;">
+                            <label for="{{ form.eligible_departments.id_for_label }}">
+                                Eligible Departments
+                            </label>
+                            {{ form.eligible_departments }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">Leave unselected to allow all departments</div>
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.eligible_courses.id_for_label }}">
+                                Eligible Courses / Degrees
+                            </label>
+                            {{ form.eligible_courses }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">Leave unselected to allow all degrees</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Schedule, Vacancies & Selection Process -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        3. Schedule & Selection Workflow
+                    </div>
+                    <div class="grid grid-3" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.application_start_date.id_for_label }}">
+                                Application Start Date <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.application_start_date }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.application_deadline.id_for_label }}">
+                                Application Deadline <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.application_deadline }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.drive_date.id_for_label }}">
+                                Drive / Assessment Date <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.drive_date }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.drive_location.id_for_label }}">
+                                Drive Venue / Online Link
+                            </label>
+                            {{ form.drive_location }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.vacancies_count.id_for_label }}">
+                                Estimated Vacancies
+                            </label>
+                            {{ form.vacancies_count }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.status.id_for_label }}">
+                                Drive Publishing Status <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.status }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 3;">
+                            <label for="{{ form.selection_process.id_for_label }}">
+                                Selection Process Rounds
+                            </label>
+                            {{ form.selection_process }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">E.g.: 1. Online Aptitude & Coding Test, 2. Technical Interview, 3. HR Round</div>
+                        </div>
+
+                        <div class="field" style="grid-column: span 3;">
+                            <label for="{{ form.description.id_for_label }}">
+                                Instructions / Guidelines for Candidates
+                            </label>
+                            {{ form.description }}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line);">
+                    <a href="{% url 'drive_list' %}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-primary" id="btn-save-drive">
+                        <svg class="icon"><use href="#i-check"/></svg>
+                        <span>Publish Placement Drive</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

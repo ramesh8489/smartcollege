@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Enter Marks{% endblock %}
+{% block topbar_title %}Enter Marks{% endblock %}
+{% block page_title %}Enter Marks{% endblock %}
+{% block page_sub %}Select your degree and year. Only subjects assigned to you for that exact class will be available.{% endblock %}
+
+{% block content %}
+
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+{% if saved_count %}<div class="alert alert-success">Saved marks for {{ saved_count }} student{{ saved_count|pluralize }}.</div>{% endif %}
+
+{% if not courses %}
+<div class="card"><div class="empty"><svg class="icon"><use href="#i-book"/></svg><b>No classes assigned</b>Your school incharge has not assigned you to a class yet.</div></div>
+{% else %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="get" class="form-grid" id="marksFilter">
+            <div class="field">
+                <label for="course">Degree</label>
+                <select class="select" id="course" name="course" required onchange="document.getElementById('marksFilter').submit()">
+                    <option value="">Select degree</option>
+                    {% for c in courses %}
+                    <option value="{{ c.id }}" {% if selected_course and selected_course.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="year">Class / Year</label>
+                <select class="select" id="year" name="year" required {% if not selected_course %}disabled{% endif %} onchange="document.getElementById('marksFilter').submit()">
+                    <option value="">Select year</option>
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>Year {{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="subject">Assigned Subject</label>
+                <select class="select" id="subject" name="subject" required {% if not selected_year %}disabled{% endif %}>
+                    <option value="">Select subject</option>
+                    {% for s in subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject and selected_subject.id == s.id %}selected{% endif %}>{{ s.name }} ({{ s.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button class="btn btn-primary" type="submit" style="align-self:end">Load class</button>
+        </form>
+        {% if selected_year and not subjects %}
+        <div class="alert alert-error" style="margin-top:14px">No subject is assigned to you for this degree/year.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if selected_subject %}
+<div class="card">
+    <div class="card-head">
+        <div class="card-title"><svg class="icon"><use href="#i-edit"/></svg> {{ selected_course.name }} — Year {{ selected_year }}</div>
+        <span class="badge">{{ selected_subject.name }}</span>
+    </div>
+
+    <div class="card-body">
+        {% if roster %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="course" value="{{ selected_course.id }}">
+            <input type="hidden" name="year" value="{{ selected_year }}">
+            <input type="hidden" name="subject" value="{{ selected_subject.id }}">
+
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Roll No</th>
+                            <th>Student</th>
+                            <th class="num">CAT 1 Exam<br><span class="muted">(40)</span></th>
+                            <th class="num">CAT 1 Assignment<br><span class="muted">(10)</span></th>
+                            <th class="num">CAT 2 Exam<br><span class="muted">(40)</span></th>
+                            <th class="num">CAT 2 Assignment<br><span class="muted">(10)</span></th>
+                            <th class="num">CAT 3 Exam<br><span class="muted">(40)</span></th>
+                            <th class="num">CAT 3 Assignment<br><span class="muted">(10)</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in roster %}
+                        <tr>
+                            <td>{{ row.student.roll_no }}</td>
+                            <td class="strong">{{ row.student.name }}</td>
+                            <td class="num"><input class="input" style="width:72px;text-align:center" type="number" min="0" max="40" name="cat_1_{{ row.student.id }}" value="{{ row.mark.cat_1|default_if_none:'' }}"></td>
+                            <td class="num"><input class="input" style="width:72px;text-align:center" type="number" min="0" max="10" name="cat_1_assignment_{{ row.student.id }}" value="{{ row.mark.cat_1_assignment|default_if_none:'' }}"></td>
+                            <td class="num"><input class="input" style="width:72px;text-align:center" type="number" min="0" max="40" name="cat_2_{{ row.student.id }}" value="{{ row.mark.cat_2|default_if_none:'' }}"></td>
+                            <td class="num"><input class="input" style="width:72px;text-align:center" type="number" min="0" max="10" name="cat_2_assignment_{{ row.student.id }}" value="{{ row.mark.cat_2_assignment|default_if_none:'' }}"></td>
+                            <td class="num"><input class="input" style="width:72px;text-align:center" type="number" min="0" max="40" name="cat_3_{{ row.student.id }}" value="{{ row.mark.cat_3|default_if_none:'' }}"></td>
+                            <td class="num"><input class="input" style="width:72px;text-align:center" type="number" min="0" max="10" name="cat_3_assignment_{{ row.student.id }}" value="{{ row.mark.cat_3_assignment|default_if_none:'' }}"></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn btn-primary" type="submit" style="margin-top:16px"><svg class="icon icon-sm"><use href="#i-check"/></svg> Save marks</button>
+            <span class="muted" style="font-size:12.5px;margin-left:10px">CAT Exam = 40 + Assignment = 10. Each CAT total = 50.</span>
+        </form>
+        {% else %}
+        <div class="empty"><svg class="icon"><use href="#i-inbox"/></svg><b>No approved students in this class yet</b></div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

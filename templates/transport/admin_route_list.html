@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Routes & Schedules · Smart College{% endblock %}
+{% block topbar_title %}Route Directory{% endblock %}
+
+{% block page_title %}Transit Routes & Pickup Stops{% endblock %}
+{% block page_sub %}Manage college commuter routes, assigned buses, driver assignments, and designated boarding points.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_route_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> Create Route
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    <!-- Filter Toolbar -->
+    <form method="get" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search route code or name..." class="form-control" style="max-width: 320px;">
+        <button type="submit" class="btn btn-ghost">
+            <svg class="icon icon-sm"><use href="#i-filter"/></svg> Search
+        </button>
+        {% if q %}
+            <a href="{% url 'transport:admin_routes' %}" class="btn btn-ghost" style="color: var(--muted);">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if page_obj %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Route Code</th>
+                    <th>Route Name</th>
+                    <th>Coverage (Start &rarr; Dest)</th>
+                    <th>Assigned Vehicle</th>
+                    <th>Stops</th>
+                    <th>Active Students</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in page_obj %}
+                <tr>
+                    <td class="strong">
+                        <a href="{% url 'transport:admin_route_detail' r.pk %}">{{ r.code }}</a>
+                    </td>
+                    <td class="strong">{{ r.name }}</td>
+                    <td>{{ r.start_point }} &rarr; {{ r.destination }}</td>
+                    <td>
+                        {% if r.assigned_vehicle %}
+                            <a href="{% url 'transport:admin_vehicle_detail' r.assigned_vehicle.pk %}">
+                                <strong>{{ r.assigned_vehicle.vehicle_number }}</strong>
+                            </a>
+                            <div class="muted" style="font-size: 11px;">Cap: {{ r.assigned_vehicle.seating_capacity }}</div>
+                        {% else %}
+                            <span class="badge red">Not Assigned</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge gray">{{ r.stop_count }} stops</span></td>
+                    <td><strong style="color: #2563eb;">{{ r.total_students }}</strong></td>
+                    <td>
+                        {% if r.is_active %}
+                            <span class="badge green">Active</span>
+                        {% else %}
+                            <span class="badge gray">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 6px;">
+                            <a href="{% url 'transport:admin_route_detail' r.pk %}" class="btn btn-ghost btn-sm">Manage</a>
+                            <a href="{% url 'transport:admin_route_update' r.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}" class="btn btn-ghost btn-sm">&larr; Prev</a>
+        {% endif %}
+        <span class="muted" style="align-self: center; font-size: 13px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}" class="btn btn-ghost btn-sm">Next &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🗺️</div>
+        <h3>No Routes Registered</h3>
+        <p class="muted" style="margin-bottom: 16px;">Set up commuter bus lines to organize student transportation.</p>
+        <a class="btn btn-primary" href="{% url 'transport:admin_route_create' %}">Create First Route</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

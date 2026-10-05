@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Hostel Complaints & Maintenance · Smart College{% endblock %}
+{% block topbar_title %}Hostel Complaints{% endblock %}
+
+{% block page_title %}Hostel Maintenance Complaints & Requests{% endblock %}
+{% block page_sub %}
+    Report room issues (electrical, plumbing, internet, cleaning) and track resolution progress in real time.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'hostel:student_complaint_create' %}">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Log New Complaint
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="grid grid-3 mb">
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--brand-600);">{{ complaints|length }}</div>
+        <div class="stat-lbl">Total Submitted Complaints</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--warning, #d97706);">{{ open_count }}</div>
+        <div class="stat-lbl">Open / Under Resolution</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--success, #16a34a);">{{ resolved_count }}</div>
+        <div class="stat-lbl">Resolved / Closed</div>
+    </div>
+</div>
+
+<!-- Complaints List -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-alert-circle"/></svg>
+            <span>My Maintenance Tickets</span>
+        </div>
+        <span class="badge gray">{{ complaints|length }} Tickets</span>
+    </div>
+
+    {% if complaints %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Issue Summary</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Hostel / Room</th>
+                    <th>Date Filed</th>
+                    <th>Status</th>
+                    <th class="num">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td><code>{{ c.complaint_id }}</code></td>
+                    <td>
+                        <div class="strong">{{ c.title }}</div>
+                        <div class="text-sm text-muted">{{ c.description|truncatechars:45 }}</div>
+                    </td>
+                    <td><span class="badge blue">{{ c.get_category_display }}</span></td>
+                    <td>
+                        {% if c.priority == 'URGENT' %}
+                            <span class="badge red">Urgent</span>
+                        {% elif c.priority == 'HIGH' %}
+                            <span class="badge yellow">High</span>
+                        {% elif c.priority == 'MEDIUM' %}
+                            <span class="badge gray">Medium</span>
+                        {% else %}
+                            <span class="badge gray">Low</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.hostel.name }}{% if c.room %} · Room {{ c.room.room_number }}{% endif %}</td>
+                    <td>{{ c.created_at|date:"d M Y" }}</td>
+                    <td>
+                        {% if c.status == 'OPEN' %}
+                            <span class="badge yellow">Open</span>
+                        {% elif c.status == 'ASSIGNED' %}
+                            <span class="badge blue">Assigned</span>
+                        {% elif c.status == 'IN_PROGRESS' %}
+                            <span class="badge yellow">In Progress</span>
+                        {% elif c.status == 'RESOLVED' %}
+                            <span class="badge green">Resolved</span>
+                        {% elif c.status == 'CLOSED' %}
+                            <span class="badge gray">Closed</span>
+                        {% elif c.status == 'REJECTED' %}
+                            <span class="badge red">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td class="num">
+                        <a class="btn btn-sm btn-ghost" href="{% url 'hostel:student_complaint_detail' c.pk %}">
+                            View Ticket &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 48px; text-align: center; color: var(--ink-muted);">
+        <p style="font-size: 15px; font-weight: 500;">No maintenance complaints logged yet.</p>
+        <p style="font-size: 13px;">If you have any room, electrical, plumbing, or hygiene issues, click "Log New Complaint" above.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

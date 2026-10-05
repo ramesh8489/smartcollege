@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{% if round_obj %}Update Round {{ round_obj.round_number }}{% else %}Schedule Interview Round{% endif %} · Smart College{% endblock %}
+{% block topbar_title %}Placements · Interview Scheduling{% endblock %}
+
+{% block page_title %}{% if round_obj %}Update Evaluation: {{ round_obj.round_name }}{% else %}Schedule Interview Round{% endif %}{% endblock %}
+{% block page_sub %}Candidate: {{ app.student.name }} ({{ app.student.roll_no }}) · {{ app.placement_drive.company.name }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'application_detail' app.pk %}" class="btn btn-ghost">
+        ← Back to Application Dossier
+    </a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-calendar"/></svg>
+                <span>{% if round_obj %}Update Outcome & Scores{% else %}Round Scheduling Details{% endif %}</span>
+            </div>
+            <span class="badge blue">{{ app.placement_drive.job_title }}</span>
+        </div>
+
+        <div class="card-body">
+            {% if form.errors %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 20px; background: var(--surface);">
+                    <div style="font-weight: 700; color: var(--danger); margin-bottom: 6px;">Please correct the following errors:</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--danger);">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <!-- Section 1: Round Configuration -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        1. Round Identification & Type
+                    </div>
+                    <div class="grid grid-3" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.round_number.id_for_label }}">
+                                Round Sequence # <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.round_number }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.round_name.id_for_label }}">
+                                Round Title <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.round_name }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.round_type.id_for_label }}">
+                                Round Category <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.round_type }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Schedule & Logistics -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        2. Schedule & Logistics
+                    </div>
+                    <div class="grid grid-3" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.scheduled_date.id_for_label }}">
+                                Scheduled Date <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.scheduled_date }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.start_time.id_for_label }}">
+                                Start Time <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.start_time }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.end_time.id_for_label }}">
+                                End Time
+                            </label>
+                            {{ form.end_time }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.location.id_for_label }}">
+                                Venue / Video Meeting Link
+                            </label>
+                            {{ form.location }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">e.g. Lab 304, Seminar Hall, or Google Meet / Teams Link</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.interviewer.id_for_label }}">
+                                Interviewer / Panelist
+                            </label>
+                            {{ form.interviewer }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Result & Scoring -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        3. Evaluation Outcome & Remarks
+                    </div>
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.result.id_for_label }}">
+                                Round Result <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.result }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.score.id_for_label }}">
+                                Evaluation Score / Marks
+                            </label>
+                            {{ form.score }}
+                            <div class="muted" style="font-size: 11.5px; margin-top: 4px;">e.g. 85/100, 9/10, or Grade A</div>
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.remarks.id_for_label }}">
+                                Panel Feedback & Remarks
+                            </label>
+                            {{ form.remarks }}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line);">
+                    <a href="{% url 'application_detail' app.pk %}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-primary" id="btn-save-round">
+                        <svg class="icon"><use href="#i-check"/></svg>
+                        <span>Save & Notify Student</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

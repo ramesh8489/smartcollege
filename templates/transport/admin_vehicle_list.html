@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Fleet & Vehicles · Smart College{% endblock %}
+{% block topbar_title %}Fleet Inventory{% endblock %}
+
+{% block page_title %}Vehicles & Campus Fleet{% endblock %}
+{% block page_sub %}Manage campus buses, mini-buses, vans, seating capacities, and statutory certificate compliance.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_vehicle_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> Add Vehicle
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    <!-- Filters & Search Toolbar -->
+    <form method="get" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search vehicle or reg number..." class="form-control" style="max-width: 280px;">
+        <select name="status" class="form-control" style="max-width: 180px;">
+            <option value="">All Statuses</option>
+            <option value="ACTIVE" {% if status == 'ACTIVE' %}selected{% endif %}>Active</option>
+            <option value="INACTIVE" {% if status == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+            <option value="MAINTENANCE" {% if status == 'MAINTENANCE' %}selected{% endif %}>Under Maintenance</option>
+        </select>
+        <select name="type" class="form-control" style="max-width: 180px;">
+            <option value="">All Vehicle Types</option>
+            <option value="BUS" {% if type == 'BUS' %}selected{% endif %}>College Bus</option>
+            <option value="MINI_BUS" {% if type == 'MINI_BUS' %}selected{% endif %}>Mini Bus</option>
+            <option value="VAN" {% if type == 'VAN' %}selected{% endif %}>Van / Traveler</option>
+        </select>
+        <button type="submit" class="btn btn-ghost">
+            <svg class="icon icon-sm"><use href="#i-filter"/></svg> Filter
+        </button>
+        {% if q or status or type %}
+            <a href="{% url 'transport:admin_vehicles' %}" class="btn btn-ghost" style="color: var(--muted);">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if page_obj %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Vehicle No</th>
+                    <th>Registration No</th>
+                    <th>Bus Name / Label</th>
+                    <th>Type</th>
+                    <th>Capacity</th>
+                    <th>Allocated</th>
+                    <th>Available</th>
+                    <th>Compliance Alerts</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in page_obj %}
+                <tr>
+                    <td class="strong">
+                        <a href="{% url 'transport:admin_vehicle_detail' v.pk %}">{{ v.vehicle_number }}</a>
+                    </td>
+                    <td><code>{{ v.registration_number }}</code></td>
+                    <td>{{ v.bus_name }}</td>
+                    <td>{{ v.get_vehicle_type_display }}</td>
+                    <td>{{ v.seating_capacity }}</td>
+                    <td><strong style="color: #2563eb;">{{ v.allocated_count }}</strong></td>
+                    <td>
+                        {% if v.available_seats > 0 %}
+                            <span class="badge green">{{ v.available_seats }}</span>
+                        {% else %}
+                            <span class="badge red">0</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if v.is_insurance_expired %}
+                            <span class="badge red" title="Insurance Expired">Ins. Expired</span>
+                        {% elif v.is_fitness_expired %}
+                            <span class="badge red" title="Fitness Expired">Fit. Expired</span>
+                        {% elif v.needs_attention %}
+                            <span class="badge amber">Review Exp.</span>
+                        {% else %}
+                            <span class="badge green">Valid</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if v.status == 'ACTIVE' %}
+                            <span class="badge green">Active</span>
+                        {% elif v.status == 'MAINTENANCE' %}
+                            <span class="badge amber">Maintenance</span>
+                        {% else %}
+                            <span class="badge gray">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 6px;">
+                            <a href="{% url 'transport:admin_vehicle_detail' v.pk %}" class="btn btn-ghost btn-sm">View</a>
+                            <a href="{% url 'transport:admin_vehicle_update' v.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}&type={{ type }}" class="btn btn-ghost btn-sm">&larr; Prev</a>
+        {% endif %}
+        <span class="muted" style="align-self: center; font-size: 13px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}&type={{ type }}" class="btn btn-ghost btn-sm">Next &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🚌</div>
+        <h3>No Vehicles Found</h3>
+        <p class="muted">No buses or fleet vehicles matched your search criteria.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

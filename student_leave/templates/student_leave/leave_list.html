@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Student Leaves · Smart College{% endblock %}
+{% block topbar_title %}Leave Management{% endblock %}
+
+{% block page_title %}My Leave Applications{% endblock %}
+{% block page_sub %}
+    Track your leave history, view real-time multi-stage approval statuses, and submit new leave requests.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" id="btn-apply-leave-top" href="{% url 'apply_leave' %}">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        <span>Apply for Leave</span>
+    </a>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--danger);">{{ message }}</div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--success); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--success);">{{ message }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Metrics Overview -->
+<div class="stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--brand-50); color: var(--brand); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--ink);">{{ total_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Total Applications</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--warn-50); color: var(--warn); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-clock"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--warn);">{{ pending_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Pending Review</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--success-50); color: var(--success); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--success);">{{ approved_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Approved Leaves</div>
+        </div>
+    </div>
+
+    <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+        <div class="stat-ico" style="background: var(--danger-50); color: var(--danger); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+            <svg class="icon"><use href="#i-trash"/></svg>
+        </div>
+        <div>
+            <div class="stat-val" style="font-size: 26px; font-weight: 800; color: var(--danger);">{{ rejected_count }}</div>
+            <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Rejected / Closed</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="filters" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 20px;">
+    <form method="get" action="." style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;">
+        <div class="field" style="min-width: 180px;">
+            <label class="label" for="filter-status">Filter by Status</label>
+            <select name="status" id="filter-status" class="select">
+                <option value="">All Statuses</option>
+                {% for st_val, st_lbl in status_choices %}
+                    <option value="{{ st_val }}" {% if status_filter == st_val %}selected{% endif %}>{{ st_lbl }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field" style="min-width: 180px;">
+            <label class="label" for="filter-type">Filter by Leave Type</label>
+            <select name="type" id="filter-type" class="select">
+                <option value="">All Leave Types</option>
+                {% for tp_val, tp_lbl in leave_types %}
+                    <option value="{{ tp_val }}" {% if type_filter == tp_val %}selected{% endif %}>{{ tp_lbl }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary" id="btn-apply-filter">
+                <svg class="icon"><use href="#i-filter"/></svg>
+                <span>Filter</span>
+            </button>
+            {% if status_filter or type_filter %}
+                <a href="{% url 'leave_list' %}" class="btn btn-ghost" id="btn-clear-filter">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Leave Requests Table Card -->
+<div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);">
+    <div style="padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--ink);">Submitted Applications</h3>
+        <span style="font-size: 13px; color: var(--muted); font-weight: 500;">Showing {{ leaves.count }} application(s)</span>
+    </div>
+
+    {% if leaves %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>From Date</th>
+                        <th>To Date</th>
+                        <th>Days</th>
+                        <th>Reason</th>
+                        <th>Applied On</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in leaves %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: var(--ink);">{{ l.leave_type }}</div>
+                                {% if l.supporting_document %}
+                                    <span style="font-size: 11px; color: var(--brand); display: inline-flex; align-items: center; gap: 3px;">
+                                        <svg class="icon icon-sm"><use href="#i-file"/></svg> Attachment
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ l.from_date|date:"d M Y" }}</td>
+                            <td>{{ l.to_date|date:"d M Y" }}</td>
+                            <td>
+                                <span class="badge gray" style="font-weight: 700;">{{ l.number_of_days }} day{% if l.number_of_days > 1 %}s{% endif %}</span>
+                            </td>
+                            <td style="max-width: 260px;">
+                                <div style="font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ l.reason }}">
+                                    {{ l.reason }}
+                                </div>
+                            </td>
+                            <td class="muted">{{ l.applied_date|date:"d M Y, h:i A" }}</td>
+                            <td>
+                                <span class="badge {{ l.status_badge_class }}">{{ l.status }}</span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 6px;">
+                                    <a class="btn btn-ghost btn-sm" id="btn-view-leave-{{ l.id }}" href="{% url 'leave_detail' l.id %}" title="View Details">
+                                        View Details
+                                    </a>
+                                    {% if l.can_student_cancel %}
+                                        <form method="post" action="{% url 'cancel_leave' l.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel this leave application?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger-soft btn-sm" id="btn-cancel-leave-{{ l.id }}" title="Cancel Application">
+                                                Cancel
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="padding: 48px 24px; text-align: center; color: var(--muted);">
+            <div style="width: 56px; height: 56px; border-radius: 16px; background: var(--surface-2); display: grid; place-items: center; margin: 0 auto 16px; color: var(--muted);">
+                <svg class="icon icon-lg"><use href="#i-calendar"/></svg>
+            </div>
+            <h4 style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 6px;">No Leave Requests Found</h4>
+            <p style="font-size: 13.5px; max-width: 420px; margin: 0 auto 20px;">
+                You have not submitted any leave requests matching the selected filter criteria.
+            </p>
+            <a class="btn btn-primary" href="{% url 'apply_leave' %}">Apply for Leave Now</a>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

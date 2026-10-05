@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Route Configuration{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Define commuter transit lines, terminus points, and vehicle assignments.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_routes' %}">&larr; Back to Routes</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please review the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_code">Route Code *</label>
+                    {{ form.code }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_name">Route Name *</label>
+                    {{ form.name }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_start_point">Starting Point / Origin *</label>
+                    {{ form.start_point }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_destination">Destination Terminus *</label>
+                    {{ form.destination }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_assigned_vehicle">Assigned Bus / Vehicle</label>
+                    {{ form.assigned_vehicle }}
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 24px;">
+                    {{ form.is_active }}
+                    <label class="form-label strong" for="id_is_active" style="margin: 0;">Route Active for Operations</label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label class="form-label strong" for="id_description">Route Description / Landmarks</label>
+                {{ form.description }}
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 18px;">
+                <a href="{% url 'transport:admin_routes' %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Save Route
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

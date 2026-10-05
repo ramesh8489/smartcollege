@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Marks History{% endblock %}
+{% block topbar_title %}Marks History{% endblock %}
+{% block page_title %}Marks History{% endblock %}
+{% block page_sub %}Marks you've entered, across your subjects.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-soft" href="/reports/faculty/marks/excel/"><svg class="icon icon-sm"><use href="#i-download"/></svg> Excel</a>
+    <a class="btn btn-ghost" href="/reports/faculty/marks/pdf/"><svg class="icon icon-sm"><use href="#i-file"/></svg> PDF</a>
+{% endblock %}
+
+{% block content %}
+
+<form class="filters" method="get">
+    <div class="filters-row">
+        <div class="field">
+            <label for="search">Search student</label>
+            <input class="input" type="search" id="search" name="search" value="{{ search|default:'' }}" placeholder="Name or roll no">
+        </div>
+        <div class="field">
+            <label for="subject">Subject</label>
+            <select class="select" id="subject" name="subject">
+                <option value="">All subjects</option>
+                {% for s in subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }} — {{ s.code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="grade">Grade</label>
+            <select class="select" id="grade" name="grade">
+                <option value="">All grades</option>
+                <option value="A+" {% if selected_grade == "A+" %}selected{% endif %}>A+</option>
+                <option value="A" {% if selected_grade == "A" %}selected{% endif %}>A</option>
+                <option value="B" {% if selected_grade == "B" %}selected{% endif %}>B</option>
+                <option value="C" {% if selected_grade == "C" %}selected{% endif %}>C</option>
+                <option value="D" {% if selected_grade == "D" %}selected{% endif %}>D</option>
+                <option value="F" {% if selected_grade == "F" %}selected{% endif %}>F</option>
+            </select>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit"><svg class="icon icon-sm"><use href="#i-filter"/></svg> Apply</button>
+            <a class="btn btn-ghost" href="/faculty/marks-history/">Clear</a>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-award"/></svg> {{ marks_summary|length }} record{{ marks_summary|length|pluralize }}</div></div>
+    <div class="card-body flush">
+        {% if marks_summary %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Student</th><th>Roll No</th><th>Subject</th><th class="num">CAT 1</th><th class="num">CAT 2</th><th class="num">CAT 3</th><th class="num">Total</th><th class="num">%</th><th>Grade</th><th></th></tr></thead>
+                <tbody>
+                {% for item in marks_summary %}
+                    <tr>
+                        <td class="strong">{{ item.mark.student.name }}</td>
+                        <td>{{ item.mark.student.roll_no }}</td>
+                        <td>{{ item.mark.subject.name }}</td>
+                        <td class="num">{{ item.mark.cat_1 }}/{{ item.mark.cat_1_assignment }}</td><td class="num">{{ item.mark.cat_2 }}/{{ item.mark.cat_2_assignment }}</td><td class="num">{{ item.mark.cat_3 }}/{{ item.mark.cat_3_assignment }}</td><td class="num">{{ item.total }}/150</td>
+                        <td class="num">{{ item.percentage }}%</td>
+                        <td><span class="badge {% if item.grade == 'F' %}red{% elif item.grade == 'A+' or item.grade == 'A' %}green{% else %}amber{% endif %}">{{ item.grade }}</span></td>
+                        <td class="right"><a class="btn btn-ghost btn-sm" href="/faculty/marks/edit/{{ item.mark.id }}/">Edit</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty"><svg class="icon"><use href="#i-award"/></svg><b>No marks found</b>Try a different filter, or enter marks from the Marks Entry page.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

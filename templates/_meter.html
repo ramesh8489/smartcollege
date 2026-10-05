@@ -1,0 +1,1 @@
+{% load l10n %}{% if pct is None %}<span class="muted">—</span>{% else %}<div class="meter"><div class="progress {{ cls }}" style="flex:1"><span style="width: {{ pct|unlocalize }}%"></span></div><span class="pct">{{ pct|floatformat:1 }}%</span></div>{% endif %}

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for Leave · Smart College{% endblock %}
+{% block topbar_title %}Apply for Leave{% endblock %}
+
+{% block page_title %}Leave Application Form{% endblock %}
+{% block page_sub %}
+    Submit a formal leave request for academic absence. Your request will proceed through Faculty, School Incharge, and Admin approval.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'leave_list' %}">
+        &larr; Back to My Leaves
+    </a>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--danger);">{{ message }}</div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--success); margin-bottom: 10px; background: var(--surface);">
+                    <div style="font-weight: 600; color: var(--success);">{{ message }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+    <!-- Main Application Form -->
+    <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-sm);">
+        <form method="post" enctype="multipart/form-data" id="leave-apply-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-error" style="margin-bottom: 20px;">
+                    <div>
+                        {% for err in form.non_field_errors %}
+                            <div>{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Leave Type -->
+                <div class="field">
+                    <label class="label" for="id_leave_type">Leave Type <span style="color: var(--danger);">*</span></label>
+                    {{ form.leave_type }}
+                    {% if form.leave_type.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.leave_type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Date Range Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="field">
+                        <label class="label" for="id_from_date">From Date <span style="color: var(--danger);">*</span></label>
+                        {{ form.from_date }}
+                        {% if form.from_date.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.from_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="id_to_date">To Date <span style="color: var(--danger);">*</span></label>
+                        {{ form.to_date }}
+                        {% if form.to_date.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.to_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Days Calculation Banner -->
+                <div id="days-calculated-box" style="display: none; padding: 12px 16px; border-radius: 10px; background: var(--brand-50); border: 1px solid var(--brand-100); color: var(--brand-700); font-weight: 600; font-size: 13.5px;">
+                    <span id="days-calculated-text">Duration: 0 day(s)</span>
+                </div>
+
+                <!-- Reason -->
+                <div class="field">
+                    <label class="label" for="id_reason">Detailed Reason <span style="color: var(--danger);">*</span></label>
+                    {{ form.reason }}
+                    <span style="font-size: 11.5px; color: var(--muted);">Please provide specific details regarding your reason for absence.</span>
+                    {% if form.reason.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.reason.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Supporting Document -->
+                <div class="field">
+                    <label class="label" for="id_supporting_document">Supporting Document / Medical Certificate (Optional)</label>
+                    {{ form.supporting_document }}
+                    <span style="font-size: 11.5px; color: var(--muted);">Accepted formats: PDF, JPG, JPEG, PNG (Maximum file size: 15MB). Required for medical absences exceeding 2 days.</span>
+                    {% if form.supporting_document.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.supporting_document.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Student Remarks -->
+                <div class="field">
+                    <label class="label" for="id_student_remarks">Student Remarks (Optional)</label>
+                    {{ form.student_remarks }}
+                    {% if form.student_remarks.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.student_remarks.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px; padding-top: 16px; border-top: 1px solid var(--line);">
+                    <a href="{% url 'leave_list' %}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-leave">
+                        <svg class="icon"><use href="#i-check"/></svg>
+                        <span>Submit Leave Application</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Student Profile & Guidelines Sidebar Card -->
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+        <!-- Applicant Card -->
+        <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); margin-bottom: 12px;">Applicant Profile</div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px;">
+                    {{ student.name|slice:":1"|upper }}
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 15px; color: var(--ink);">{{ student.name }}</div>
+                    <div style="font-size: 12.5px; color: var(--muted);">Roll No: <b>{{ student.roll_no }}</b></div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--line); padding-top: 12px; font-size: 12.5px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">School:</span>
+                    <span style="font-weight: 600; color: var(--ink);">{{ student.department.name }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">Course:</span>
+                    <span style="font-weight: 600; color: var(--ink);">{{ student.course.name|default:"General" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--muted);">Academic Year:</span>
+                    <span style="font-weight: 600; color: var(--ink);">Year {{ student.year }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval Workflow Card -->
+        <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); margin-bottom: 14px;">4-Stage Approval Workflow</div>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-weight: 700; font-size: 11px;">1</span>
+                    <div>
+                        <div style="font-weight: 700; color: var(--ink);">Student Submission</div>
+                        <div style="font-size: 11.5px; color: var(--muted);">Initial status set to Pending</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="width: 24px; height: 24px; border-radius: 50%; background: var(--warn-50); color: var(--warn); display: grid; place-items: center; font-weight: 700; font-size: 11px;">2</span>
+                    <div>
+                        <div style="font-weight: 700; color: var(--ink);">Class Faculty Review</div>
+                        <div style="font-size: 11.5px; color: var(--muted);">Authorized faculty evaluates request</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="width: 24px; height: 24px; border-radius: 50%; background: var(--accent-50); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 11px;">3</span>
+                    <div>
+                        <div style="font-weight: 700; color: var(--ink);">School Incharge Review</div>
+                        <div style="font-size: 11.5px; color: var(--muted);">Department Head review & endorsement</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="width: 24px; height: 24px; border-radius: 50%; background: var(--success-50); color: var(--success); display: grid; place-items: center; font-weight: 700; font-size: 11px;">4</span>
+                    <div>
+                        <div style="font-weight: 700; color: var(--ink);">Administrator Authorization</div>
+                        <div style="font-size: 11.5px; color: var(--muted);">Final institutional sign-off</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Policy Guidelines Card -->
+        <div class="card" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); margin-bottom: 10px;">Leave Policies</div>
+            <ul style="padding-left: 18px; margin: 0; font-size: 12px; color: var(--ink-2); display: flex; flex-direction: column; gap: 6px;">
+                <li>From date must not be after To date.</li>
+                <li>Retroactive leaves are strictly allowed for Medical/Sick/Emergency causes within 7 days.</li>
+                <li>Overlapping leave periods are automatically blocked.</li>
+                <li>Leave requests can be cancelled while in Pending status.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const fromInput = document.getElementById("id_from_date");
+    const toInput = document.getElementById("id_to_date");
+    const box = document.getElementById("days-calculated-box");
+    const text = document.getElementById("days-calculated-text");
+
+    function calculateDays() {
+        if (fromInput.value && toInput.value) {
+            const d1 = new Date(fromInput.value);
+            const d2 = new Date(toInput.value);
+            if (d2 >= d1) {
+                const diffTime = Math.abs(d2 - d1);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                text.textContent = "Calculated Duration: " + diffDays + " day" + (diffDays > 1 ? "s" : "") + " of leave requested.";
+                box.style.display = "block";
+            } else {
+                box.style.display = "none";
+            }
+        } else {
+            box.style.display = "none";
+        }
+    }
+
+    if (fromInput && toInput) {
+        fromInput.addEventListener("change", calculateDays);
+        toInput.addEventListener("change", calculateDays);
+        calculateDays();
+    }
+});
+</script>
+
+{% endblock %}

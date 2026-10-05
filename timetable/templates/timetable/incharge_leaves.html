@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}School Leave Approvals · Smart College{% endblock %}
+{% block topbar_title %}School Leave Approvals{% endblock %}
+{% block page_title %}School Incharge Leave Approvals{% endblock %}
+{% block page_sub %}Review and endorse student and faculty leave applications for {{ incharge.department.name }}.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'incharge_leave_list' %}">
+        <svg class="icon"><use href="#i-calendar"/></svg>
+        <span>Student Leave Portal</span>
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Student Leave Management (School Incharge Section) -->
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-users"/></svg>
+            <span>Student Leave Requests (Awaiting Incharge Endorsement)</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span class="badge violet">Pending: {{ student_pending_count }}</span>
+            <span class="badge green">Endorsed: {{ student_approved_count }}</span>
+            <span class="badge red">Rejected: {{ student_rejected_count }}</span>
+            <a class="link-arrow" href="{% url 'incharge_leave_list' %}">Full student leaves portal ›</a>
+        </div>
+    </div>
+    <div class="card-body flush">
+        {% if student_pending_leaves %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course / Year</th>
+                        <th>Type</th>
+                        <th>Duration</th>
+                        <th>Dates</th>
+                        <th>Faculty Remarks</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for sl in student_pending_leaves %}
+                <tr>
+                    <td>
+                        <div class="strong">{{ sl.student.name }}</div>
+                        <div class="p-sub muted">{{ sl.student.roll_no }}</div>
+                    </td>
+                    <td>{{ sl.student.course.name|default:"General" }} - Yr {{ sl.student.year }}</td>
+                    <td><span class="badge gray">{{ sl.leave_type }}</span></td>
+                    <td><span class="badge gray">{{ sl.number_of_days }}d</span></td>
+                    <td class="nowrap">{{ sl.from_date|date:"d M Y" }} – {{ sl.to_date|date:"d M Y" }}</td>
+                    <td style="max-width: 180px; font-size: 12.5px; color: var(--ink-2);">{{ sl.faculty_remarks|default:"(No remarks)" }}</td>
+                    <td>
+                        <form method="post" style="min-width: 230px; display: flex; flex-direction: column; gap: 6px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="target" value="student_leave">
+                            <input type="hidden" name="student_leave_id" value="{{ sl.id }}">
+                            <input class="input" name="comment" placeholder="Incharge endorsement remarks" required style="padding: 6px 10px; font-size: 12px;">
+                            <div style="display: flex; gap: 6px;">
+                                <button class="btn btn-success btn-sm" name="action" value="approve" type="submit" style="padding: 4px 8px; font-size: 11.5px;">
+                                    Endorse & Escalate
+                                </button>
+                                <button class="btn btn-danger-soft btn-sm" name="action" value="reject" type="submit" style="padding: 4px 8px; font-size: 11.5px;">
+                                    Reject
+                                </button>
+                                <a href="{% url 'leave_detail' sl.id %}" class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 11.5px;">
+                                    Details
+                                </a>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty"><svg class="icon"><use href="#i-check"/></svg><b>No student leaves pending</b>All faculty-approved student leave requests for {{ incharge.department.name }} have been reviewed.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Faculty Leave Requests Section -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+            <span>Faculty Leave Requests</span>
+        </div>
+    </div>
+    <div class="card-body flush">
+        {% if requests %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Faculty</th><th>Type</th><th>Leave dates</th><th>Reason</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                {% for r in requests %}
+                <tr>
+                    <td><div class="strong">{{ r.faculty.name }}</div><div class="p-sub muted">{{ r.faculty.faculty_id }}</div></td>
+                    <td><span class="badge gray">{{ r.get_leave_type_display }}</span></td><td class="nowrap">{{ r.from_date|date:"d M Y" }} – {{ r.to_date|date:"d M Y" }}</td>
+                    <td>{{ r.reason }}</td>
+                    <td>
+                        {% if r.status == "PENDING" %}<span class="badge violet">Pending</span>
+                        {% elif r.status == "APPROVED" %}<span class="badge">Approved → Admin</span>
+                        {% else %}<span class="badge gray">Rejected</span>{% endif %}
+                    </td>
+                    <td class="right">
+                        {% if r.status == "PENDING" %}
+                        <form method="post" class="stack" style="min-width:220px">
+                            {% csrf_token %}
+                            <input type="hidden" name="leave_id" value="{{ r.id }}">
+                            <input class="input" name="comment" placeholder="Optional comment">
+                            <div>
+                                <button class="btn btn-success btn-sm" name="action" value="approve" type="submit">Approve & Forward</button>
+                                <button class="btn btn-danger-soft btn-sm" name="action" value="reject" type="submit">Reject</button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <span class="muted">{{ r.incharge_comment|default:"No comment" }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty"><svg class="icon"><use href="#i-inbox"/></svg><b>No faculty leave requests</b></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

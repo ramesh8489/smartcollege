@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Vehicle {{ vehicle.vehicle_number }} · Smart College{% endblock %}
+{% block topbar_title %}Fleet Details{% endblock %}
+
+{% block page_title %}{{ vehicle.vehicle_number }} &middot; {{ vehicle.bus_name }}{% endblock %}
+{% block page_sub %}
+    Registration: <code>{{ vehicle.registration_number }}</code> &middot;
+    Capacity: {{ vehicle.seating_capacity }} seats &middot;
+    Status:
+    {% if vehicle.status == 'ACTIVE' %}
+        <span class="badge green">Active</span>
+    {% elif vehicle.status == 'MAINTENANCE' %}
+        <span class="badge amber">Under Maintenance</span>
+    {% else %}
+        <span class="badge gray">{{ vehicle.get_status_display }}</span>
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-secondary" href="{% url 'transport:admin_vehicle_update' vehicle.pk %}">
+        <svg class="icon"><use href="#i-edit"/></svg> Edit Vehicle
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_vehicles' %}">&larr; Back to Vehicles</a>
+{% endblock %}
+
+{% block content %}
+<!-- Quick KPI Cards -->
+<div class="grid grid-4" style="gap: 16px; margin-bottom: 24px;">
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Total Seating</div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--ink); margin-top: 4px;">{{ vehicle.seating_capacity }}</div>
+    </div>
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Allocated Students</div>
+        <div style="font-size: 24px; font-weight: 800; color: #2563eb; margin-top: 4px;">{{ vehicle.allocated_count }}</div>
+    </div>
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Available Free Seats</div>
+        {% if vehicle.available_seats > 0 %}
+        <div style="font-size: 24px; font-weight: 800; color: #059669; margin-top: 4px;">
+        {% else %}
+        <div style="font-size: 24px; font-weight: 800; color: #dc2626; margin-top: 4px;">
+        {% endif %}
+            {{ vehicle.available_seats }}
+        </div>
+    </div>
+    <div class="card" style="padding: 18px;">
+        <div class="muted" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Seating Occupancy</div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--ink); margin-top: 4px;">{{ vehicle.occupancy_percentage }}%</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+    <!-- Main Left Column -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+        <!-- Active Allocations on this Bus -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-users"/></svg>
+                    <span>Allocated Students ({{ allocations.count }})</span>
+                </div>
+                <a href="{% url 'transport:admin_allocation_create' %}?vehicle={{ vehicle.id }}" class="btn btn-ghost btn-sm">+ Allocate Student</a>
+            </div>
+
+            {% if allocations %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Roll No</th>
+                            <th>Student Name</th>
+                            <th>Course</th>
+                            <th>Route</th>
+                            <th>Boarding Stop</th>
+                            <th>Seat</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in allocations %}
+                        <tr>
+                            <td><code>{{ a.student.roll_no }}</code></td>
+                            <td class="strong">{{ a.student.name }}</td>
+                            <td>{{ a.student.course.name|default:"-" }}</td>
+                            <td>{{ a.route.code }}</td>
+                            <td>{{ a.stop.stop_name }}</td>
+                            <td><span class="badge gray">{{ a.seat_number|default:"Open" }}</span></td>
+                            <td>
+                                <a href="{% url 'transport:admin_allocation_detail' a.pk %}" class="btn btn-ghost btn-sm">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 24px; text-align: center; color: var(--muted); font-size: 13px;">
+                No students currently allocated to this vehicle.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Maintenance Log -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-clock"/></svg>
+                    <span>Maintenance History</span>
+                </div>
+                <a href="{% url 'transport:admin_maintenance_create' %}?vehicle={{ vehicle.id }}" class="btn btn-ghost btn-sm">+ Log Service</a>
+            </div>
+
+            {% if maintenance %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Service Type</th>
+                            <th>Service Provider</th>
+                            <th>Cost</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in maintenance %}
+                        <tr>
+                            <td>{{ m.service_date|date:"d M Y" }}</td>
+                            <td class="strong">{{ m.get_maintenance_type_display }}</td>
+                            <td>{{ m.service_provider }}</td>
+                            <td>₹{{ m.cost|floatformat:2 }}</td>
+                            <td><span class="badge green">{{ m.get_status_display }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 24px; text-align: center; color: var(--muted); font-size: 13px;">
+                No service records logged for this vehicle yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Vehicle Specs -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+                <svg class="icon"><use href="#i-bus"/></svg>
+                <span>Vehicle Specifications</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Type:</span>
+                    <span>{{ vehicle.get_vehicle_type_display }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Registration No:</span>
+                    <code>{{ vehicle.registration_number }}</code>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Purchase Date:</span>
+                    <span>{{ vehicle.purchase_date|date:"d M Y"|default:"-" }}</span>
+                </div>
+                {% if vehicle.driver %}
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Assigned Driver:</span>
+                    <strong>{{ vehicle.driver.name }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Statutory Compliance Card -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 14px; font-size: 14px;">
+                <svg class="icon"><use href="#i-shield"/></svg>
+                <span>Compliance Certificates</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+                <div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span class="muted">Insurance Expiry:</span>
+                        {% if vehicle.is_insurance_expired %}
+                        <strong style="color: #dc2626;">{{ vehicle.insurance_expiry|date:"d M Y"|default:"Not set" }}</strong>
+                        {% else %}
+                        <strong style="color: #059669;">{{ vehicle.insurance_expiry|date:"d M Y"|default:"Not set" }}</strong>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span class="muted">Fitness Certificate:</span>
+                        {% if vehicle.is_fitness_expired %}
+                        <strong style="color: #dc2626;">{{ vehicle.fitness_expiry|date:"d M Y"|default:"Not set" }}</strong>
+                        {% else %}
+                        <strong style="color: #059669;">{{ vehicle.fitness_expiry|date:"d M Y"|default:"Not set" }}</strong>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span class="muted">Pollution (PUC):</span>
+                        {% if vehicle.is_pollution_expired %}
+                        <strong style="color: #dc2626;">{{ vehicle.pollution_expiry|date:"d M Y"|default:"Not set" }}</strong>
+                        {% else %}
+                        <strong style="color: #059669;">{{ vehicle.pollution_expiry|date:"d M Y"|default:"Not set" }}</strong>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

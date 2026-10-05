@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Publish Hostel Notice · Smart College{% endblock %}
+{% block topbar_title %}Publish Notice{% endblock %}
+
+{% block page_title %}Broadcast Hostel Circular or Notice{% endblock %}
+{% block page_sub %}
+    Send official announcements, curfew reminders, and maintenance schedules to resident students.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_notices' %}">&larr; Back to Notices</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="card" style="max-width: 700px; margin: 0 auto; padding: 28px 32px;">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div style="background: var(--danger-subtle, #fef2f2); border-left: 4px solid var(--danger, #dc2626); padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
+                {% for err in form.non_field_errors %}
+                    <div style="color: var(--danger, #dc2626); font-weight: 500;">{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label class="label">{{ form.hostel.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.hostel }}
+                {% if form.hostel.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.hostel.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div>
+                <label class="label">{{ form.priority.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.priority }}
+                {% if form.priority.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.priority.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="label">{{ form.title.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.title.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="label">{{ form.message.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+            {{ form.message }}
+            {% if form.message.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.message.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label class="label">{{ form.publish_date.label }} <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.publish_date }}
+                {% if form.publish_date.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.publish_date.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div>
+                <label class="label">{{ form.expiry_date.label }}</label>
+                {{ form.expiry_date }}
+                {% if form.expiry_date.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.expiry_date.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label class="label">{{ form.attachment.label }}</label>
+            {{ form.attachment }}
+            {% if form.attachment.errors %}
+                <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.attachment.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <a href="{% url 'hostel:admin_notices' %}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-check"/></svg> Publish &amp; Notify Residents
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

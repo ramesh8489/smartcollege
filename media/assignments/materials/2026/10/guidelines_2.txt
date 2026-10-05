@@ -1,0 +1,7 @@
+SmartCollege Academic Assignment Guidelines
+Title: Lab Record 4: SQL Query Optimization & Indexing
+Course: M.Sc Computer Science (AI & Data Science)
+Subject: Cloud Computing & DevOps
+Max Marks: 25
+
+Please follow the department code formatting guidelines.

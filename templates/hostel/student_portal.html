@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+
+{% block title %}My Hostel Accommodation · Smart College{% endblock %}
+{% block topbar_title %}Hostel Accommodation{% endblock %}
+
+{% block page_title %}Student Hostel Portal{% endblock %}
+{% block page_sub %}
+    {% if allocation %}
+        Resident of {{ allocation.hostel.name }} · Room {{ allocation.room.room_number }} (Bed {{ allocation.bed.bed_number }})
+    {% else %}
+        Campus hostel applications, accommodation records, fees, attendance &amp; maintenance
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    {% if not allocation %}
+        <a class="btn btn-primary" href="{% url 'hostel:application_create' %}">
+            <svg class="icon icon-sm"><use href="#i-plus"/></svg> Apply for Hostel
+        </a>
+    {% endif %}
+    <a class="btn btn-soft" href="{% url 'hostel:application_list' %}">
+        <svg class="icon icon-sm"><use href="#i-layers"/></svg> Applications ({{ applications.total }})
+    </a>
+    <a class="btn btn-soft" href="{% url 'hostel:student_fees' %}">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> Hostel Fees
+    </a>
+    <a class="btn btn-soft" href="{% url 'hostel:student_attendance' %}">
+        <svg class="icon icon-sm"><use href="#i-check"/></svg> Attendance
+    </a>
+    <a class="btn btn-soft" href="{% url 'hostel:student_complaint_list' %}">
+        <svg class="icon icon-sm"><use href="#i-shield"/></svg> Complaints
+    </a>
+    <a class="btn btn-soft" href="{% url 'hostel:student_visitors' %}">
+        <svg class="icon icon-sm"><use href="#i-users"/></svg> Visitors
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO / ALLOCATION STATUS BANNER -->
+{% if allocation %}
+<div class="card mb" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff; border: none; padding: 22px 26px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+        <div style="max-width: 680px;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 12px; border-radius: 999px; margin-bottom: 12px;">
+                <span style="width: 7px; height: 7px; background: #10b981; border-radius: 50%; display: inline-block;"></span> Active Resident
+            </div>
+            <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 6px 0; color: #ffffff;">{{ allocation.hostel.name }}</h2>
+            <div style="color: #94a3b8; font-size: 14px; line-height: 1.5;">
+                {{ allocation.block.name }} &middot; {{ allocation.floor.name }} &middot; 
+                <strong style="color: #f1f5f9;">Room {{ allocation.room.room_number }}</strong> ({{ allocation.room.get_room_type_display }}) &middot; 
+                <strong style="color: #60a5fa;">Bed {{ allocation.bed.bed_number }}</strong>
+            </div>
+        </div>
+        <div style="text-align: right; background: rgba(255, 255, 255, 0.06); padding: 12px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">Allocation ID</div>
+            <div style="font-weight: 800; font-size: 14px; color: #38bdf8; font-family: monospace;">{{ allocation.allocation_id }}</div>
+            <div style="font-size: 12px; color: #cbd5e1; margin-top: 4px;">Allocated: {{ allocation.allocation_date|date:"d M Y" }}</div>
+            {% if allocation.expected_checkout_date %}
+            <div style="font-size: 11.5px; color: #94a3b8;">Expected Checkout: {{ allocation.expected_checkout_date|date:"d M Y" }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card mb" style="background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border: 1px solid #bfdbfe; padding: 22px 24px; border-radius: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <div style="display: inline-block; font-size: 11.5px; font-weight: 700; color: #2563eb; background: #dbeafe; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px;">Accommodation Status</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 18px; color: #1e3a8a;">No Active Hostel Allocation</h3>
+            <p style="margin: 0; color: #475569; font-size: 13.5px; max-width: 600px;">
+                You are not currently registered to a hostel bed. You can submit an accommodation application for the upcoming academic session.
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'hostel:application_create' %}" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-plus"/></svg> Submit Application
+            </a>
+            <a href="{% url 'hostel:application_list' %}" class="btn btn-ghost">View Applications</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 4 SUMMARY METRIC CARDS (Phase 10: Allocation, Fees, Attendance, Complaints) -->
+<div class="grid-4 mb">
+
+    <!-- Card 1: Allocation / Room Status -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #e0f2fe; color: #0284c7;"><svg class="icon icon-lg"><use href="#i-home"/></svg></div>
+        <div>
+            <div class="stat-val" style="font-size: 18px; font-weight: 800;">
+                {% if allocation %}Room {{ allocation.room.room_number }}{% else %}Not Allocated{% endif %}
+            </div>
+            <div class="stat-label">
+                {% if allocation %}Bed {{ allocation.bed.bed_number }} · {{ allocation.hostel.code }}{% else %}Status: Non-Resident{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Hostel Fees -->
+    <div class="stat">
+        {% if fees.outstanding > 0 %}
+        <div class="stat-ico" style="background: #fee2e2; color: #dc2626;">
+        {% else %}
+        <div class="stat-ico" style="background: #dcfce7; color: #16a34a;">
+        {% endif %}
+            <svg class="icon icon-lg"><use href="#i-file"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">₹{{ fees.outstanding|floatformat:0 }}</div>
+            <div class="stat-label">
+                Outstanding Dues (Paid: ₹{{ fees.total_paid|floatformat:0 }})
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Hostel Attendance -->
+    <div class="stat">
+        {% if attendance.percentage and attendance.percentage < 75 %}
+        <div class="stat-ico" style="background: #fef3c7; color: #d97706;">
+        {% else %}
+        <div class="stat-ico" style="background: #ede9fe; color: #7c3aed;">
+        {% endif %}
+            <svg class="icon icon-lg"><use href="#i-check"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">
+                {% if attendance.percentage is not None %}{{ attendance.percentage }}%{% else %}—{% endif %}
+            </div>
+            <div class="stat-label">
+                Hostel Attendance ({{ attendance.present }}/{{ attendance.total }} Days)
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Complaints -->
+    <div class="stat">
+        <div class="stat-ico" style="background: #f1f5f9; color: #475569;"><svg class="icon icon-lg"><use href="#i-shield"/></svg></div>
+        <div>
+            <div class="stat-val">{{ complaints.open }}</div>
+            <div class="stat-label">
+                Open Issues (Resolved: {{ complaints.resolved }})
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- TWO-COLUMN DASHBOARD DETAILS -->
+<div class="split">
+
+    <!-- LEFT COLUMN -->
+    <div>
+
+        <!-- Current Allocation Detail Card -->
+        <div class="card mb">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-home"/></svg> Current Accommodation Details
+                </div>
+                {% if allocation %}
+                    <span class="badge green">Active Resident</span>
+                {% else %}
+                    <span class="badge slate">Not Allocated</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if allocation %}
+                <div class="kv">
+                    <div class="kv-item">
+                        <div class="kv-k">Hostel Name</div>
+                        <div class="kv-v" style="font-weight: 700;">{{ allocation.hostel.name }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Hostel Type</div>
+                        <div class="kv-v">{{ allocation.hostel.get_hostel_type_display }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Block &amp; Floor</div>
+                        <div class="kv-v">{{ allocation.block.name }} &middot; {{ allocation.floor.name }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Room Number</div>
+                        <div class="kv-v" style="font-weight: 700; color: var(--brand);">Room {{ allocation.room.room_number }} ({{ allocation.room.get_room_type_display }})</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Bed Assigned</div>
+                        <div class="kv-v" style="font-weight: 700; color: #0284c7;">Bed {{ allocation.bed.bed_number }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Monthly Rent</div>
+                        <div class="kv-v">₹{{ allocation.room.monthly_rent|floatformat:2 }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Allocation Date</div>
+                        <div class="kv-v">{{ allocation.allocation_date|date:"d M Y" }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Expected Checkout</div>
+                        <div class="kv-v">{{ allocation.expected_checkout_date|date:"d M Y"|default:"Not specified" }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty">
+                    <svg class="icon"><use href="#i-home"/></svg>
+                    <b>No Active Hostel Bed</b>
+                    <span>You do not currently reside in any college hostel. Submit an application below.</span>
+                    <div style="margin-top: 14px;">
+                        <a href="{% url 'hostel:application_create' %}" class="btn btn-primary btn-sm">Submit Hostel Application</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Hostel Fees & Dues Overview -->
+        <div class="card mb">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-file"/></svg> Hostel Fees &amp; Invoices
+                </div>
+                <a class="link-arrow" href="{% url 'hostel:student_fees' %}">Full fee statement ›</a>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 16px; background: var(--surface-2); padding: 14px; border-radius: 8px;">
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Total Billed</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--ink);">₹{{ fees.total_fees|floatformat:2 }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Total Paid</div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--success);">₹{{ fees.total_paid|floatformat:2 }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Outstanding</div>
+                        {% if fees.outstanding > 0 %}
+                        <div style="font-size: 18px; font-weight: 800; color: var(--warn);">
+                        {% else %}
+                        <div style="font-size: 18px; font-weight: 800; color: var(--success);">
+                        {% endif %}
+                            ₹{{ fees.outstanding|floatformat:2 }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11.5px; text-transform: uppercase;">Payment Status</div>
+                        <div style="margin-top: 4px;">
+                            {% if fees.status == "PAID" %}
+                                <span class="badge green">Fully Paid</span>
+                            {% elif fees.status == "PARTIAL" %}
+                                <span class="badge amber">Partially Paid</span>
+                            {% elif fees.status == "PENDING" %}
+                                <span class="badge red">Payment Due</span>
+                            {% else %}
+                                <span class="badge slate">No Invoices</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if fees.records %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fee Particulars</th>
+                                <th>Academic Year</th>
+                                <th>Due Date</th>
+                                <th style="text-align: right;">Amount</th>
+                                <th style="text-align: right;">Paid</th>
+                                <th style="text-align: right;">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rec in fees.records|slice:":4" %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ rec.title|default:"Hostel Fee" }}</td>
+                                <td>{{ rec.academic_year }}</td>
+                                <td>{{ rec.due_date|date:"d M Y"|default:"—" }}</td>
+                                <td style="text-align: right;">₹{{ rec.amount|floatformat:2 }}</td>
+                                <td style="text-align: right; color: var(--success);">₹{{ rec.paid_amount|floatformat:2 }}</td>
+                                {% if rec.balance_amount > 0 %}
+                                <td style="text-align: right; font-weight: 700; color: var(--warn);">
+                                {% else %}
+                                <td style="text-align: right; font-weight: 700; color: var(--success);">
+                                {% endif %}
+                                    ₹{{ rec.balance_amount|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="muted" style="font-size: 13px; text-align: center; padding: 12px 0;">No hostel fee demands or dues recorded on your account.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Maintenance Complaints -->
+        <div class="card mb">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-shield"/></svg> Maintenance &amp; Complaints
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a class="btn btn-primary btn-sm" href="{% url 'hostel:student_complaint_create' %}">
+                        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Log Complaint
+                    </a>
+                    <a class="btn btn-ghost btn-sm" href="{% url 'hostel:student_complaint_list' %}">All ({{ complaints.total }})</a>
+                </div>
+            </div>
+            <div class="card-body flush">
+                {% if complaints.recent %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Category / Title</th>
+                                <th>Location</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Reported</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in complaints.recent %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700;">{{ c.title }}</div>
+                                    <div class="muted" style="font-size: 12px;">{{ c.get_category_display }}</div>
+                                </td>
+                                <td>
+                                    {{ c.hostel.code }}{% if c.room %} · Rm {{ c.room.room_number }}{% endif %}
+                                </td>
+                                <td>
+                                    {% if c.priority == "URGENT" %}
+                                        <span class="badge red">Urgent</span>
+                                    {% elif c.priority == "HIGH" %}
+                                        <span class="badge amber">High</span>
+                                    {% elif c.priority == "MEDIUM" %}
+                                        <span class="badge blue">Medium</span>
+                                    {% else %}
+                                        <span class="badge slate">Low</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if c.status == "OPEN" %}
+                                        <span class="badge amber">Open</span>
+                                    {% elif c.status == "ASSIGNED" %}
+                                        <span class="badge blue">Assigned</span>
+                                    {% elif c.status == "IN_PROGRESS" %}
+                                        <span class="badge violet">In Progress</span>
+                                    {% elif c.status == "RESOLVED" %}
+                                        <span class="badge green">Resolved</span>
+                                    {% elif c.status == "CLOSED" %}
+                                        <span class="badge slate">Closed</span>
+                                    {% elif c.status == "REJECTED" %}
+                                        <span class="badge red">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td class="muted">{{ c.created_at|date:"d M" }}</td>
+                                <td style="text-align: right;">
+                                    <a href="{% url 'hostel:student_complaint_detail' c.pk %}" class="btn btn-ghost btn-sm">View ›</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty" style="padding: 24px 16px;">
+                    <svg class="icon"><use href="#i-check"/></svg>
+                    <b>No Maintenance Complaints</b>
+                    <span>Everything is running smoothly! If you face any room maintenance issues, report them here.</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN / STACK -->
+    <div class="stack">
+
+        <!-- Attendance Summary Card -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-check"/></svg> Hostel Attendance
+                </div>
+                <a class="link-arrow" href="{% url 'hostel:student_attendance' %}">History ›</a>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="font-size: 28px; font-weight: 800; color: var(--ink);">
+                        {% if attendance.percentage is not None %}{{ attendance.percentage }}%{% else %}—{% endif %}
+                    </div>
+                    <div class="muted" style="font-size: 13px;">Compliance Rate</div>
+                </div>
+
+                <div class="kv" style="grid-template-columns: 1fr; gap: 8px;">
+                    <div class="kv-item">
+                        <div class="kv-k">Days Present</div>
+                        <div class="kv-v" style="font-weight: 700; color: var(--success);">{{ attendance.present }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Days Absent</div>
+                        <div class="kv-v" style="font-weight: 700; color: var(--warn);">{{ attendance.absent }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Permissions / Outpasses</div>
+                        <div class="kv-v">{{ attendance.permission }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Approved Leaves</div>
+                        <div class="kv-v">{{ attendance.leave }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Total Roll Calls</div>
+                        <div class="kv-v">{{ attendance.total }}</div>
+                    </div>
+                </div>
+
+                <a href="{% url 'hostel:student_attendance' %}" class="btn btn-ghost btn-block" style="margin-top: 14px;">
+                    View Detailed Attendance Roll Call
+                </a>
+            </div>
+        </div>
+
+        <!-- Applications Summary -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-layers"/></svg> Accommodation Applications
+                </div>
+                <a class="link-arrow" href="{% url 'hostel:application_list' %}">All ›</a>
+            </div>
+            <div class="card-body">
+                {% if applications.latest %}
+                <div style="background: var(--surface-2); padding: 12px 14px; border-radius: 8px; margin-bottom: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-family: monospace; font-size: 12px; font-weight: 700;">{{ applications.latest.application_id }}</span>
+                        {% if applications.latest.status == "APPROVED" %}
+                            <span class="badge green">Approved</span>
+                        {% elif applications.latest.status == "PENDING" %}
+                            <span class="badge amber">Pending Review</span>
+                        {% elif applications.latest.status == "UNDER_REVIEW" %}
+                            <span class="badge blue">Under Review</span>
+                        {% elif applications.latest.status == "REJECTED" %}
+                            <span class="badge red">Rejected</span>
+                        {% elif applications.latest.status == "WAITLISTED" %}
+                            <span class="badge violet">Waitlisted</span>
+                        {% else %}
+                            <span class="badge slate">{{ applications.latest.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="muted" style="font-size: 12.5px;">
+                        Preference: {{ applications.latest.hostel_preference.name|default:"Any Hostel" }} ({{ applications.latest.get_room_type_preference_display }})
+                    </div>
+                    {% if applications.latest.status == "REJECTED" and applications.latest.rejection_reason %}
+                    <div style="margin-top: 6px; font-size: 12px; color: var(--warn); background: #fee2e2; padding: 6px 8px; border-radius: 4px;">
+                        <strong>Reason:</strong> {{ applications.latest.rejection_reason }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="kv" style="grid-template-columns: 1fr; gap: 8px;">
+                    <div class="kv-item">
+                        <div class="kv-k">Pending Review</div>
+                        <div class="kv-v" style="font-weight: 700; color: var(--brand);">{{ applications.pending }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Approved</div>
+                        <div class="kv-v" style="font-weight: 700; color: var(--success);">{{ applications.approved }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Rejected</div>
+                        <div class="kv-v" style="font-weight: 700; color: var(--warn);">{{ applications.rejected }}</div>
+                    </div>
+                    <div class="kv-item">
+                        <div class="kv-k">Total Applications</div>
+                        <div class="kv-v">{{ applications.total }}</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-top: 14px;">
+                    <a href="{% url 'hostel:application_create' %}" class="btn btn-primary btn-sm btn-block">New Application</a>
+                    <a href="{% url 'hostel:application_list' %}" class="btn btn-ghost btn-sm btn-block">History</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Official Hostel Notices & Circulars -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-bell"/></svg> Hostel Bulletins &amp; Notices
+                </div>
+                <a class="link-arrow" href="{% url 'hostel:student_notices' %}">All ›</a>
+            </div>
+            <div class="card-body">
+                {% for n in notices %}
+                    <div class="note" style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
+                            <h4 style="font-size: 13.5px; margin: 0 0 4px 0; font-weight: 700;">
+                                {% if n.priority == "URGENT" %}<span style="color: #ef4444;">🚨</span> {% endif %}{{ n.title }}
+                            </h4>
+                            {% if n.priority == "URGENT" %}
+                                <span class="badge red">Urgent</span>
+                            {% elif n.priority == "IMPORTANT" %}
+                                <span class="badge amber">Important</span>
+                            {% endif %}
+                        </div>
+                        <div class="meta" style="font-size: 11px; margin-bottom: 4px;">
+                            {{ n.publish_date|date:"d M Y" }} &middot; {% if n.hostel %}{{ n.hostel.code }}{% else %}Campus-Wide{% endif %}
+                        </div>
+                        <p style="font-size: 12.5px; margin: 0; color: var(--ink);">{{ n.message|truncatechars:120 }}</p>
+                    </div>
+                {% empty %}
+                    <div class="muted" style="font-size: 13px; text-align: center; padding: 12px 0;">No notices posted for your hostel at this time.</div>
+                {% endfor %}
+                <a class="link-arrow" href="{% url 'hostel:student_notices' %}">See all hostel notices ›</a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

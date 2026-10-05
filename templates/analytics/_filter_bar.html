@@ -1,0 +1,124 @@
+<form class="filters mb" method="get" id="analyticsFilterForm">
+    <div class="filters-row" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
+        {# School filter #}
+        <div class="field">
+            <label for="fSchool">School / Dept</label>
+            {% if scope.is_restricted_school %}
+                <input class="input" type="text" value="{{ scope.school.name }}" readonly style="background: var(--surface-2); font-weight: 600;" title="Scoped to your assigned School">
+                <input type="hidden" name="school" value="{{ scope.school.id }}">
+            {% else %}
+                <select class="select" id="fSchool" name="school" onchange="this.form.submit()">
+                    <option value="">All Schools</option>
+                    {% for sch in scope.available_schools %}
+                        <option value="{{ sch.id }}" {% if scope.school and scope.school.id == sch.id %}selected{% endif %}>{{ sch.name }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </div>
+
+        {# Course / Degree filter #}
+        <div class="field">
+            <label for="fCourse">Degree / Course</label>
+            <select class="select" id="fCourse" name="course" onchange="this.form.submit()">
+                <option value="">All Degrees</option>
+                {% for crs in scope.available_courses %}
+                    <option value="{{ crs.id }}" {% if scope.course and scope.course.id == crs.id %}selected{% endif %}>{{ crs.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {# Class / Year filter #}
+        <div class="field">
+            <label for="fYear">Class / Year</label>
+            <select class="select" id="fYear" name="year" onchange="this.form.submit()">
+                <option value="">All Years</option>
+                {% for yr in scope.available_years %}
+                    <option value="{{ yr }}" {% if scope.year == yr %}selected{% endif %}>Year {{ yr }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {# Subject filter #}
+        <div class="field">
+            <label for="fSubject">Subject</label>
+            <select class="select" id="fSubject" name="subject" onchange="this.form.submit()">
+                <option value="">All Subjects</option>
+                {% for s in scope.available_subjects %}
+                    <option value="{{ s.id }}" {% if scope.subject and scope.subject.id == s.id %}selected{% endif %}>{{ s.name }} ({{ s.code }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {# Date From #}
+        <div class="field">
+            <label for="fDateFrom">Date From</label>
+            <input class="input" type="date" id="fDateFrom" name="date_from" value="{{ scope.date_from_str }}">
+        </div>
+
+        {# Date To #}
+        <div class="field">
+            <label for="fDateTo">Date To</label>
+            <input class="input" type="date" id="fDateTo" name="date_to" value="{{ scope.date_to_str }}">
+        </div>
+
+        {# Risk Level filter if on Risk or Attendance page #}
+        {% if current_tab == 'risk' or current_tab == 'attendance' %}
+        <div class="field">
+            <label for="fRisk">Risk Level</label>
+            <select class="select" id="fRisk" name="risk_level" onchange="this.form.submit()">
+                <option value="">All Risk Levels</option>
+                {% if current_tab == 'risk' %}
+                    <option value="High" {% if scope.risk_level == 'High' %}selected{% endif %}>High Risk</option>
+                    <option value="Medium" {% if scope.risk_level == 'Medium' %}selected{% endif %}>Medium Risk</option>
+                    <option value="Low" {% if scope.risk_level == 'Low' %}selected{% endif %}>Low Risk</option>
+                {% else %}
+                    <option value="Safe" {% if scope.risk_level == 'Safe' %}selected{% endif %}>Safe (&ge; 75%)</option>
+                    <option value="Warning" {% if scope.risk_level == 'Warning' %}selected{% endif %}>Warning (65%–74.9%)</option>
+                    <option value="Critical" {% if scope.risk_level == 'Critical' %}selected{% endif %}>Critical (&lt; 65%)</option>
+                {% endif %}
+            </select>
+        </div>
+        {% endif %}
+
+        {# Search input #}
+        <div class="field">
+            <label for="fQ">Search</label>
+            <input class="input" type="search" id="fQ" name="q" value="{{ scope.q }}" placeholder="Name, Roll No, SIF...">
+        </div>
+
+        {# Buttons #}
+        <div class="form-actions" style="margin-bottom: 2px;">
+            <button class="btn btn-primary" type="submit">
+                <svg class="icon icon-sm"><use href="#i-filter"/></svg> Apply
+            </button>
+            <a class="btn btn-ghost" href="{{ reset_url }}">Reset</a>
+        </div>
+    </div>
+
+    {# Breadcrumbs #}
+    <div class="crumbs" style="margin-top: 10px;">
+        <svg class="icon icon-sm"><use href="#i-layers"/></svg>
+        <span>Scope:</span>
+        <b>{% if scope.school %}{{ scope.school.name }}{% else %}All Schools{% endif %}</b>
+        {% if scope.course %}
+            <span class="sep">&rsaquo;</span>
+            <b>{{ scope.course.name }}</b>
+        {% endif %}
+        {% if scope.year %}
+            <span class="sep">&rsaquo;</span>
+            <b>Year {{ scope.year }}</b>
+        {% endif %}
+        {% if scope.subject %}
+            <span class="sep">&rsaquo;</span>
+            <b>{{ scope.subject.name }}</b>
+        {% endif %}
+        {% if scope.date_from_str or scope.date_to_str %}
+            <span class="sep">&rsaquo;</span>
+            <span class="badge gray">Dates: {{ scope.date_from_str|default:"Start" }} to {{ scope.date_to_str|default:"Present" }}</span>
+        {% endif %}
+        {% if scope.risk_level %}
+            <span class="sep">&rsaquo;</span>
+            <span class="badge {% if scope.risk_level in 'High Critical' %}red{% elif scope.risk_level in 'Medium Warning' %}amber{% else %}green{% endif %}">{{ scope.risk_level }}</span>
+        {% endif %}
+    </div>
+</form>

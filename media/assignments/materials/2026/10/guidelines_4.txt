@@ -1,0 +1,7 @@
+SmartCollege Academic Assignment Guidelines
+Title: Seminar Paper: Advances in Generative AI and LLMs
+Course: M.Sc Computer Science (AI & Data Science)
+Subject: Cloud Computing & DevOps
+Max Marks: 100
+
+Please follow the department code formatting guidelines.

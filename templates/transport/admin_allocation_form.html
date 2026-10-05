@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Seat Allocation Wizard{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Assign a student commuter to a specific college bus, route, and boarding stop.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_allocations' %}">&larr; Back to Allocations</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please review the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label strong" for="id_student">Select Student *</label>
+                {{ form.student }}
+                <div class="muted" style="font-size: 11.5px; margin-top: 4px;">Student must be actively enrolled.</div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_vehicle">Assigned Bus / Vehicle *</label>
+                    {{ form.vehicle }}
+                    <div class="muted" style="font-size: 11.5px; margin-top: 4px;">Must have remaining seating capacity.</div>
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_route">Designated Route *</label>
+                    {{ form.route }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_stop">Boarding Stop *</label>
+                    {{ form.stop }}
+                    <div class="muted" style="font-size: 11.5px; margin-top: 4px;">Must belong to the selected route.</div>
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_seat_number">Seat Designation (optional)</label>
+                    {{ form.seat_number }}
+                </div>
+            </div>
+
+            <div class="grid grid-3" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_academic_year">Academic Session *</label>
+                    {{ form.academic_year }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_start_date">Start Date *</label>
+                    {{ form.start_date }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_status">Status *</label>
+                    {{ form.status }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_pickup_time">Custom Pickup Time (optional)</label>
+                    {{ form.pickup_time }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_drop_time">Custom Drop Time (optional)</label>
+                    {{ form.drop_time }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label class="form-label strong" for="id_remarks">Internal Administrative Remarks</label>
+                {{ form.remarks }}
+            </div>
+
+            <div style="background: var(--surface-2); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="issue_pass" value="1" id="id_issue_pass" checked style="width: 18px; height: 18px;">
+                <label for="id_issue_pass" style="font-weight: 600; font-size: 13.5px; margin: 0; cursor: pointer;">
+                    Automatically generate and issue official digital transport pass upon allocation
+                </label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 18px;">
+                <a href="{% url 'transport:admin_allocations' %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Confirm Allocation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

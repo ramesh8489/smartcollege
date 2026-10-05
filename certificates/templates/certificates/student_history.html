@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Certificate Request History · Smart College{% endblock %}
+{% block topbar_title %}Student Portal · Request History{% endblock %}
+
+{% block page_title %}Certificate Request History{% endblock %}
+{% block page_sub %}Complete record and audit trail of all certificate requests and generated credentials.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'certificate_request_create' %}" class="btn btn-primary btn-sm">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg>
+        <span>New Request</span>
+    </a>
+    <a href="{% url 'certificates_student_portal' %}" class="btn btn-ghost btn-sm">
+        ← Back to Portal
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filters Card -->
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-body" style="padding: 16px;">
+        <form method="GET" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+            <div style="flex: 2; min-width: 200px;">
+                <label style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block;">Search</label>
+                <input type="text" name="q" value="{{ q }}" class="input" placeholder="Search by Request ID, purpose, or certificate name...">
+            </div>
+
+            <div style="flex: 1; min-width: 150px;">
+                <label style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block;">Status</label>
+                <select name="status" class="select">
+                    <option value="">All Statuses</option>
+                    {% for val, label in status_choices %}
+                        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 160px;">
+                <label style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block;">Certificate Type</label>
+                <select name="type" class="select">
+                    <option value="">All Types</option>
+                    {% for ct in cert_types %}
+                        <option value="{{ ct.id }}" {% if type_filter == ct.id|stringformat:"s" %}selected{% endif %}>{{ ct.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block;">Request Date</label>
+                <input type="date" name="date" value="{{ date_filter }}" class="input">
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">
+                    <svg class="icon icon-sm"><use href="#i-filter"/></svg>
+                    <span>Filter</span>
+                </button>
+                <a href="{% url 'student_certificate_history' %}" class="btn btn-ghost" style="padding: 8px 12px;">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- History Table Card -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+            <span>My Submitted Requests ({{ page_obj.paginator.count }})</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if page_obj %}
+            <div class="table-wrap">
+                <table class="table" style="width: 100%; margin: 0;">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Certificate Type</th>
+                            <th>Purpose</th>
+                            <th>Request Date</th>
+                            <th>Status</th>
+                            <th>Certificate Number</th>
+                            <th>Approved Date</th>
+                            <th style="text-align: right;">Download</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in page_obj %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'certificate_request_detail' req.pk %}" style="font-family: monospace; font-weight: 700; color: var(--brand);">
+                                        {{ req.request_id }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 700; color: var(--text);">{{ req.certificate_type.name }}</div>
+                                </td>
+                                <td>
+                                    <div>{{ req.purpose|truncatechars:40 }}</div>
+                                    {% if req.status == 'Rejected' and req.rejection_reason %}
+                                        <div style="font-size: 11px; color: var(--danger); margin-top: 3px;">
+                                            <strong>Reason:</strong> {{ req.rejection_reason }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ req.created_at|date:"d M Y" }}</td>
+                                <td>
+                                    <span class="badge {{ req.status_badge_class }}">
+                                        {{ req.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if req.generated_certificate %}
+                                        <span style="font-family: monospace; font-weight: 700; color: #1e40af;">
+                                            {{ req.generated_certificate.certificate_number }}
+                                        </span>
+                                    {% else %}
+                                        <span class="muted" style="font-size: 11.5px;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if req.approved_at %}
+                                        {{ req.approved_at|date:"d M Y" }}
+                                    {% else %}
+                                        <span class="muted" style="font-size: 11.5px;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right;">
+                                    {% if req.generated_certificate %}
+                                        <a href="{% url 'download_certificate_pdf' req.pk %}" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 12px;">
+                                            <svg class="icon icon-sm"><use href="#i-download"/></svg>
+                                            <span>PDF</span>
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'certificate_request_detail' req.pk %}" class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 11.5px;">
+                                            Details
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 12.5px;">
+                        Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} total requests)
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status_filter }}&type={{ type_filter }}&date={{ date_filter }}" class="btn btn-ghost btn-sm">‹ Previous</a>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status_filter }}&type={{ type_filter }}&date={{ date_filter }}" class="btn btn-ghost btn-sm">Next ›</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <div style="padding: 40px; text-align: center;" class="muted">
+                No certificate requests matched your search criteria.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

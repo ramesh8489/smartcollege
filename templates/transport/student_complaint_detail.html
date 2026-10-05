@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Complaint {{ complaint.complaint_id }} · Smart College{% endblock %}
+{% block topbar_title %}Complaint Details{% endblock %}
+
+{% block page_title %}Ticket {{ complaint.complaint_id }}{% endblock %}
+{% block page_sub %}
+    Logged on {{ complaint.created_at|date:"d M Y, h:i A" }} &middot;
+    Status:
+    {% if complaint.status == 'OPEN' %}
+        <span class="badge amber">Open</span>
+    {% elif complaint.status == 'IN_PROGRESS' %}
+        <span class="badge violet">In Progress</span>
+    {% elif complaint.status == 'RESOLVED' %}
+        <span class="badge green">Resolved</span>
+    {% else %}
+        <span class="badge gray">{{ complaint.get_status_display }}</span>
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:student_complaints' %}">&larr; Back to Complaints</a>
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start;">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card" style="padding: 24px;">
+            <div class="card-head" style="margin-bottom: 16px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-edit"/></svg>
+                    <span>{{ complaint.title }}</span>
+                </div>
+                <div>
+                    <span class="badge gray">{{ complaint.get_category_display }}</span>
+                    {% if complaint.priority == 'CRITICAL' %}
+                        <span class="badge red">Critical Priority</span>
+                    {% elif complaint.priority == 'HIGH' %}
+                        <span class="badge amber">High Priority</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="font-size: 14px; line-height: 1.6; color: var(--text); margin-bottom: 20px; white-space: pre-wrap;">{{ complaint.description }}</div>
+
+            {% if complaint.attachment %}
+            <div style="background: var(--surface-2); padding: 12px 16px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg class="icon icon-sm"><use href="#i-file"/></svg>
+                    <span style="font-size: 13px; font-weight: 500;">Supporting Attachment</span>
+                </div>
+                <a href="{{ complaint.attachment.url }}" target="_blank" class="btn btn-ghost btn-sm">View File &rarr;</a>
+            </div>
+            {% endif %}
+
+            <!-- Resolution Block -->
+            {% if complaint.resolution %}
+            <div style="padding: 18px; background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 8px; margin-top: 10px;">
+                <div style="font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: #15803d; letter-spacing: 0.5px;">Resolution Remarks</div>
+                <div style="font-size: 14px; color: #166534; margin-top: 6px; line-height: 1.5; white-space: pre-wrap;">{{ complaint.resolution }}</div>
+                {% if complaint.resolved_at %}
+                <div class="muted" style="font-size: 11.5px; margin-top: 8px; color: #15803d;">
+                    Resolved on {{ complaint.resolved_at|date:"d M Y, h:i A" }}
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div style="padding: 16px; background: var(--surface-2); border-radius: 8px; color: var(--muted); font-size: 13px;">
+                ⏳ This ticket is currently being investigated by the transport staff. You will receive an alert once resolved.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Metadata Sidebar -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 14px; font-size: 13.5px;">
+                <svg class="icon"><use href="#i-clock"/></svg>
+                <span>Ticket Details</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Ticket ID:</span>
+                    <code>{{ complaint.complaint_id }}</code>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Route:</span>
+                    <span>{{ complaint.route.code|default:"General" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Vehicle:</span>
+                    <span>{{ complaint.vehicle.vehicle_number|default:"N/A" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Filed On:</span>
+                    <span>{{ complaint.created_at|date:"d M Y" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Status:</span>
+                    <span class="strong">{{ complaint.get_status_display }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

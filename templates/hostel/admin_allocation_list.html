@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Hostel Allocations · Smart College{% endblock %}
+{% block topbar_title %}Hostel Allocations{% endblock %}
+
+{% block page_title %}Hostel Bed Allocation Roster{% endblock %}
+{% block page_sub %}
+    Manage active resident allocations, room occupancy, bed availability, and checkout dates.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_attendance' %}">
+        <svg class="icon icon-sm"><use href="#i-calendar"/></svg> Daily Attendance
+    </a>
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_fees' %}">
+        <svg class="icon icon-sm"><use href="#i-dollar"/></svg> Hostel Fees
+    </a>
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_complaints' %}">
+        <svg class="icon icon-sm"><use href="#i-alert-circle"/></svg> Complaints
+    </a>
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_notices' %}">
+        <svg class="icon icon-sm"><use href="#i-file-text"/></svg> Notices
+    </a>
+    <a class="btn btn-primary" href="{% url 'hostel:admin_allocation_create' %}">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Allocate Bed
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Filters -->
+<div class="card mb" style="padding: 18px 24px;">
+    <form method="get" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 220px;">
+            <label class="label" style="font-size: 12px;">Search Student / Roll No / Room / Bed / ID</label>
+            <input type="text" name="q" value="{{ q }}" class="input" placeholder="Search resident...">
+        </div>
+
+        <div style="width: 200px;">
+            <label class="label" style="font-size: 12px;">Status</label>
+            <select name="status" class="select">
+                <option value="">All Statuses</option>
+                {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="width: 220px;">
+            <label class="label" style="font-size: 12px;">Hostel</label>
+            <select name="hostel" class="select">
+                <option value="">All Hostels</option>
+                {% for h in hostels %}
+                    <option value="{{ h.id }}" {% if hostel_filter == h.id|stringformat:"i" %}selected{% endif %}>{{ h.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon icon-sm"><use href="#i-search"/></svg> Filter
+            </button>
+            <a href="{% url 'hostel:admin_allocations' %}" class="btn btn-ghost">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Allocations Table -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-home"/></svg>
+            <span>Allocations Roster ({{ page_obj.paginator.count }})</span>
+        </div>
+    </div>
+
+    {% if page_obj %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Allocation ID</th>
+                    <th>Student Resident</th>
+                    <th>Roll No</th>
+                    <th>Hostel</th>
+                    <th>Room</th>
+                    <th>Bed</th>
+                    <th>Allocated Date</th>
+                    <th>Status</th>
+                    <th class="num">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in page_obj %}
+                <tr>
+                    <td><code>{{ a.allocation_id }}</code></td>
+                    <td class="strong">{{ a.student.name }}</td>
+                    <td><code>{{ a.student.roll_no }}</code></td>
+                    <td>{{ a.hostel.name }}</td>
+                    <td><b>{{ a.room.room_number }}</b> <span class="muted" style="font-size: 11px;">({{ a.block.name }})</span></td>
+                    <td><span class="badge gray">{{ a.bed.bed_number }}</span></td>
+                    <td>{{ a.allocation_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if a.status == 'ACTIVE' %}
+                            <span class="badge green">Active</span>
+                        {% elif a.status == 'CHECKED_OUT' %}
+                            <span class="badge gray">Checked Out</span>
+                        {% elif a.status == 'TRANSFERRED' %}
+                            <span class="badge violet">Transferred</span>
+                        {% else %}
+                            <span class="badge red">{{ a.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="num">
+                        <a class="btn btn-ghost btn-sm" href="{% url 'hostel:admin_allocation_detail' a.pk %}">
+                            View &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="card-foot" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px;">
+        <div class="muted" style="font-size: 13px;">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+        </div>
+        <div style="display: flex; gap: 6px;">
+            {% if page_obj.has_previous %}
+                <a class="btn btn-ghost btn-sm" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&hostel={{ hostel_filter }}&q={{ q }}">&larr; Prev</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a class="btn btn-ghost btn-sm" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&hostel={{ hostel_filter }}&q={{ q }}">Next &rarr;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty" style="padding: 48px; text-align: center;">
+        <svg class="icon icon-xl" style="color: var(--text-muted); width: 48px; height: 48px; margin-bottom: 12px;"><use href="#i-home"/></svg>
+        <h3 style="margin-bottom: 8px;">No Allocations Found</h3>
+        <p class="muted">No students currently allocated matching criteria.</p>
+        <a class="btn btn-primary" href="{% url 'hostel:admin_allocation_create' %}" style="margin-top: 10px;">Allocate Bed</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

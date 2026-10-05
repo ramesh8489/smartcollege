@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Allocation {{ allocation.allocation_id }} · Smart College{% endblock %}
+{% block topbar_title %}Hostel Allocation Details{% endblock %}
+
+{% block page_title %}Allocation Record: {{ allocation.allocation_id }}{% endblock %}
+{% block page_sub %}
+    Student: <b>{{ allocation.student.name }}</b> &middot;
+    Status:
+    {% if allocation.status == 'ACTIVE' %}
+        <span class="badge green">Active Resident</span>
+    {% elif allocation.status == 'CHECKED_OUT' %}
+        <span class="badge gray">Checked Out</span>
+    {% elif allocation.status == 'TRANSFERRED' %}
+        <span class="badge violet">Transferred</span>
+    {% else %}
+        <span class="badge red">{{ allocation.get_status_display }}</span>
+    {% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    {% if allocation.status == 'ACTIVE' %}
+        <a class="btn btn-ghost" href="{% url 'hostel:admin_fee_create' %}?student_id={{ allocation.student_id }}">
+            <svg class="icon icon-sm"><use href="#i-dollar"/></svg> Issue Fee Demand
+        </a>
+        <a class="btn btn-primary" href="{% url 'hostel:admin_allocation_transfer' allocation.pk %}">
+            <svg class="icon icon-sm"><use href="#i-layers"/></svg> Transfer Room / Bed
+        </a>
+    {% endif %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_allocations' %}">&larr; Back to Allocations</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start;">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Assignment Info -->
+        <div class="card" style="padding: 24px;">
+            <div class="card-head" style="margin-bottom: 16px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-home"/></svg>
+                    <span>Room & Bed Assignment</span>
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px;">
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Resident Student</div>
+                    <div class="strong" style="font-size: 15px; margin-top: 2px;">{{ allocation.student.name }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Roll Number</div>
+                    <div style="font-size: 15px; margin-top: 2px;"><code>{{ allocation.student.roll_no }}</code></div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Hostel Name</div>
+                    <div class="strong" style="font-size: 14px; margin-top: 2px; color: var(--brand-700);">
+                        {{ allocation.hostel.name }} ({{ allocation.hostel.code }})
+                    </div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Block & Floor</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ allocation.block.name }} &middot; {{ allocation.floor.name }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Room Number</div>
+                    <div class="strong" style="font-size: 15px; margin-top: 2px;">
+                        Room {{ allocation.room.room_number }} ({{ allocation.room.get_room_type_display }})
+                    </div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Assigned Bed</div>
+                    <div style="font-size: 15px; margin-top: 2px;"><span class="badge violet">{{ allocation.bed.bed_number }}</span></div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Allocation Date</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ allocation.allocation_date|date:"d M Y" }}</div>
+                </div>
+                <div>
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Actual Checkout Date</div>
+                    <div style="font-size: 14px; margin-top: 2px;">{{ allocation.actual_checkout_date|date:"d M Y"|default:"Still in residence" }}</div>
+                </div>
+            </div>
+
+            {% if allocation.remarks %}
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);">
+                <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Allocation Remarks</div>
+                <div style="font-size: 13.5px; color: var(--ink); line-height: 1.5;">{{ allocation.remarks|linebreaks }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Lifecycle Events Table -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-clock"/></svg>
+                    <span>Check-in & Check-out History</span>
+                </div>
+            </div>
+
+            {% if lifecycle_events %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Date & Time</th>
+                            <th>Processed By</th>
+                            <th>Reason / Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ev in lifecycle_events %}
+                        <tr>
+                            <td>
+                                {% if ev.event_type == 'CHECK_IN' %}
+                                    <span class="badge green">Check In</span>
+                                {% else %}
+                                    <span class="badge amber">Check Out</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ ev.event_date|date:"d M Y" }} · {{ ev.event_time|time:"h:i A" }}</td>
+                            <td>{% if ev.processed_by %}{{ ev.processed_by.get_full_name|default:ev.processed_by.username }}{% else %}Staff{% endif %}</td>
+                            <td>
+                                {% if ev.reason %}<div><b>Reason:</b> {{ ev.reason }}</div>{% endif %}
+                                {% if ev.remarks %}<div class="muted" style="font-size: 12px;">{{ ev.remarks }}</div>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty" style="padding: 24px; text-align: center;">
+                <p class="muted">No check-in or checkout events recorded for this allocation yet.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Room Transfers History Table -->
+        {% if transfers %}
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-layers"/></svg>
+                    <span>Room & Bed Transfer History</span>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Transfer Date</th>
+                            <th>Previous Bed / Room</th>
+                            <th>New Bed / Room</th>
+                            <th>Approved By</th>
+                            <th>Reason / Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transfers %}
+                        <tr>
+                            <td>{{ t.transfer_date|date:"d M Y" }}</td>
+                            <td>
+                                <b>Rm {{ t.old_room.room_number }}</b> · Bed {{ t.old_bed.bed_number }}
+                                <div class="muted" style="font-size: 11px;">{{ t.old_hostel.code }}</div>
+                            </td>
+                            <td>
+                                <b style="color: var(--brand-700);">Rm {{ t.new_room.room_number }}</b> · Bed {{ t.new_bed.bed_number }}
+                                <div class="muted" style="font-size: 11px;">{{ t.new_hostel.code }}</div>
+                            </td>
+                            <td>{% if t.approved_by %}{{ t.approved_by.get_full_name|default:t.approved_by.username }}{% else %}Warden{% endif %}</td>
+                            <td>
+                                <div><b>Reason:</b> {{ t.reason }}</div>
+                                {% if t.remarks %}<div class="muted" style="font-size: 11.5px;">{{ t.remarks }}</div>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Actions & Audit Sidebar -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        {% if allocation.status == 'ACTIVE' %}
+        <!-- Check-out Action Card -->
+        <div class="card" style="padding: 20px; border-left: 4px solid var(--warn, #f59e0b);">
+            <div class="card-title" style="margin-bottom: 12px;">
+                <svg class="icon" style="color: var(--warn, #f59e0b);"><use href="#i-check"/></svg>
+                <span>Process Check-Out</span>
+            </div>
+            <form method="post" action="{% url 'hostel:admin_allocation_event' allocation.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="event_type" value="CHECK_OUT">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="field">
+                        <label class="label" style="font-size: 12px;">Check-Out Date</label>
+                        {{ checkout_form.event_date }}
+                    </div>
+                    <div class="field">
+                        <label class="label" style="font-size: 12px;">Checkout Reason <span style="color: var(--danger);">*</span></label>
+                        {{ checkout_form.reason }}
+                    </div>
+                    <div class="field">
+                        <label class="label" style="font-size: 12px;">Key / Condition Remarks</label>
+                        {{ checkout_form.remarks }}
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="background: var(--warn, #f59e0b); border-color: var(--warn, #f59e0b);">
+                        Complete Check-Out
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Check-in Action Card (if not yet recorded) -->
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 12px;">
+                <svg class="icon"><use href="#i-clock"/></svg>
+                <span>Log Check-In Event</span>
+            </div>
+            <form method="post" action="{% url 'hostel:admin_allocation_event' allocation.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="event_type" value="CHECK_IN">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="field">
+                        <label class="label" style="font-size: 12px;">Check-In Date</label>
+                        {{ checkin_form.event_date }}
+                    </div>
+                    <div class="field">
+                        <label class="label" style="font-size: 12px;">Check-In Remarks</label>
+                        {{ checkin_form.remarks }}
+                    </div>
+                    <button type="submit" class="btn btn-ghost">
+                        Log Check-In
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 12px;">
+                <svg class="icon"><use href="#i-shield"/></svg>
+                <span>Administrative Audit</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Allocated By:</span>
+                    <b>{% if allocation.allocated_by %}{{ allocation.allocated_by.get_full_name|default:allocation.allocated_by.username }}{% else %}Administration{% endif %}</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Record Created:</span>
+                    <b>{{ allocation.created_at|date:"d M Y, h:i A" }}</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="muted">Last Modified:</span>
+                    <b>{{ allocation.updated_at|date:"d M Y, h:i A" }}</b>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

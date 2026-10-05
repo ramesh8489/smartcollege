@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Academic Risk Analytics{% endblock %}
+{% block topbar_title %}Academic Risk Identification{% endblock %}
+
+{% block extra_head %}
+<style>
+    .avatar.risk-high { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #ffffff; }
+    .avatar.risk-medium { background: linear-gradient(135deg, #f59e0b, #d97706); color: #ffffff; }
+    .avatar.risk-low { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; }
+</style>
+{% endblock %}
+
+{% block page_title %}Academic Risk Indicator & Student Support{% endblock %}
+
+{% block page_sub %}
+Rule-based academic advisory framework for proactive student mentoring &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Updated {{ scope.generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="/analytics/export/excel/?type=risk&{{ export_params }}">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg> Export Risk List (Excel)
+    </a>
+    <a class="btn btn-ghost" href="/analytics/export/pdf/?type=risk&{{ export_params }}" target="_blank">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> PDF Advisory Report
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "analytics/_nav_tabs.html" %}
+{% include "analytics/_filter_bar.html" %}
+
+{# Institutional Methodology Disclaimer Banner #}
+<div class="alert alert-info mb">
+    <svg class="icon icon-sm" style="flex: none; margin-top: 2px;"><use href="#i-shield"/></svg>
+    <div style="font-size: 13px;">
+        <b>Academic Support Recommendation (Methodology Notice):</b>
+        This framework calculates an objective risk index based on transparent, observable academic data:
+        <b>Attendance Shortage (40% weight)</b>, <b>Examination & Continuous Marks (40% weight)</b>, and <b>Auxiliary Institutional Factors (20% weight: fee balance, overdue loans, missing assignments)</b>.
+        This indicator is purely designed for institutional mentoring and quality assurance.
+    </div>
+</div>
+
+{# Risk Summary KPI Cards #}
+<div class="grid grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+        <div>
+            <div class="stat-val">{{ risk.total_evaluated }}</div>
+            <div class="stat-label">Evaluated Candidates</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico rose"><svg class="icon icon-lg"><use href="#i-shield"/></svg></div>
+        <div>
+            <div class="stat-val">{{ risk.high_risk_count }}</div>
+            <div class="stat-label">High Academic Risk (&ge; 60 pts)</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-clock"/></svg></div>
+        <div>
+            <div class="stat-val">{{ risk.medium_risk_count }}</div>
+            <div class="stat-label">Medium Risk (30–59 pts)</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div>
+            <div class="stat-val">{{ risk.low_risk_count }}</div>
+            <div class="stat-label">Low / Baseline Risk (&lt; 30 pts)</div>
+        </div>
+    </div>
+</div>
+
+{# Detailed Risk Students Table #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon" style="color: var(--danger);"><use href="#i-shield"/></svg>
+            <span>Candidate Evaluation & Support Recommendations</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <a href="?risk_level=High{% if export_params %}&{{ export_params }}{% endif %}" class="btn btn-ghost btn-sm {% if scope.risk_level == 'High' %}btn-primary{% endif %}">High Risk Only</a>
+            <a href="?risk_level=Medium{% if export_params %}&{{ export_params }}{% endif %}" class="btn btn-ghost btn-sm {% if scope.risk_level == 'Medium' %}btn-primary{% endif %}">Medium Risk</a>
+            <a href="/analytics/risk/" class="btn btn-ghost btn-sm">Clear Filter</a>
+        </div>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Student Candidate</th>
+                        <th>Roll No</th>
+                        <th>Course & Year</th>
+                        <th class="num">Attendance</th>
+                        <th class="num">Marks Avg</th>
+                        <th class="num">Fee Balance</th>
+                        <th class="num">Risk Score</th>
+                        <th>Risk Level</th>
+                        <th>Itemized Diagnostic Reasons</th>
+                        <th class="num">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in page_obj %}
+                    <tr>
+                        <td class="strong">
+                            <div class="person">
+                                <div class="avatar risk-{{ item.risk_level|lower }}" style="width: 32px; height: 32px; font-size: 12px;">
+                                    {{ item.name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <div class="p-name">{{ item.name }}</div>
+                                    <div class="p-sub">{{ item.department }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><code>{{ item.roll_no }}</code></td>
+                        <td>{{ item.course }}<br><span class="muted" style="font-size: 11px;">Year {{ item.year }}</span></td>
+                        <td class="num">
+                            {% if item.attendance_pct is not None %}
+                                <span class="badge {% if item.attendance_pct >= scope.settings.attendance_warning_threshold %}green{% elif item.attendance_pct >= scope.settings.attendance_critical_threshold %}amber{% else %}red{% endif %}">
+                                    {{ item.attendance_pct }}%
+                                </span>
+                            {% else %}
+                                <span class="badge gray">No Log</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">
+                            {% if item.marks_pct is not None %}
+                                <b style="font-size: 13.5px;">{{ item.marks_pct }}%</b>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">
+                            {% if item.fee_balance > 0 %}
+                                <span style="color: var(--danger); font-weight: 700;">₹{{ item.fee_balance|floatformat:0 }}</span>
+                            {% else %}
+                                <span class="badge green">Cleared</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">
+                            <div style="font-weight: 800; font-size: 15px;">{{ item.risk_score }}<span class="muted" style="font-size: 11px; font-weight: normal;">/100</span></div>
+                        </td>
+                        <td>
+                            <span class="badge {{ item.badge_class }}" style="font-weight: 800;">{{ item.risk_level }}</span>
+                        </td>
+                        <td>
+                            <ul style="margin: 0; padding-left: 16px; font-size: 12px; color: var(--ink-2); line-height: 1.4;">
+                                {% for r in item.reasons %}
+                                    <li>{{ r }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td class="num">
+                            <a class="btn btn-ghost btn-sm" href="/analytics/student/{{ item.student.id }}/" title="View Student Analytics">
+                                Analytics
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10">
+                            <div class="empty">
+                                <svg class="icon"><use href="#i-check"/></svg>
+                                <b>No Student Risk Candidates Found</b>
+                                <span>All candidates meet or exceed institutional academic benchmarks.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Pagination #}
+        {% if page_obj.has_other_pages %}
+        <div class="pagination">
+            <span class="muted">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <div class="pages">
+                {% if page_obj.has_previous %}
+                    <a class="page-btn" href="?page={{ page_obj.previous_page_number }}{% if export_params %}&{{ export_params }}{% endif %}">&larr;</a>
+                {% endif %}
+                <span class="page-btn active">{{ page_obj.number }}</span>
+                {% if page_obj.has_next %}
+                    <a class="page-btn" href="?page={{ page_obj.next_page_number }}{% if export_params %}&{{ export_params }}{% endif %}">&rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

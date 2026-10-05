@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}My Examination Results · {{ student.name }}{% endblock %}
+{% block topbar_title %}Examination Results{% endblock %}
+
+{% block page_title %}My Examination Results{% endblock %}
+{% block page_sub %}{{ student.name }} ({{ student.roll_no }}) · {{ student.course.name }} · Year {{ student.year }}{% endblock %}
+
+{% block page_actions %}
+    <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-ghost" onclick="window.print();">
+            <svg class="icon"><use href="#i-download"/></svg>
+            <span>Print Results Card</span>
+        </button>
+        <a href="{% url 'exam_list' %}" class="btn btn-soft">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+            <span>Exam Schedules</span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{% if exam_reports %}
+    {% for report in exam_reports %}
+    <div class="card mb" style="border-top: 4px solid {% if report.overall_result == 'Pass' %}var(--brand){% else %}var(--danger){% endif %};">
+        <div class="card-head">
+            <div>
+                <div class="card-title" style="font-size: 17px;">
+                    <svg class="icon"><use href="#i-award"/></svg>
+                    <span>{{ report.exam.name }}</span>
+                </div>
+                <div class="muted" style="font-size: 12px; margin-top: 2px;">
+                    {{ report.exam.exam_type }} · {{ report.exam.academic_year }} · Semester {{ report.exam.semester }} · {{ report.exam.start_date|date:"d M Y" }} to {{ report.exam.end_date|date:"d M Y" }}
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span class="badge" style="background: var(--surface-2); font-weight: 700;">
+                    Overall: {{ report.overall_percentage }}%
+                </span>
+                <span class="badge {% if report.overall_grade == 'F' or report.overall_grade == 'AB' %}red{% elif report.overall_grade == 'O' or report.overall_grade == 'A+' or report.overall_grade == 'A' %}green{% else %}amber{% endif %}" style="font-weight: 800; font-size: 13px;">
+                    Grade: {{ report.overall_grade }}
+                </span>
+                <span class="badge {% if report.overall_result == 'Pass' %}green{% else %}red{% endif %}" style="font-weight: 800; font-size: 13px; padding: 6px 12px;">
+                    {{ report.overall_result }}
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Overall Result KPI Grid -->
+            <div class="grid grid-4 mb" style="gap: 14px;">
+                <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Total Score</div>
+                    <div style="font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 2px;">
+                        {{ report.total_obtained }} <span class="muted" style="font-size: 14px; font-weight: 500;">/ {{ report.total_max }}</span>
+                    </div>
+                </div>
+
+                <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Overall Percentage</div>
+                    <div style="font-size: 20px; font-weight: 800; color: var(--brand); margin-top: 2px;">
+                        {{ report.overall_percentage }}%
+                    </div>
+                </div>
+
+                <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Overall Result</div>
+                    <div style="font-size: 18px; font-weight: 800; color: {% if report.overall_result == 'Pass' %}var(--success){% else %}var(--danger){% endif %}; margin-top: 2px;">
+                        {{ report.overall_result }}
+                    </div>
+                </div>
+
+                <div style="background: var(--surface-2); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Subjects Cleared</div>
+                    <div style="font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 2px;">
+                        {{ report.passed_count }} <span class="muted" style="font-size: 14px; font-weight: 500;">/ {{ report.marks|length }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject-wise Marks Table -->
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Subject Name & Code</th>
+                            <th style="text-align: right;">Maximum Marks</th>
+                            <th style="text-align: right;">Marks Obtained</th>
+                            <th style="text-align: center;">Percentage</th>
+                            <th style="text-align: center;">Grade</th>
+                            <th style="text-align: center;">Grade Point</th>
+                            <th style="text-align: center;">Result</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in report.marks %}
+                        <tr>
+                            <td>
+                                <strong style="color: var(--ink);">{{ m.subject.name }}</strong>
+                                <div class="muted" style="font-size: 11px;">Code: {{ m.subject.code }} · {{ m.subject.get_subject_type_display }}</div>
+                            </td>
+                            <td style="text-align: right;">
+                                <strong>{{ m.max_marks }}</strong>
+                            </td>
+                            <td style="text-align: right;">
+                                {% if m.result_status == "Absent" %}
+                                    <span class="muted" style="font-style: italic;">Absent (0)</span>
+                                {% else %}
+                                    <strong style="font-size: 14px;">{{ m.marks_obtained }}</strong>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center; font-weight: 700;">
+                                {{ m.percentage }}%
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge {% if m.grade == 'F' or m.grade == 'AB' %}red{% elif m.grade == 'O' or m.grade == 'A+' or m.grade == 'A' %}green{% else %}amber{% endif %}" style="font-weight: 800;">
+                                    {{ m.grade }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; font-weight: 600;">
+                                {{ m.grade_point }}
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge {% if m.result_status == 'Pass' %}green{% else %}red{% endif %}" style="font-weight: 700;">
+                                    {{ m.result_status }}
+                                </span>
+                            </td>
+                            <td class="muted" style="font-size: 12px;">
+                                {{ m.remarks|default:"—" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <div class="card-body" style="padding: 50px 20px; text-align: center;">
+            <div style="font-size: 42px; margin-bottom: 12px;">🎓</div>
+            <div style="font-size: 17px; font-weight: 700; color: var(--ink);">No Examination Results Published Yet</div>
+            <div class="muted" style="max-width: 440px; margin: 6px auto 18px; font-size: 13.5px;">
+                Your examination evaluations and marks will appear here once invigilators and faculty finalize and publish the grades.
+            </div>
+            <a href="{% url 'exam_list' %}" class="btn btn-primary">
+                <svg class="icon"><use href="#i-calendar"/></svg>
+                <span>View Exam Schedules</span>
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Library Management{% endblock %}
+{% block topbar_title %}Library{% endblock %}
+{% block page_title %}Library Management{% endblock %}
+{% block page_sub %}{% if is_admin %}Manage books, issue records and returns.{% else %}Search books and track your issued books.{% endif %}{% endblock %}
+
+{% block page_actions %}
+{% if is_admin %}
+<a class="btn btn-ghost" href="/admin/library/book/">Manage Books</a>
+<a class="btn btn-primary" href="/admin/library/book/add/">Add Book</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="grid grid-3 mb">
+    <div class="stat"><div class="stat-ico"><svg class="icon"><use href="#i-book"/></svg></div><div><div class="stat-val">{{ books|length }}</div><div class="stat-label">Books in catalog</div></div></div>
+    <div class="stat"><div class="stat-ico green"><svg class="icon"><use href="#i-check"/></svg></div><div><div class="stat-val">{{ available_count }}</div><div class="stat-label">Available copies</div></div></div>
+    <div class="stat"><div class="stat-ico amber"><svg class="icon"><use href="#i-clock"/></svg></div><div><div class="stat-val">{{ overdue_count }}</div><div class="stat-label">Overdue loans</div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <div>
+            <div class="card-title"><svg class="icon"><use href="#i-book"/></svg> Book Catalog</div>
+            <div class="card-sub">Search by title or author.</div>
+        </div>
+        <form method="get" class="form-actions">
+            <input class="input" name="q" value="{{ request.GET.q }}" placeholder="Search books...">
+            <button class="btn btn-soft" type="submit">Search</button>
+        </form>
+    </div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Book</th><th>Category</th><th>Copies</th><th>Shelf</th>{% if is_admin %}<th>Issue</th>{% endif %}</tr></thead>
+                <tbody>
+                {% for book in books %}
+                <tr>
+                    <td><div class="strong">{{ book.title }}</div><div class="muted">{{ book.author }}{% if book.isbn %} · ISBN {{ book.isbn }}{% endif %}</div></td>
+                    <td><span class="badge gray">{{ book.get_category_display }}</span></td>
+                    <td>{{ book.available_copies }} / {{ book.total_copies }}</td>
+                    <td>{{ book.shelf_location|default:"—" }}</td>
+                    {% if is_admin %}
+                    <td>
+                        {% if book.available_copies > 0 %}
+                        <form method="post" action="{% url 'library_issue' %}" class="form-actions">
+                            {% csrf_token %}
+                            <input type="hidden" name="book_id" value="{{ book.id }}">
+                            <select class="select" name="student_id" required>
+                                <option value="">Student</option>
+                                {% for s in student_list %}<option value="{{ s.id }}">{{ s.name }} — {{ s.roll_no }}</option>{% endfor %}
+                            </select>
+                            <input class="input" style="max-width:90px" type="number" name="days" value="14" min="1" max="60" title="Loan days">
+                            <button class="btn btn-primary btn-sm" type="submit">Issue</button>
+                        </form>
+                        {% else %}<span class="badge red">No copies</span>{% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr><td colspan="5"><div class="empty"><svg class="icon"><use href="#i-book"/></svg><b>No books found</b><span>Add books from Django Admin to start the library.</span></div></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-head"><div><div class="card-title"><svg class="icon"><use href="#i-clock"/></svg> {% if is_admin %}Loan Records{% else %}My Library History{% endif %}</div><div class="card-sub">Issue, due and return details.</div></div></div>
+    <div class="card-body flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr>{% if is_admin %}<th>Student</th>{% endif %}<th>Book</th><th>Issue Date</th><th>Due Date</th><th>Status</th><th>Fine</th>{% if is_admin %}<th>Action</th>{% endif %}</tr></thead>
+                <tbody>
+                {% for loan in loans %}
+                <tr>
+                    {% if is_admin %}<td><div class="strong">{{ loan.student.name }}</div><div class="muted">{{ loan.student.roll_no }}</div></td>{% endif %}
+                    <td>{{ loan.book.title }}</td><td>{{ loan.issue_date|date:"d M Y" }}</td><td>{{ loan.due_date|date:"d M Y" }}</td>
+                    <td>{% with status=loan.current_status %}<span class="badge {% if status == 'RETURNED' %}green{% elif status == 'OVERDUE' %}red{% else %}amber{% endif %}">{{ status|title }}</span>{% endwith %}</td>
+                    <td>₹{{ loan.calculated_fine|floatformat:2 }}</td>
+                    {% if is_admin %}<td>{% if not loan.return_date %}<form method="post" action="{% url 'library_return' loan.id %}">{% csrf_token %}<button class="btn btn-success btn-sm" type="submit">Return</button></form>{% else %}<span class="muted">Returned {{ loan.return_date|date:"d M Y" }}</span>{% endif %}</td>{% endif %}
+                </tr>
+                {% empty %}<tr><td colspan="7"><div class="empty"><svg class="icon"><use href="#i-clock"/></svg><b>No loan records</b><span>No books have been issued yet.</span></div></td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

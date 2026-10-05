@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Hostel Attendance · Smart College{% endblock %}
+{% block topbar_title %}My Hostel Attendance{% endblock %}
+
+{% block page_title %}Hostel Attendance History & Percentage{% endblock %}
+{% block page_sub %}
+    Track your daily hostel attendance, roll calls, permissions, leaves, and overall compliance rate.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:application_list' %}">&larr; Back to Hostel Home</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="grid grid-4 mb">
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--brand-600);">{{ total_days }}</div>
+        <div class="stat-lbl">Total Recorded Days</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--success, #16a34a);">{{ present_count }}</div>
+        <div class="stat-lbl">Days Present</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--danger, #dc2626);">{{ absent_count }}</div>
+        <div class="stat-lbl">Days Absent ({{ permission_count }} Perm, {{ leave_count }} Leave)</div>
+    </div>
+    <div class="stat-card">
+        {% if attendance_percentage >= 75 %}
+        <div class="stat-val" style="color: var(--success, #16a34a);">
+        {% else %}
+        <div class="stat-val" style="color: var(--danger, #dc2626);">
+        {% endif %}
+            {{ attendance_percentage }}%
+        </div>
+        <div class="stat-lbl">Compliance Rate</div>
+    </div>
+</div>
+
+<!-- Attendance History Table -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-calendar"/></svg>
+            <span>Attendance Log ({{ student.name }})</span>
+        </div>
+        <span class="badge gray">{{ total_days }} Records</span>
+    </div>
+
+    {% if attendances %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Hostel</th>
+                    <th>Room</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for att in attendances %}
+                <tr>
+                    <td class="strong">{{ att.date|date:"D, d M Y" }}</td>
+                    <td>{{ att.hostel.name }}</td>
+                    <td>Room {{ att.room.room_number|default:"—" }}</td>
+                    <td>
+                        {% if att.status == 'PRESENT' %}
+                            <span class="badge green">Present</span>
+                        {% elif att.status == 'ABSENT' %}
+                            <span class="badge red">Absent</span>
+                        {% elif att.status == 'PERMISSION' %}
+                            <span class="badge yellow">Permission</span>
+                        {% elif att.status == 'LEAVE' %}
+                            <span class="badge blue">Leave</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ att.remarks|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 40px; text-align: center; color: var(--ink-muted);">
+        No hostel attendance records found for your account.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

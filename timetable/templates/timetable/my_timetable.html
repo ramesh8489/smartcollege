@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}My Timetable{% endblock %}
+{% block topbar_title %}My Timetable{% endblock %}
+{% block page_title %}My Weekly Timetable{% endblock %}
+{% block page_sub %}{{ faculty.name }}{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <div class="card-body flush">
+        {% if slots %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Day</th><th>Period</th><th>Class</th><th>Subject</th></tr></thead>
+                <tbody>
+                {% for s in slots %}
+                    <tr>
+                        <td class="strong">{{ s.get_day_of_week_display }}</td>
+                        <td>P{{ s.period.period_number }} <span class="muted">({{ s.period.start_time|time:"g:i A" }})</span></td>
+                        <td>{{ s.school_class }}</td>
+                        <td>{{ s.subject.name }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty"><svg class="icon"><use href="#i-calendar"/></svg><b>No timetable slots assigned yet</b>Ask your School Incharge.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

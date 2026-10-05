@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Submit Transport Complaint · Smart College{% endblock %}
+{% block topbar_title %}New Transport Complaint{% endblock %}
+
+{% block page_title %}Report Bus Issue or Grievance{% endblock %}
+{% block page_sub %}Your report will be immediately assigned to the campus transport safety and operations team.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:student_complaints' %}">&larr; Back to Complaints</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        <div class="card-head" style="margin-bottom: 20px;">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-edit"/></svg>
+                <span>Complaint Ticket Information</span>
+            </div>
+            <div class="muted" style="font-size: 13px;">Reporting Student: <strong>{{ student.name }}</strong></div>
+        </div>
+
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please correct the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_category">Category *</label>
+                    {{ form.category }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_priority">Urgency Priority *</label>
+                    {{ form.priority }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_route">Relevant Route (optional)</label>
+                    {{ form.route }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_vehicle">Relevant Vehicle / Bus (optional)</label>
+                    {{ form.vehicle }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label strong" for="id_title">Subject / Short Title *</label>
+                {{ form.title }}
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label strong" for="id_description">Detailed Description of Incident / Issue *</label>
+                {{ form.description }}
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label class="form-label strong" for="id_attachment">Photo or Supporting Document (optional)</label>
+                {{ form.attachment }}
+                <div class="muted" style="font-size: 11.5px; margin-top: 4px;">Upload photos of damage, ticket slips, or relevant proofs (JPEG, PNG, PDF).</div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 18px;">
+                <a href="{% url 'transport:student_complaints' %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Submit Ticket
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

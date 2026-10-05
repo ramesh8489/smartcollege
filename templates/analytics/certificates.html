@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Certificates Analytics{% endblock %}
+{% block topbar_title %}Certificates Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .chart-box { position: relative; height: 260px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block page_title %}Certificate & Document Analytics{% endblock %}
+
+{% block page_sub %}
+Student administrative certificate request workflows, turnaround velocity, and institutional verification &middot;
+<span style="color: var(--brand-700); font-weight: 600;">Updated {{ scope.generated_at|date:"d M Y, h:i A" }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="/analytics/export/excel/?type=overall&{{ export_params }}">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg> Export Excel
+    </a>
+    <a class="btn btn-ghost" href="/analytics/export/pdf/?type=overall&{{ export_params }}" target="_blank">
+        <svg class="icon icon-sm"><use href="#i-file"/></svg> PDF Report
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "analytics/_nav_tabs.html" %}
+{% include "analytics/_filter_bar.html" %}
+
+{# Certificates KPI Summary #}
+<div class="grid grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico"><svg class="icon icon-lg"><use href="#i-award"/></svg></div>
+        <div>
+            <div class="stat-val">{{ certificates.total_requests }}</div>
+            <div class="stat-label">Total Certificate Requests</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-clock"/></svg></div>
+        <div>
+            <div class="stat-val">{{ certificates.pending_count }}</div>
+            <div class="stat-label">Pending Approval</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div>
+            <div class="stat-val">{{ certificates.approved_count }} / {{ certificates.generated_count }}</div>
+            <div class="stat-label">Approved / Generated</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico rose"><svg class="icon icon-lg"><use href="#i-shield"/></svg></div>
+        <div>
+            <div class="stat-val">{{ certificates.doc_pending }} / {{ certificates.total_documents }}</div>
+            <div class="stat-label">Pending Docs Verification</div>
+        </div>
+    </div>
+</div>
+
+{# Charts #}
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-award"/></svg> Certificate Request Lifecycle</div>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="certReqChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-shield"/></svg> Student Document Verification</div>
+        </div>
+        <div class="card-body">
+            <div class="chart-box">
+                <canvas id="certDocChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Certificate Type Popularity Table #}
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title"><svg class="icon"><use href="#i-layers"/></svg> Certificate Types Demand</div>
+    </div>
+    <div class="card-body flush">
+        <table class="table">
+            <thead><tr><th>Certificate Type</th><th class="num">Requests Count</th></tr></thead>
+            <tbody>
+                {% for t in certificates.type_breakdown %}
+                <tr>
+                    <td class="strong">{{ t.certificate_type__name }}</td>
+                    <td class="num"><b style="font-size: 14px;">{{ t.count }}</b></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">
+                        <div class="empty">
+                            <svg class="icon"><use href="#i-award"/></svg>
+                            <b>No Certificate Requests Filed</b>
+                            <span>No student requests submitted under current scope.</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{ charts_json|json_script:"cert-charts-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const raw = document.getElementById("cert-charts-data");
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+
+    const ctx1 = document.getElementById("certReqChart");
+    const totalReq = data.requests.data.reduce((a, b) => a + b, 0);
+    if (ctx1 && totalReq > 0) {
+        new Chart(ctx1, {
+            type: "doughnut",
+            data: {
+                labels: data.requests.labels,
+                datasets: [{
+                    data: data.requests.data,
+                    backgroundColor: ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444"],
+                    borderWidth: 2,
+                    borderColor: "#ffffff"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "68%",
+                plugins: { legend: { position: "bottom" } }
+            }
+        });
+    } else if (ctx1) {
+        ctx1.parentElement.innerHTML = '<div class="empty"><svg class="icon"><use href="#i-award"/></svg><b>No Request Records</b><span>No certificate requests found.</span></div>';
+    }
+
+    const ctx2 = document.getElementById("certDocChart");
+    const totalDoc = data.docs.data.reduce((a, b) => a + b, 0);
+    if (ctx2 && totalDoc > 0) {
+        new Chart(ctx2, {
+            type: "doughnut",
+            data: {
+                labels: data.docs.labels,
+                datasets: [{
+                    data: data.docs.data,
+                    backgroundColor: ["#f59e0b", "#10b981", "#ef4444"],
+                    borderWidth: 2,
+                    borderColor: "#ffffff"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "68%",
+                plugins: { legend: { position: "bottom" } }
+            }
+        });
+    } else if (ctx2) {
+        ctx2.parentElement.innerHTML = '<div class="empty"><svg class="icon"><use href="#i-shield"/></svg><b>No Document Records</b><span>No uploaded documents requiring verification.</span></div>';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Drivers & Licences · Smart College{% endblock %}
+{% block topbar_title %}Driver Roster{% endblock %}
+
+{% block page_title %}Drivers & Licence Management{% endblock %}
+{% block page_sub %}Transport drivers, contact details, vehicle links, and regulatory licence validity monitoring.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-primary" href="{% url 'transport:admin_driver_create' %}">
+        <svg class="icon"><use href="#i-plus"/></svg> Register Driver
+    </a>
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 24px;">
+    {% if drivers %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Emp ID</th>
+                    <th>Driver Name</th>
+                    <th>Phone</th>
+                    <th>Licence Number</th>
+                    <th>Licence Expiry</th>
+                    <th>Licence Status</th>
+                    <th>Assigned Vehicle</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in drivers %}
+                <tr>
+                    <td><code>{{ d.employee_id }}</code></td>
+                    <td class="strong">{{ d.name }}</td>
+                    <td>{{ d.phone }}</td>
+                    <td><code>{{ d.licence_number }}</code></td>
+                    <td>{{ d.licence_expiry|date:"d M Y" }}</td>
+                    <td>
+                        {% if d.is_licence_expired %}
+                            <span class="badge red">EXPIRED</span>
+                        {% elif d.is_licence_expiring_soon %}
+                            <span class="badge amber">Expiring Soon</span>
+                        {% else %}
+                            <span class="badge green">Valid</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if d.assigned_vehicle %}
+                            <a href="{% url 'transport:admin_vehicle_detail' d.assigned_vehicle.pk %}">
+                                <strong>{{ d.assigned_vehicle.vehicle_number }}</strong>
+                            </a>
+                        {% else %}
+                            <span class="muted" style="font-size: 12px;">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if d.is_active %}
+                            <span class="badge green">Active</span>
+                        {% else %}
+                            <span class="badge gray">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'transport:admin_driver_update' d.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 36px; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">👨‍✈️</div>
+        <h3>No Drivers Registered</h3>
+        <p class="muted" style="margin-bottom: 16px;">Register drivers to link them with buses and track driving licence renewals.</p>
+        <a class="btn btn-primary" href="{% url 'transport:admin_driver_create' %}">Register First Driver</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

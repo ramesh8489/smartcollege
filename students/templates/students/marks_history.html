@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Marks History{% endblock %}
+{% block topbar_title %}Marks{% endblock %}
+{% block page_title %}Marks History{% endblock %}
+{% block page_sub %}{{ student.name }} · {{ student.roll_no }}{% endblock %}
+
+{% block content %}
+
+<form class="filters" method="get">
+    <div class="filters-row">
+        <div class="field">
+            <label for="subject">Subject</label>
+            <select class="select" id="subject" name="subject">
+                <option value="">All subjects</option>
+                {% for item in subjects %}
+                    <option value="{{ item.subject }}" {% if selected_subject == item.subject|stringformat:"s" %}selected{% endif %}>{{ item.subject__name }} — {{ item.subject__code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit"><svg class="icon icon-sm"><use href="#i-filter"/></svg> Apply</button>
+            <a class="btn btn-ghost" href="/students/marks-history/">Clear</a>
+        </div>
+    </div>
+</form>
+
+<div class="grid-3 mb">
+    <div class="stat"><div class="stat-ico"><svg class="icon icon-lg"><use href="#i-book"/></svg></div>
+        <div><div class="stat-val">{{ total_subjects }}</div><div class="stat-label">Total subjects</div></div></div>
+    <div class="stat"><div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-edit"/></svg></div>
+        <div><div class="stat-val">{{ total_marks }}</div><div class="stat-label">Total marks</div></div></div>
+    <div class="stat"><div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+        <div><div class="stat-val">{{ overall_percentage }}%</div><div class="stat-label">Overall percentage</div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-award"/></svg> Subject-wise marks</div></div>
+    <div class="card-body flush">
+        {% if marks_summary %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Subject</th><th class="num">CAT 1<br>Exam / Assgn</th><th class="num">CAT 2<br>Exam / Assgn</th><th class="num">CAT 3<br>Exam / Assgn</th><th class="num">Total</th><th class="num">Average</th><th class="num">%</th><th>Grade</th></tr></thead>
+                <tbody>
+                {% for item in marks_summary %}
+                    <tr>
+                        <td class="strong">{{ item.mark.subject.name }}<div class="p-sub muted">{{ item.mark.subject.code }}</div></td>
+                        <td class="num">{{ item.mark.cat_1 }} / {{ item.mark.cat_1_assignment }}</td>
+                        <td class="num">{{ item.mark.cat_2 }} / {{ item.mark.cat_2_assignment }}</td>
+                        <td class="num">{{ item.mark.cat_3 }} / {{ item.mark.cat_3_assignment }}</td>
+                        <td class="num strong">{{ item.total }}/150</td>
+                        <td class="num">{{ item.average }}/50</td>
+                        <td class="num">{{ item.percentage }}%</td>
+                        <td><span class="badge {% if item.grade == 'F' %}red{% elif item.grade == 'A+' or item.grade == 'A' %}green{% else %}amber{% endif %}">{{ item.grade }}</span></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty"><svg class="icon"><use href="#i-award"/></svg><b>No marks yet</b>Your marks haven't been entered yet.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

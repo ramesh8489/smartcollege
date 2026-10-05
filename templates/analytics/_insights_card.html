@@ -1,0 +1,40 @@
+{% if insights %}
+<style>
+    .insight-ico-box { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+    .insight-ico-box.danger { background: var(--danger-50, #fef2f2); color: var(--danger, #dc2626); }
+    .insight-ico-box.warning { background: var(--warn-50, #fffbeb); color: var(--warn, #d97706); }
+    .insight-ico-box.success { background: var(--success-50, #f0fdf4); color: var(--success, #16a34a); }
+    .insight-ico-box.info { background: var(--brand-50, #eef2ff); color: var(--brand, #4f46e5); }
+</style>
+<div class="card mb" style="border-left: 4px solid var(--brand-600); background: linear-gradient(to right, #f8faff, #ffffff);">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon" style="color: var(--brand-600);"><use href="#i-award"/></svg>
+            <span>AI Academic Insights & Diagnostic Observations</span>
+        </div>
+        <span class="badge" style="background: var(--brand-50); color: var(--brand-700); font-size: 11px;">
+            Rule-Based Analytical Engine &middot; Real Data
+        </span>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+            {% for item in insights %}
+            <div style="display: flex; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: #ffffff; box-shadow: var(--shadow-sm); align-items: flex-start;">
+                <div class="insight-ico-box {% if item.type == 'danger' %}danger{% elif item.type == 'warning' %}warning{% elif item.type == 'success' %}success{% else %}info{% endif %}">
+                    <svg class="icon icon-sm"><use href="#i-{{ item.icon }}"/></svg>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+                        <b style="font-size: 13.5px; color: var(--ink);">{{ item.title }}</b>
+                        <span class="badge {% if item.type == 'danger' %}red{% elif item.type == 'warning' %}amber{% elif item.type == 'success' %}green{% else %}violet{% endif %}" style="font-size: 10.5px;">
+                            {{ item.metric }}
+                        </span>
+                    </div>
+                    <p style="font-size: 12.5px; color: var(--ink-2); margin-top: 4px; line-height: 1.4;">{{ item.message }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}

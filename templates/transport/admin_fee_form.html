@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Issue Fee Demand{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Create a Transport Fee billing entry linked to the student's central accounts ledger.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_fees' %}">&larr; Back to Fee Ledger</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please review the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label strong" for="id_student">Select Student *</label>
+                {{ form.student }}
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_title">Demand Title *</label>
+                    {{ form.title }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_academic_year">Academic Year *</label>
+                    {{ form.academic_year }}
+                </div>
+            </div>
+
+            <div class="grid grid-3" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_amount">Fee Amount (₹) *</label>
+                    {{ form.amount }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_semester">Semester (optional)</label>
+                    {{ form.semester }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_due_date">Due Date</label>
+                    {{ form.due_date }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label class="form-label strong" for="id_remarks">Remarks / Note</label>
+                {{ form.remarks }}
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Create Transport Fee Demand
+                </button>
+                <a href="{% url 'transport:admin_fees' %}" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

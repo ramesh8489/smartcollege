@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Hostel Fees & Receipts · Smart College{% endblock %}
+{% block topbar_title %}My Hostel Fees{% endblock %}
+
+{% block page_title %}Hostel Accommodation Fees & Receipts{% endblock %}
+{% block page_sub %}
+    View your hostel dues, rent, mess fee invoices, payment history, and download official PDF payment receipts.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:application_list' %}">&larr; Back to Hostel Home</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Student Fee Summary Cards -->
+<div class="grid grid-4 mb">
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--brand-600);">₹{{ fee_data.total_fees|floatformat:2 }}</div>
+        <div class="stat-lbl">Total Hostel Fees</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--success, #16a34a);">₹{{ fee_data.total_paid|floatformat:2 }}</div>
+        <div class="stat-lbl">Total Amount Paid</div>
+    </div>
+    <div class="stat-card">
+        {% if fee_data.outstanding > 0 %}
+        <div class="stat-val" style="color: var(--danger, #dc2626);">
+        {% else %}
+        <div class="stat-val" style="color: var(--ink-muted);">
+        {% endif %}
+            ₹{{ fee_data.outstanding|floatformat:2 }}
+        </div>
+        <div class="stat-lbl">Outstanding Balance</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">
+            {% if fee_data.status == 'PAID' %}
+                <span class="badge green" style="font-size: 14px;">All Paid</span>
+            {% elif fee_data.status == 'PARTIAL' %}
+                <span class="badge yellow" style="font-size: 14px;">Partial Due</span>
+            {% elif fee_data.status == 'PENDING' %}
+                <span class="badge red" style="font-size: 14px;">Pending</span>
+            {% else %}
+                <span class="badge gray" style="font-size: 14px;">No Fees</span>
+            {% endif %}
+        </div>
+        <div class="stat-lbl">Overall Payment Status</div>
+    </div>
+</div>
+
+<!-- Detailed Fee Records -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-dollar"/></svg>
+            <span>Hostel Invoices & Demands</span>
+        </div>
+        <span class="badge gray">{{ fee_data.records|length }} Invoices</span>
+    </div>
+
+    {% if fee_data.records %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fee Category / Description</th>
+                    <th>Academic Session</th>
+                    <th>Due Date</th>
+                    <th>Fee Amount</th>
+                    <th>Paid</th>
+                    <th>Balance Due</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in fee_data.records %}
+                <tr>
+                    <td>
+                        <div class="strong">{{ r.title }}</div>
+                        {% if r.remarks %}<div class="text-sm text-muted">{{ r.remarks }}</div>{% endif %}
+                    </td>
+                    <td>{{ r.academic_year }}</td>
+                    <td>{{ r.due_date|date:"d M Y"|default:"—" }}</td>
+                    <td class="strong">₹{{ r.amount|floatformat:2 }}</td>
+                    <td style="color: var(--success, #16a34a); font-weight: 500;">₹{{ r.paid_amount|floatformat:2 }}</td>
+                    {% if r.balance_amount > 0 %}
+                    <td style="color: var(--danger, #dc2626); font-weight: 600;">
+                    {% else %}
+                    <td style="color: var(--ink-muted); font-weight: 600;">
+                    {% endif %}
+                        ₹{{ r.balance_amount|floatformat:2 }}
+                    </td>
+                    <td>
+                        {% if r.status == 'PAID' %}
+                            <span class="badge green">Paid</span>
+                        {% elif r.status == 'PARTIAL' %}
+                            <span class="badge yellow">Partial</span>
+                        {% else %}
+                            <span class="badge red">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 40px; text-align: center; color: var(--ink-muted);">
+        No hostel fee demands or dues currently registered on your account.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Payments & Official PDF Receipts -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-file-text"/></svg>
+            <span>Payment History & Official Receipts</span>
+        </div>
+    </div>
+
+    {% if fee_data.records %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Receipt No</th>
+                    <th>Fee Category</th>
+                    <th>Payment Date</th>
+                    <th>Mode</th>
+                    <th>Transaction Ref</th>
+                    <th>Amount Paid</th>
+                    <th class="num">Download Receipt</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in fee_data.records %}
+                    {% for p in r.payments.all %}
+                    <tr>
+                        <td><code>{{ p.receipt_number }}</code></td>
+                        <td>{{ r.title }}</td>
+                        <td>{{ p.payment_date|date:"d M Y" }}</td>
+                        <td><span class="badge gray">{{ p.get_payment_mode_display }}</span></td>
+                        <td>{{ p.reference_number|default:"—" }}</td>
+                        <td class="strong" style="color: var(--success, #16a34a);">₹{{ p.amount|floatformat:2 }}</td>
+                        <td class="num">
+                            <a class="btn btn-sm btn-ghost" href="{% url 'payment_receipt' p.id %}" target="_blank">
+                                <svg class="icon icon-sm"><use href="#i-download"/></svg> PDF Receipt
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

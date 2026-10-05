@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance{% endblock %}
+{% block topbar_title %}Mark Attendance{% endblock %}
+{% block page_title %}Mark Attendance{% endblock %}
+{% block page_sub %}Pick your class slot for the hour, then mark the whole class.{% endblock %}
+
+{% block content %}
+
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+{% if not slots %}
+
+    <div class="card"><div class="empty"><svg class="icon"><use href="#i-calendar"/></svg><b>No timetable slots yet</b>Ask your School Incharge to assign you classes in the Timetable Builder.</div></div>
+
+{% else %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="get" class="form-row" style="display:flex;flex-wrap:wrap;gap:14px;align-items:end">
+                <div class="field" style="flex:1;min-width:160px">
+                    <label for="date">Date</label>
+                    <input class="input" type="date" id="date" name="date" value="{{ selected_date }}" required>
+                </div>
+                <div class="field" style="flex:2;min-width:280px">
+                    <label for="slot">Class / hour</label>
+                    <select class="select" id="slot" name="slot" required>
+                        <option value="" disabled {% if not selected_slot %}selected{% endif %}>Select your class for this hour</option>
+                        {% for s in slots %}
+                            <option value="{{ s.id }}" {% if selected_slot and selected_slot.id == s.id %}selected{% endif %}>
+                                {{ s.get_day_of_week_display }} · P{{ s.period.period_number }} ({{ s.period.start_time|time:"g:i A" }}) · {{ s.school_class }} · {{ s.subject.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="btn btn-primary" type="submit">Load class →</button>
+            </form>
+        </div>
+    </div>
+
+    {% if selected_slot %}
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><svg class="icon"><use href="#i-check"/></svg> {{ selected_slot.school_class }}</div>
+                <div class="chips">
+                    <span class="badge">{{ selected_slot.subject.name }}</span>
+                    <span class="badge violet">Period {{ selected_slot.period.period_number }}</span>
+                    <span class="badge gray">{{ selected_date }}</span>
+                </div>
+            </div>
+
+            <div class="card-body">
+
+                {% if roster %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="slot" value="{{ selected_slot.id }}">
+                    <input type="hidden" name="date" value="{{ selected_date }}">
+
+                    <div style="margin-bottom:14px;display:flex;gap:8px">
+                        <button class="btn btn-ghost btn-sm" type="button" onclick="setAll('present')">Mark all present</button>
+                        <button class="btn btn-ghost btn-sm" type="button" onclick="setAll('absent')">Mark all absent</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Roll No</th><th>Student</th><th>Status</th></tr></thead>
+                            <tbody>
+                            {% for row in roster %}
+                                <tr>
+                                    <td>{{ row.student.roll_no }}</td>
+                                    <td class="strong">{{ row.student.name }}</td>
+                                    <td>
+                                        <label style="margin-right:16px;font-weight:400"><input type="radio" name="status_{{ row.student.id }}" value="present" {% if row.present %}checked{% endif %}> Present</label>
+                                        <label style="font-weight:400"><input type="radio" name="status_{{ row.student.id }}" value="absent" {% if not row.present %}checked{% endif %}> Absent</label>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button class="btn btn-primary" type="submit" style="margin-top:16px"><svg class="icon icon-sm"><use href="#i-check"/></svg> Save attendance</button>
+                </form>
+
+                {% else %}
+
+                    <div class="empty"><svg class="icon"><use href="#i-inbox"/></svg><b>No approved students in this class yet</b></div>
+
+                {% endif %}
+
+            </div>
+        </div>
+
+    {% endif %}
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setAll(value) {
+    document.querySelectorAll('input[type="radio"][value="' + value + '"]').forEach(function (el) { el.checked = true; });
+}
+</script>
+{% endblock %}

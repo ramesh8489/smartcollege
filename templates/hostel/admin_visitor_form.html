@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Manage Visitor Pass · Smart College{% endblock %}
+{% block topbar_title %}Visitor Pass{% endblock %}
+
+{% block page_title %}Visitor Pass Clearance & Gate Log{% endblock %}
+{% block page_sub %}
+    Approve, reject, or log entry and exit gate timestamps for visitor #{{ visitor.id }}.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_visitors' %}">&larr; Back to Visitor Registry</a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="grid grid-2 mb" style="max-width: 900px; margin: 0 auto 24px;">
+    <!-- Visitor Details Card -->
+    <div class="card" style="padding: 24px;">
+        <div class="card-head" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-user"/></svg>
+                <span>Visitor Particulars</span>
+            </div>
+            <span class="badge blue">Pass #{{ visitor.id }}</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 600;">Visitor Name</div>
+                <div style="font-size: 16px; font-weight: 600; color: var(--ink);">{{ visitor.visitor_name }}</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 600;">Relationship</div>
+                    <div style="font-weight: 500;">{{ visitor.relationship }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 600;">Phone Number</div>
+                    <div style="font-family: monospace; font-weight: 600;">{{ visitor.phone }}</div>
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 600;">Visit Date</div>
+                <div style="font-weight: 600; color: var(--brand-600);">{{ visitor.visit_date|date:"l, d F Y" }}</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 600;">Purpose of Visit</div>
+                <div style="color: var(--ink); background: var(--surface-alt, #f8fafc); padding: 8px 12px; border-radius: 6px; font-size: 13px;">
+                    {{ visitor.purpose }}
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 600;">Resident Student</div>
+                <div style="font-weight: 600; color: var(--ink);">{{ visitor.student.name }}</div>
+                <div style="font-size: 12px; color: var(--muted); font-family: monospace;">{{ visitor.student.roll_no }} &middot; {{ visitor.hostel.name }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Form Card -->
+    <div class="card" style="padding: 24px;">
+        <div class="card-head" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-shield"/></svg>
+                <span>Warden & Gate Clearance</span>
+            </div>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div style="background: var(--danger-subtle, #fef2f2); border-left: 4px solid var(--danger, #dc2626); padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
+                    {% for err in form.non_field_errors %}
+                        <div style="color: var(--danger, #dc2626); font-weight: 500;">{{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div style="margin-bottom: 18px;">
+                <label class="label">Pass Status <span style="color: var(--danger, #dc2626);">*</span></label>
+                {{ form.status }}
+                {% if form.status.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.status.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;">
+                <div>
+                    <label class="label">Gate Entry Time</label>
+                    {{ form.entry_time }}
+                    {% if form.entry_time.errors %}
+                        <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.entry_time.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="label">Gate Exit Time</label>
+                    {{ form.exit_time }}
+                    {% if form.exit_time.errors %}
+                        <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.exit_time.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 22px;">
+                <label class="label">Remarks / Gate Clearance Notes</label>
+                {{ form.remarks }}
+                {% if form.remarks.errors %}
+                    <div style="color: var(--danger, #dc2626); font-size: 12px; margin-top: 4px;">{{ form.remarks.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border); padding-top: 18px;">
+                <a href="{% url 'hostel:admin_visitors' %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon icon-sm"><use href="#i-check"/></svg> Update Visitor Record
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · Smart College{% endblock %}
+{% block topbar_title %}Fleet Registration{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Register or update college transport fleet specifications, statutory certificates, and seating capacities.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_vehicles' %}">&larr; Back to Vehicles</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+    <div class="card" style="padding: 28px;">
+        {% if form.errors %}
+            <div class="card" style="padding: 14px 18px; border-left: 4px solid var(--accent); background: #fef2f2; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;">Please review the errors below:</div>
+                <ul style="margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_vehicle_number">Vehicle Number / Fleet Tag *</label>
+                    {{ form.vehicle_number }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_registration_number">Registration Number (RTO) *</label>
+                    {{ form.registration_number }}
+                </div>
+            </div>
+
+            <div class="grid grid-3" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_vehicle_type">Vehicle Type *</label>
+                    {{ form.vehicle_type }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_bus_name">Bus Name / Label *</label>
+                    {{ form.bus_name }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_seating_capacity">Seating Capacity *</label>
+                    {{ form.seating_capacity }}
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_status">Operating Status *</label>
+                    {{ form.status }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_purchase_date">Purchase / Acquisition Date</label>
+                    {{ form.purchase_date }}
+                </div>
+            </div>
+
+            <div style="margin: 20px 0 12px; font-weight: 700; font-size: 13.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                Statutory Compliance & Certificate Validity
+            </div>
+
+            <div class="grid grid-3" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label strong" for="id_insurance_expiry">Insurance Expiry Date</label>
+                    {{ form.insurance_expiry }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_fitness_expiry">Fitness Certificate Expiry</label>
+                    {{ form.fitness_expiry }}
+                </div>
+                <div>
+                    <label class="form-label strong" for="id_pollution_expiry">Pollution (PUC) Expiry</label>
+                    {{ form.pollution_expiry }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label class="form-label strong" for="id_notes">Internal Remarks / Specifications</label>
+                {{ form.notes }}
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 18px;">
+                <a href="{% url 'transport:admin_vehicles' %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon"><use href="#i-check"/></svg> Save Vehicle
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

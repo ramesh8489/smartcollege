@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Room / Bed Transfer · Smart College{% endblock %}
+{% block topbar_title %}Hostel Bed Transfer{% endblock %}
+
+{% block page_title %}Transfer Resident Student{% endblock %}
+{% block page_sub %}
+    Relocate <b>{{ allocation.student.name }}</b> from Room {{ allocation.room.room_number }} (Bed {{ allocation.bed.bed_number }}) to a new room or bed. Old bed will be released and new bed occupied atomically.
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'hostel:admin_allocation_detail' allocation.pk %}">
+        &larr; Back to Allocation Record
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--danger);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+    <!-- Transfer Form -->
+    <div class="card" style="padding: 28px;">
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="card mb" style="padding: 12px 18px; border-left: 4px solid var(--danger); background: var(--danger-50, #fef2f2); color: var(--danger, #dc2626);">
+                    {% for err in form.non_field_errors %}
+                        <div>{{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Current Location Banner -->
+                <div style="padding: 14px 18px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface-2);">
+                    <div class="muted" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Current Assignment (To Be Vacated)</div>
+                    <div style="display: flex; gap: 16px; margin-top: 6px; font-size: 14px; flex-wrap: wrap;">
+                        <span>Hostel: <b>{{ allocation.hostel.name }}</b></span>
+                        <span>Block: <b>{{ allocation.block.name }}</b></span>
+                        <span>Room: <b>{{ allocation.room.room_number }}</b></span>
+                        <span>Bed: <b class="badge violet">{{ allocation.bed.bed_number }}</b></span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_new_hostel">Destination Hostel <span style="color: var(--danger);">*</span></label>
+                    {{ form.new_hostel }}
+                    {% if form.new_hostel.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.new_hostel.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="field">
+                        <label class="label" for="id_new_room">Destination Room <span style="color: var(--danger);">*</span></label>
+                        {{ form.new_room }}
+                        {% if form.new_room.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.new_room.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="id_new_bed">Destination Bed (Available) <span style="color: var(--danger);">*</span></label>
+                        {{ form.new_bed }}
+                        {% if form.new_bed.errors %}
+                            <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.new_bed.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_transfer_date">Effective Transfer Date <span style="color: var(--danger);">*</span></label>
+                    {{ form.transfer_date }}
+                    {% if form.transfer_date.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.transfer_date.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_reason">Reason for Transfer <span style="color: var(--danger);">*</span></label>
+                    {{ form.reason }}
+                    <div class="muted" style="font-size: 12px; margin-top: 4px;">State the formal administrative or medical reason for relocation.</div>
+                    {% if form.reason.errors %}
+                        <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ form.reason.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="id_remarks">Key Exchange & Inventory Notes</label>
+                    {{ form.remarks }}
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="icon icon-sm"><use href="#i-check"/></svg> Confirm Room & Bed Transfer
+                    </button>
+                    <a class="btn btn-ghost" href="{% url 'hostel:admin_allocation_detail' allocation.pk %}">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Instructions Sidebar -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="card" style="padding: 20px;">
+            <div class="card-title" style="margin-bottom: 12px;">
+                <svg class="icon"><use href="#i-shield"/></svg>
+                <span>Transfer Protocols</span>
+            </div>
+            <ul style="font-size: 13px; color: var(--ink-2); line-height: 1.6; padding-left: 18px; margin: 0;">
+                <li>The resident's previous bed will immediately return to <b>Available</b> status.</li>
+                <li>The destination bed will become <b>Occupied</b>.</li>
+                <li>Both source and destination room occupancy figures will update automatically.</li>
+                <li>Complete audit history of the move will be preserved permanently.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Institutional Transport Reports · Smart College{% endblock %}
+{% block topbar_title %}Reports & Exports{% endblock %}
+
+{% block page_title %}Transport Reports & Document Exports{% endblock %}
+{% block page_sub %}Generate official institutional audits, compliance registers, occupancy analyses, and accounting ledgers in XLSX and PDF formats.{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-ghost" href="{% url 'transport:admin_dashboard' %}">&larr; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-3" style="gap: 20px;">
+    <!-- 1. VEHICLE FLEET -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">🚌</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Vehicle Fleet Master Report</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Complete inventory of institutional buses, registration numbers, seating capacities, and statutory compliance status (fitness, pollution, insurance).
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_vehicles_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_vehicles_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. ROUTES -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">🗺️</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Routes & Fleet Allocation</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Institutional transit corridors, start-to-end itineraries, vehicle bindings, and active operational status.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_routes_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_routes_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 3. STOPS -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">📍</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Route Stops & Timetable</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Directory of all boarding points, chronological sequence order, morning pickup timings, and evening drop timings.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_stops_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_stops_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 4. DRIVERS -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">👨‍✈️</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Drivers & Licence Compliance</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Staff roster of drivers, commercial driving licence numbers, renewal expiration dates, assigned buses, and emergency contacts.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_drivers_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_drivers_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 5. STUDENT ALLOCATIONS -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">🎓</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Student Transport Allocations</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Active student passenger roster, assigned bus numbers, travel routes, pickup stops, and academic year allocations.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_allocations_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_allocations_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 6. FLEET OCCUPANCY -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">📊</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Fleet Capacity & Occupancy</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Bus-wise seating capacity analysis, passenger load percentage, and available seat vacancy breakdown.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_occupancy_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_occupancy_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 7. ATTENDANCE -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">📋</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Daily Commute Attendance</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Historical morning and evening trip roll call logs, passenger presence, absence, and boarding records.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_attendance_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_attendance_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 8. FEES & COLLECTIONS -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">💳</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Transport Fee Ledger & Dues</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Financial revenue audit, student-wise transport billing, collections received, and outstanding balances.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_fees_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_fees_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 9. TRANSPORT PASSES -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">🎫</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Digital Passes Registry</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Master register of issued transport passes, unique serial numbers, issuance dates, validity horizons, and statuses.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_passes_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_passes_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 10. FLEET MAINTENANCE -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">🔧</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Maintenance & Servicing Log</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Workshop repair records, preventive service costs, vendor details, and upcoming scheduled inspections.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_maintenance_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_maintenance_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 11. COMPLAINTS -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">🛡️</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Grievances & Redressal Audit</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Record of commuter complaints, driver behavior issues, delay reports, priority levels, and resolution outcomes.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_complaints_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_complaints_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- 12. INCIDENTS -->
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="font-size: 28px; margin-bottom: 8px;">⚠️</div>
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 17px;">Breakdown & Safety Incidents</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                Road incidents, mechanical breakdowns, transit delay documentation, and corrective safety protocols taken.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'transport:export_incidents_excel' %}" class="btn btn-ghost btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> Excel
+            </a>
+            <a href="{% url 'transport:export_incidents_pdf' %}" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+                <svg class="icon"><use href="#i-download"/></svg> PDF
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

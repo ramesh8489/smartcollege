@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} · Exam Management{% endblock %}
+{% block topbar_title %}Exam Management{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_sub %}Configure examination details, academic period, degree/course targets, and active status.{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'exam_list' %}" class="btn btn-ghost">
+        ← Back to Exam List
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 860px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-calendar"/></svg>
+                <span>Examination Parameters</span>
+            </div>
+            {% if exam %}
+                <span class="badge {% if exam.is_active %}green{% else %}rose{% endif %}">
+                    {% if exam.is_active %}Currently Active{% else %}Inactive{% endif %}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+            {% if form.errors %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 20px; background: var(--danger-50);">
+                    <div style="font-weight: 700; color: var(--danger); margin-bottom: 6px;">Please correct the following errors:</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--danger);">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <!-- Section 1: Basic Information -->
+                <div style="margin-bottom: 22px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        1. General Exam Information
+                    </div>
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.name.id_for_label }}">
+                                Exam Name <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.name }}
+                            <div class="muted" style="font-size: 11.5px;">E.g. Continuous Assessment Test 1 (CAT-1), End Semester Exam Nov 2026</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.exam_type.id_for_label }}">
+                                Exam Type <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.exam_type }}
+                            <div class="muted" style="font-size: 11.5px;">Select the evaluation tier (CAT 1, CAT 2, CAT 3, Model, Semester, Internal, Practical)</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.academic_year.id_for_label }}">
+                                Academic Year <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.academic_year }}
+                            <div class="muted" style="font-size: 11.5px;">Format: 2025-2026, 2026-2027</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Target Degree, Year & Semester -->
+                <div style="margin-bottom: 22px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        2. Academic Degree & Cohort
+                    </div>
+                    <div class="grid grid-3" style="gap: 16px;">
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.course.id_for_label }}">
+                                Course / Degree <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.course }}
+                            <div class="muted" style="font-size: 11.5px;">Target academic degree programme</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.year.id_for_label }}">
+                                Year <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.year }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.semester.id_for_label }}">
+                                Semester <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.semester }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Schedule Dates & Status -->
+                <div style="margin-bottom: 22px;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px;">
+                        3. Schedule Timeline & Status
+                    </div>
+                    <div class="grid grid-2" style="gap: 16px;">
+                        <div class="field">
+                            <label for="{{ form.start_date.id_for_label }}">
+                                Start Date <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.start_date }}
+                        </div>
+
+                        <div class="field">
+                            <label for="{{ form.end_date.id_for_label }}">
+                                End Date <span style="color: var(--danger);">*</span>
+                            </label>
+                            {{ form.end_date }}
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label for="{{ form.description.id_for_label }}">
+                                Description / Instructions
+                            </label>
+                            {{ form.description }}
+                            <div class="muted" style="font-size: 11.5px;">Enter syllabus coverage, guidelines, permitted equipment, or hall regulations.</div>
+                        </div>
+
+                        <div class="field" style="grid-column: span 2;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; margin-top: 4px;">
+                                {{ form.is_active }}
+                                <span>
+                                    <strong style="font-size: 13.5px; color: var(--ink);">Active Status</strong>
+                                    <div class="muted" style="font-size: 12px; font-weight: 400; text-transform: none;">
+                                        When checked, this examination session is marked Active and visible to enrolled students and invigilators.
+                                    </div>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line);">
+                    <a href="{% url 'exam_list' %}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-primary" style="padding: 10px 22px;">
+                        <svg class="icon"><use href="#i-check"/></svg>
+                        <span>{{ action }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

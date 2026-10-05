@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Hostel Visitors · Smart College{% endblock %}
+{% block topbar_title %}Hostel Visitors{% endblock %}
+
+{% block page_title %}Hostel Visitor Passes & Logs{% endblock %}
+{% block page_sub %}
+    Register visiting family and guardians, monitor check-in/out records, and track security approvals.
+{% endblock %}
+
+{% block page_actions %}
+    {% if allocation %}
+    <a class="btn btn-primary" href="{% url 'hostel:student_visitor_create' %}">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Request Visitor Pass
+    </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--brand-600); margin-bottom: 10px; background: var(--surface);">
+                <div style="font-weight: 500; color: var(--ink);">{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="grid grid-4 mb">
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--brand-600);">{{ visitors|length }}</div>
+        <div class="stat-lbl">Total Registered Visitors</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--warning, #d97706);">{{ pending_count }}</div>
+        <div class="stat-lbl">Pending Approval</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--success, #16a34a);">{{ approved_count }}</div>
+        <div class="stat-lbl">Approved Passes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color: var(--primary, #2563eb);">{{ checked_in_count }}</div>
+        <div class="stat-lbl">Currently Checked In</div>
+    </div>
+</div>
+
+{% if not allocation %}
+<div class="card mb" style="padding: 24px; border-left: 4px solid var(--warning, #d97706); background: var(--surface);">
+    <div style="font-weight: 600; color: var(--ink); margin-bottom: 6px;">No Active Hostel Allocation</div>
+    <div style="color: var(--muted); font-size: 13px;">
+        Visitor passes can only be requested by students currently residing in hostel accommodation.
+    </div>
+</div>
+{% endif %}
+
+<!-- Visitors Table -->
+<div class="card">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-users"/></svg>
+            <span>Visitor Pass History</span>
+        </div>
+        <span class="badge gray">{{ visitors|length }} Total</span>
+    </div>
+
+    {% if visitors %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Visit Date</th>
+                    <th>Visitor Name</th>
+                    <th>Relationship</th>
+                    <th>Contact Phone</th>
+                    <th>Hostel</th>
+                    <th>Entry / Exit Time</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                    <th>Warden Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in visitors %}
+                <tr>
+                    <td style="font-weight: 600; white-space: nowrap;">
+                        {{ v.visit_date|date:"d M Y" }}
+                    </td>
+                    <td style="font-weight: 500;">
+                        {{ v.visitor_name }}
+                    </td>
+                    <td>
+                        <span class="badge gray">{{ v.relationship }}</span>
+                    </td>
+                    <td style="font-family: monospace;">{{ v.phone }}</td>
+                    <td>{{ v.hostel.name }}</td>
+                    <td>
+                        {% if v.entry_time %}
+                            <span style="font-weight: 500; color: var(--success, #16a34a);">{{ v.entry_time|time:"H:i" }}</span>
+                        {% else %}
+                            <span style="color: var(--muted);">&mdash;</span>
+                        {% endif %}
+                        /
+                        {% if v.exit_time %}
+                            <span style="font-weight: 500; color: var(--muted);">{{ v.exit_time|time:"H:i" }}</span>
+                        {% else %}
+                            <span style="color: var(--muted);">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ v.purpose }}
+                    </td>
+                    <td>
+                        {% if v.status == "PENDING" %}
+                            <span class="badge orange">Pending Review</span>
+                        {% elif v.status == "APPROVED" %}
+                            <span class="badge green">Approved</span>
+                        {% elif v.status == "CHECKED_IN" %}
+                            <span class="badge blue">Checked In</span>
+                        {% elif v.status == "CHECKED_OUT" %}
+                            <span class="badge gray">Checked Out</span>
+                        {% elif v.status == "REJECTED" %}
+                            <span class="badge red">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if v.approved_by %}
+                            <span style="font-size: 12px; color: var(--muted);">By {{ v.approved_by.get_full_name|default:v.approved_by.username }}</span>
+                        {% else %}
+                            <span style="font-size: 12px; color: var(--muted);">&mdash;</span>
+                        {% endif %}
+                        {% if v.remarks %}
+                            <div style="font-size: 11px; color: var(--muted); font-style: italic; margin-top: 2px;">{{ v.remarks }}</div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 48px 24px; color: var(--muted);">
+        <svg class="icon icon-xl" style="margin-bottom: 12px; opacity: 0.5;"><use href="#i-users"/></svg>
+        <p style="font-size: 15px; margin-bottom: 8px;">No visitor requests recorded yet.</p>
+        {% if allocation %}
+        <p style="font-size: 13px;">Planning a visit from parents or relatives? Submit an advance pass request.</p>
+        <a class="btn btn-outline" style="margin-top: 14px;" href="{% url 'hostel:student_visitor_create' %}">Request Pass Now</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

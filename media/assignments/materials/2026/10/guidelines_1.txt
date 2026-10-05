@@ -1,0 +1,7 @@
+SmartCollege Academic Assignment Guidelines
+Title: Mini-Project 1: Distributed Microservices Architecture
+Course: M.Sc Computer Science (AI & Data Science)
+Subject: Cloud Computing & DevOps
+Max Marks: 50
+
+Please follow the department code formatting guidelines.

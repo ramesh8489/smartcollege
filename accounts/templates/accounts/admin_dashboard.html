@@ -1,0 +1,866 @@
+{% extends "base.html" %}
+{% load l10n %}
+
+{% block title %}Admin{% endblock %}
+{% block topbar_title %}Admin{% endblock %}
+
+{% block page_title %}{% if tab == 'overview' %}Overview{% elif tab == 'students' %}Students{% elif tab == 'faculty' %}Faculty{% elif tab == 'approvals' %}Approvals{% elif tab == 'student_leaves' %}Student Leaves{% elif tab == 'leave_messages' %}Leave Messages{% else %}Circulars{% endif %}{% endblock %}
+
+{% block page_sub %}
+    {% if tab == 'overview' %}School-wise, degree-wise and class-wise view of the whole college.
+    {% elif tab == 'students' %}Search and filter every enrolled student.
+    {% elif tab == 'faculty' %}Faculty across schools, with their subjects and teaching load.
+    {% elif tab == 'approvals' %}New registrations waiting for your decision.
+    {% elif tab == 'student_leaves' %}Institutional student leave management, multi-stage audits, and final approvals.
+    {% elif tab == 'leave_messages' %}Approved faculty leave requests forwarded by School Incharges.
+    {% else %}Announcements for students and faculty.{% endif %}
+{% endblock %}
+
+{% block page_actions %}
+    {% if tab == 'students' %}
+        <a class="btn btn-primary" href="{{ export_url }}"><svg class="icon icon-sm"><use href="#i-download"/></svg> Export Excel</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{# ================= FILTER BAR (overview / students / faculty) ================= #}
+{% if tab == 'overview' or tab == 'students' or tab == 'faculty' %}
+<form class="filters" method="get" id="filterForm">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <div class="filters-row">
+        <div class="field">
+            <label for="fSchool">School</label>
+            <select class="select" id="fSchool" name="school"></select>
+        </div>
+        <div class="field">
+            <label for="fCourse">Degree</label>
+            <select class="select" id="fCourse" name="course"></select>
+        </div>
+        {% if tab != 'faculty' %}
+        <div class="field">
+            <label for="fYear">Class</label>
+            <select class="select" id="fYear" name="year"></select>
+        </div>
+        {% else %}
+        <input type="hidden" name="year" value="">
+        {% endif %}
+        {% if tab == 'students' or tab == 'faculty' %}
+        <div class="field">
+            <label for="fQ">Search</label>
+            <input class="input" id="fQ" type="search" name="q" value="{{ q|default:'' }}" placeholder="{% if tab == 'students' %}Name, roll no, SIF, email{% else %}Name, faculty ID, email{% endif %}">
+        </div>
+        {% endif %}
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit"><svg class="icon icon-sm"><use href="#i-filter"/></svg> Apply</button>
+            <a class="btn btn-ghost" href="{{ reset_url }}">Reset</a>
+        </div>
+    </div>
+
+    <div class="crumbs">
+        <svg class="icon icon-sm"><use href="#i-layers"/></svg>
+        {% for c in crumbs %}
+            {% if not forloop.first %}<span class="sep">›</span>{% endif %}
+            {% if c.url and not forloop.last %}<a href="{{ c.url }}">{{ c.label }}</a>{% else %}<b>{{ c.label }}</b>{% endif %}
+        {% endfor %}
+    </div>
+</form>
+{{ tree|json_script:"tree-data" }}
+{% endif %}
+
+
+{# ============================== OVERVIEW ============================== #}
+{% if tab == 'overview' %}
+
+    <div class="grid-6 mb">
+        <div class="stat"><div class="stat-ico"><svg class="icon icon-lg"><use href="#i-users"/></svg></div>
+            <div><div class="stat-val">{{ cards.students }}</div><div class="stat-label">Students</div></div></div>
+        <div class="stat"><div class="stat-ico violet"><svg class="icon icon-lg"><use href="#i-award"/></svg></div>
+            <div><div class="stat-val">{{ cards.faculty }}</div><div class="stat-label">Faculty</div></div></div>
+        <div class="stat"><div class="stat-ico amber"><svg class="icon icon-lg"><use href="#i-book"/></svg></div>
+            <div><div class="stat-val">{{ cards.degrees }}</div><div class="stat-label">Degrees with students</div></div></div>
+        <div class="stat"><div class="stat-ico"><svg class="icon icon-lg"><use href="#i-layers"/></svg></div>
+            <div><div class="stat-val">{{ cards.classes }}</div><div class="stat-label">Classes</div></div></div>
+        <div class="stat"><div class="stat-ico green"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+            <div><div class="stat-val">{% if cards.attendance_pct is None %}—{% else %}{{ cards.attendance_pct|floatformat:1 }}%{% endif %}</div><div class="stat-label">Average attendance</div></div></div>
+        <div class="stat"><div class="stat-ico rose"><svg class="icon icon-lg"><use href="#i-chart"/></svg></div>
+            <div><div class="stat-val">{% if cards.marks_pct is None %}—{% else %}{{ cards.marks_pct|floatformat:1 }}%{% endif %}</div><div class="stat-label">Average marks</div></div></div>
+    </div>
+
+    <!-- AI & Advanced Analytics Quick Hub -->
+    <div class="card mb" style="border-left: 4px solid var(--brand); background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="card-title">
+                <svg class="icon" style="color: var(--brand);"><use href="#i-chart"/></svg>
+                <span>AI & Advanced Analytics Center</span>
+            </div>
+            <a class="btn btn-primary btn-sm" href="/analytics/">Open Analytics Dashboard &rarr;</a>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                <a href="/analytics/" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--brand);"><use href="#i-home"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Overall Analytics</div><div class="muted" style="font-size: 11px;">College-wide KPI summary</div></div>
+                </a>
+                <a href="/analytics/academic/" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--brand);"><use href="#i-chart"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Academic Analytics</div><div class="muted" style="font-size: 11px;">Subject & degree averages</div></div>
+                </a>
+                <a href="/analytics/attendance/" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--success);"><use href="#i-check"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Attendance Analytics</div><div class="muted" style="font-size: 11px;">Shortages & compliance</div></div>
+                </a>
+                <a href="/analytics/risk/" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--danger);"><use href="#i-shield"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Risk Students</div><div class="muted" style="font-size: 11px;">Academic support needed</div></div>
+                </a>
+                <a href="/analytics/fees/" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--warn);"><use href="#i-file"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Fees Analytics</div><div class="muted" style="font-size: 11px;">Collections & balances</div></div>
+                </a>
+                <a href="/analytics/library/" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--brand);"><use href="#i-book"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Library Analytics</div><div class="muted" style="font-size: 11px;">Circulation & overdues</div></div>
+                </a>
+                <a href="/analytics/placements/" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--accent);"><use href="#i-briefcase"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Placement Analytics</div><div class="muted" style="font-size: 11px;">Hiring & selections</div></div>
+                </a>
+                <a href="/hostel/dashboard/" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--brand);"><use href="#i-shield"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Hostel Management</div><div class="muted" style="font-size: 11px;">Occupancy, rooms & beds</div></div>
+                </a>
+                <a href="{% url 'transport:admin_dashboard' %}" class="btn btn-ghost" style="justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: var(--radius-sm);">
+                    <svg class="icon icon-sm" style="color: var(--brand);"><use href="#i-bus"/></svg>
+                    <div><div style="font-weight: 700; font-size: 13px;">Transport System</div><div class="muted" style="font-size: 11px;">Fleet, routes, passes & fees</div></div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Leave Management Overview Card -->
+    <div class="card mb">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-calendar"/></svg> Student Leave Management
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <span class="badge gray">Total: {{ student_leaves_total_count }}</span>
+                <span class="badge amber">Pending: {{ student_leaves_pending_count }}</span>
+                <span class="badge green">Approved: {{ student_leaves_approved_count }}</span>
+                <span class="badge red">Rejected: {{ student_leaves_rejected_count }}</span>
+                <a class="link-arrow" href="{% url 'admin_leave_list' %}">Manage all leaves ›</a>
+            </div>
+        </div>
+        <div class="card-body flush">
+            {% if student_leaves_recent %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>School & Degree</th>
+                            <th>Type</th>
+                            <th>Duration</th>
+                            <th>Dates</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sl in student_leaves_recent %}
+                        <tr>
+                            <td>
+                                <div class="strong">{{ sl.student.name }}</div>
+                                <div class="p-sub muted">{{ sl.student.roll_no }}</div>
+                            </td>
+                            <td>
+                                <div>{{ sl.student.course.name|default:"General" }} (Yr {{ sl.student.year }})</div>
+                                <div class="p-sub muted">{{ sl.student.department.name }}</div>
+                            </td>
+                            <td><span class="strong">{{ sl.leave_type }}</span></td>
+                            <td><span class="badge gray">{{ sl.number_of_days }}d</span></td>
+                            <td>{{ sl.from_date|date:"d M" }} &rarr; {{ sl.to_date|date:"d M Y" }}</td>
+                            <td><span class="badge {{ sl.status_badge_class }}">{{ sl.status }}</span></td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'leave_detail' sl.id %}" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 12px;">
+                                    Manage
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty">
+                <svg class="icon"><use href="#i-calendar"/></svg>
+                <b>No Student Leave Applications</b>No student leave requests submitted yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Training & Placement Overview Card -->
+    <div class="card mb">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-briefcase"/></svg> Training & Placement Cell
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <span class="badge gray">Companies: {{ placement_companies_count }}</span>
+                <span class="badge blue">Drives: {{ placement_drives_count }}</span>
+                <span class="badge amber">Applications: {{ placement_apps_count }}</span>
+                <span class="badge green">Placed: {{ placement_placed_count }}</span>
+                <a class="link-arrow" href="{% url 'placements_dashboard' %}">Full Placement Hub ›</a>
+            </div>
+        </div>
+        <div class="card-body flush">
+            {% if placement_recent_drives %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Role & Type</th>
+                            <th>Package (CTC)</th>
+                            <th>Drive Date</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in placement_recent_drives %}
+                        <tr>
+                            <td>
+                                <div class="strong">{{ d.company.name }}</div>
+                                <div class="p-sub muted">{{ d.company.industry }}</div>
+                            </td>
+                            <td>
+                                <div>{{ d.job_title }}</div>
+                                <div class="p-sub muted">{{ d.get_employment_type_display }} • {{ d.job_location }}</div>
+                            </td>
+                            <td><span class="strong" style="color: var(--brand);">{{ d.salary_package }}</span></td>
+                            <td>{{ d.drive_date|date:"d M Y" }}</td>
+                            <td class="muted">{{ d.application_deadline|date:"d M Y" }}</td>
+                            <td>
+                                <span class="badge {% if d.status == 'Open' %}green{% elif d.status == 'Completed' %}blue{% else %}amber{% endif %}">
+                                    {{ d.status }}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'drive_detail' d.pk %}" class="btn btn-ghost btn-sm" style="padding: 4px 10px; font-size: 12px;">
+                                    View Drive ›
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty">
+                <svg class="icon"><use href="#i-briefcase"/></svg>
+                <b>No Placement Drives</b>No recruitment drives scheduled yet.
+            </div>
+            {% endif %}
+    <!-- Certificate & Document Management Overview Card -->
+    <div class="card mb">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-award"/></svg> Certificate & Document Management
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span class="badge gray">Total: {{ cert_stats.total_requests }}</span>
+                <span class="badge amber">Pending: {{ cert_stats.pending_requests }}</span>
+                <span class="badge green">Approved: {{ cert_stats.approved_requests }}</span>
+                <span class="badge blue">Generated: {{ cert_stats.generated_certs }}</span>
+                <span class="badge violet">Docs Pending: {{ cert_stats.pending_docs }}</span>
+                <a class="link-arrow" href="{% url 'certificates_admin_dashboard' %}">Manage requests ›</a>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div>
+                        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Certificate Requests</div>
+                        <div style="font-size: 20px; font-weight: 800; color: var(--text);">{{ cert_stats.total_requests }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Pending Review</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #f59e0b;">{{ cert_stats.pending_requests }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Approved</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #10b981;">{{ cert_stats.approved_requests }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Generated Credentials</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #1e40af;">{{ cert_stats.generated_certs }}</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Docs Awaiting Review</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #7c3aed;">{{ cert_stats.pending_docs }}</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="{% url 'certificates_admin_dashboard' %}" class="btn btn-primary btn-sm">Manage Requests</a>
+                    <a href="{% url 'admin_document_management' %}" class="btn btn-secondary btn-sm">Manage Documents</a>
+                    <a href="{% url 'certificate_type_list' %}" class="btn btn-ghost btn-sm">Certificate Types</a>
+                    <a href="{% url 'certificate_verify_search' %}" target="_blank" class="btn btn-ghost btn-sm">Verify Certificate</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hostel Accommodation & Campus Residences Overview Card -->
+    <div class="card mb">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-home"/></svg> Hostel & Campus Residences
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <a class="link-arrow" href="{% url 'hostel:admin_dashboard' %}">Hostel Dashboard ›</a>
+                <a class="link-arrow" href="{% url 'hostel:admin_allocations' %}">Allocations ›</a>
+                <a class="link-arrow" href="{% url 'hostel:admin_reports_hub' %}">Reports Hub ›</a>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                    <div>
+                        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Hostel Facilities</div>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--text); margin-top: 4px;">Boys, Girls & Co-Ed Hostels</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Resident Services</div>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--text); margin-top: 4px;">Allocations, Transfers & Check-outs</div>
+                    </div>
+                    <div>
+                        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Campus Life & Care</div>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--text); margin-top: 4px;">Roll Call, Complaints & Visitor Passes</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="{% url 'hostel:admin_dashboard' %}" class="btn btn-primary btn-sm">Hostel Dashboard</a>
+                    <a href="{% url 'hostel:admin_allocations' %}" class="btn btn-secondary btn-sm">Manage Allocations</a>
+                    <a href="{% url 'hostel:room_search' %}" class="btn btn-ghost btn-sm">Room Search</a>
+                    <a href="{% url 'hostel:admin_reports_hub' %}" class="btn btn-ghost btn-sm">Exports & Reports</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if level != 'class' %}
+
+    <div class="card">
+        <div class="card-head">
+            <div>
+                <div class="card-title"><svg class="icon"><use href="#i-school"/></svg> {{ breakdown_title }}</div>
+                <div class="card-sub">{{ breakdown_hint }}</div>
+            </div>
+            {% if level == 'school' and school_incharge %}
+                <span class="badge violet"><svg class="icon icon-sm"><use href="#i-shield"/></svg> Incharge: {{ school_incharge.faculty.name }}</span>
+            {% endif %}
+        </div>
+        <div class="card-body flush">
+            {% if rows %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>{{ first_col }}</th>
+                            <th class="num">Students</th>
+                            {% if level == 'all' or level == 'course' %}<th class="num">Faculty</th>{% endif %}
+                            {% if extra_col %}<th>{{ extra_col }}</th>{% endif %}
+                            {% if level == 'all' %}<th>Incharge</th>{% endif %}
+                            <th style="min-width:150px">Attendance</th>
+                            <th style="min-width:150px">Avg marks</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            <td class="strong"><a class="row-link" href="{{ row.url }}">{{ row.name }}</a></td>
+                            <td class="num">{{ row.students }}</td>
+                            {% if level == 'all' or level == 'course' %}<td class="num">{{ row.faculty }}</td>{% endif %}
+                            {% if extra_col %}<td class="muted nowrap">{{ row.extra }}</td>{% endif %}
+                            {% if level == 'all' %}<td>{% if row.incharge %}<span class="badge violet">{{ row.incharge }}</span>{% else %}<span class="muted">Not assigned</span>{% endif %}</td>{% endif %}
+                            <td>{% include "_meter.html" with pct=row.attendance_pct cls=row.attendance_cls %}</td>
+                            <td>{% include "_meter.html" with pct=row.marks_pct cls=row.marks_cls %}</td>
+                            <td class="right"><a class="link-arrow" href="{{ row.url }}">Open ›</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="empty"><svg class="icon"><use href="#i-inbox"/></svg><b>Nothing here yet</b>No classes have been created for this degree.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% else %}
+
+    <div class="split">
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><svg class="icon"><use href="#i-users"/></svg> Students in this class</div>
+                <span class="badge gray">{{ class_students|length }}</span>
+            </div>
+            <div class="card-body flush">
+                {% if class_students %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Student</th><th>Roll no</th><th style="min-width:140px">Attendance</th><th style="min-width:140px">Avg marks</th></tr></thead>
+                        <tbody>
+                        {% for r in class_students %}
+                            <tr>
+                                <td><div class="person"><div class="avatar">{{ r.obj.name|slice:":1" }}</div><div><div class="p-name">{{ r.obj.name }}</div><div class="p-sub">{{ r.obj.sif_number|default:"No SIF" }}</div></div></div></td>
+                                <td>{{ r.obj.roll_no }}</td>
+                                <td>{% include "_meter.html" with pct=r.attendance_pct cls=r.attendance_cls %}</td>
+                                <td>{% include "_meter.html" with pct=r.marks_pct cls=r.marks_cls %}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="empty"><svg class="icon"><use href="#i-inbox"/></svg><b>No approved students</b>Nobody is enrolled in this class yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-award"/></svg> Faculty teaching</div></div>
+            <div class="card-body">
+                {% for f in class_faculty %}
+                    <div class="person" style="margin-bottom:12px"><div class="avatar">{{ f.name|slice:":1" }}</div><div><div class="p-name">{{ f.name }}</div><div class="p-sub">{{ f.faculty_id }}</div></div></div>
+                {% empty %}
+                    <div class="muted">No faculty assigned in the timetable yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-calendar"/></svg> Weekly timetable</div>
+        </div>
+        <div class="card-body flush">
+            {% if timetable and timetable.has_slots %}
+            <div class="table-wrap">
+                <table class="tt">
+                    <thead><tr><th>Period</th>{% for d in timetable.days %}<th>{{ d }}</th>{% endfor %}</tr></thead>
+                    <tbody>
+                    {% for row in timetable.rows %}
+                        <tr>
+                            <td>P{{ row.period.period_number }}<span class="tt-time">{{ row.period.start_time|time:"g:i A" }}</span></td>
+                            {% for cell in row.cells %}
+                                <td>{% if cell %}<div class="tt-cell"><b>{{ cell.subject.name }}</b><span>{{ cell.faculty.name }}</span></div>{% endif %}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="empty"><svg class="icon"><use href="#i-calendar"/></svg><b>No timetable yet</b>The school incharge hasn't built a timetable for this class.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% endif %}
+
+{# ============================== STUDENTS ============================== #}
+{% elif tab == 'students' %}
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title"><svg class="icon"><use href="#i-users"/></svg> {{ page.paginator.count }} student{{ page.paginator.count|pluralize }}</div>
+        </div>
+        <div class="card-body flush">
+            {% if student_rows %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr><th>Student</th><th>Roll no</th><th>School / Degree</th><th>Class</th><th style="min-width:130px">Attendance</th><th style="min-width:130px">Avg marks</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                    {% for r in student_rows %}
+                        <tr>
+                            <td><div class="person"><div class="avatar">{{ r.obj.name|slice:":1" }}</div><div><div class="p-name">{{ r.obj.name }}</div><div class="p-sub">{{ r.obj.sif_number|default:"No SIF" }}</div></div></div></td>
+                            <td>{{ r.obj.roll_no }}</td>
+                            <td><div class="strong">{{ r.obj.course.name|default:"—" }}</div><div class="p-sub muted">{{ r.obj.department.name }}</div></td>
+                            <td><span class="badge">Year {{ r.obj.year }}</span></td>
+                            <td>{% include "_meter.html" with pct=r.attendance_pct cls=r.attendance_cls %}</td>
+                            <td>{% include "_meter.html" with pct=r.marks_pct cls=r.marks_cls %}</td>
+                            <td class="right"><a class="btn btn-ghost btn-sm" href="/admin/students/student/{{ r.obj.id }}/change/">Edit</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "_pagination.html" %}
+            {% else %}
+                <div class="empty"><svg class="icon"><use href="#i-inbox"/></svg><b>No students found</b>Try a different school, degree, class or search.</div>
+            {% endif %}
+        </div>
+    </div>
+
+{# ============================== FACULTY ============================== #}
+{% elif tab == 'faculty' %}
+
+    <div class="card">
+        <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-award"/></svg> {{ faculty_rows|length }} faculty member{{ faculty_rows|length|pluralize }}</div></div>
+        <div class="card-body flush">
+            {% if faculty_rows %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Faculty</th><th>School</th><th>Subjects</th><th class="num">Weekly periods</th><th>Role</th><th></th></tr></thead>
+                    <tbody>
+                    {% for r in faculty_rows %}
+                        <tr>
+                            <td><div class="person"><div class="avatar">{{ r.obj.name|slice:":1" }}</div><div><div class="p-name">{{ r.obj.name }}</div><div class="p-sub">{{ r.obj.faculty_id }} · {{ r.obj.email }}</div></div></div></td>
+                            <td>{{ r.obj.department.name }}</td>
+                            <td><div class="chips">{% for s in r.subjects %}<span class="badge gray">{{ s }}</span>{% empty %}<span class="muted">—</span>{% endfor %}</div></td>
+                            <td class="num">{{ r.slots }}</td>
+                            <td>{% if r.incharge_of %}<span class="badge violet">Incharge</span>{% else %}<span class="muted">Faculty</span>{% endif %}</td>
+                            <td class="right"><a class="btn btn-ghost btn-sm" href="/admin/faculty/faculty/{{ r.obj.id }}/change/">Edit</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="empty"><svg class="icon"><use href="#i-inbox"/></svg><b>No faculty found</b>Try a different school or filter.</div>
+            {% endif %}
+        </div>
+    </div>
+
+{# ============================== APPROVALS ============================== #}
+{% elif tab == 'approvals' %}
+
+    {% if pending_students or pending_faculty %}
+    <div class="card">
+        <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-inbox"/></svg> Pending registrations ({{ pending_count }})</div></div>
+        <div class="card-body flush">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Applicant</th><th>Type</th><th>ID</th><th>School / Degree</th><th></th></tr></thead>
+                    <tbody>
+                    {% for s in pending_students %}
+                        <tr>
+                            <td><div class="person"><div class="avatar">{{ s.name|slice:":1" }}</div><div><div class="p-name">{{ s.name }}</div><div class="p-sub">{{ s.email }}</div></div></div></td>
+                            <td><span class="badge">Student</span></td>
+                            <td>{{ s.roll_no }}<div class="p-sub muted">SIF {{ s.sif_number|default:"—" }}</div></td>
+                            <td><div class="strong">{{ s.course.name|default:"—" }}</div><div class="p-sub muted">{{ s.department.name }} · Year {{ s.year }}</div></td>
+                            <td class="right nowrap">
+                                <form class="inline-form" method="post" action="/accounts/approve-student/{{ s.id }}/">{% csrf_token %}<button class="btn btn-success btn-sm" type="submit">Approve</button></form>
+                                <form class="inline-form" method="post" action="/accounts/reject-student/{{ s.id }}/" onsubmit="return confirm('Reject and delete this registration?')">{% csrf_token %}<button class="btn btn-danger-soft btn-sm" type="submit">Reject</button></form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    {% for f in pending_faculty %}
+                        <tr>
+                            <td><div class="person"><div class="avatar">{{ f.name|slice:":1" }}</div><div><div class="p-name">{{ f.name }}</div><div class="p-sub">{{ f.email }}</div></div></div></td>
+                            <td><span class="badge violet">Faculty</span></td>
+                            <td>{{ f.faculty_id }}</td>
+                            <td>{{ f.department.name }}</td>
+                            <td class="right nowrap">
+                                <form class="inline-form" method="post" action="/accounts/approve-faculty/{{ f.id }}/">{% csrf_token %}<button class="btn btn-success btn-sm" type="submit">Approve</button></form>
+                                <form class="inline-form" method="post" action="/accounts/reject-faculty/{{ f.id }}/" onsubmit="return confirm('Reject and delete this registration?')">{% csrf_token %}<button class="btn btn-danger-soft btn-sm" type="submit">Reject</button></form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card"><div class="empty"><svg class="icon"><use href="#i-check"/></svg><b>All caught up</b>There are no registrations waiting for approval.</div></div>
+    {% endif %}
+
+{# ============================== LEAVE MESSAGES ============================== #}
+{% elif tab == 'leave_messages' %}
+
+    <div class="card">
+        <div class="card-head">
+            <div>
+                <div class="card-title"><svg class="icon"><use href="#i-calendar"/></svg> Faculty Leave Messages</div>
+                <div class="card-sub">{{ unseen_leave_count }} unread message{{ unseen_leave_count|pluralize }}</div>
+            </div>
+        </div>
+        <div class="card-body flush">
+            {% if leave_requests %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr><th>Faculty</th><th>School</th><th>Type</th><th>Leave dates</th><th>Reason</th><th>Incharge decision</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                    {% for r in leave_requests %}
+                    <tr>
+                        <td><div class="strong">{{ r.faculty.name }}</div><div class="p-sub muted">{{ r.faculty.faculty_id }}</div></td>
+                        <td>{{ r.department.name }}</td>
+                        <td><span class="badge gray">{{ r.get_leave_type_display }}</span></td>
+                        <td class="nowrap">{{ r.from_date|date:"d M Y" }} – {{ r.to_date|date:"d M Y" }}</td>
+                        <td>{{ r.reason }}</td>
+                        <td>
+                            <span class="badge">Approved by {{ r.reviewed_by.name|default:"School Incharge" }}</span>
+                            {% if r.incharge_comment %}<div class="p-sub">{{ r.incharge_comment }}</div>{% endif %}
+                        </td>
+                        <td class="right nowrap">
+                            {% if not r.admin_seen %}
+                            <form method="post" action="/accounts/leave-messages/seen/{{ r.id }}/">
+                                {% csrf_token %}<button class="btn btn-primary btn-sm" type="submit">Mark as seen</button>
+                            </form>
+                            {% else %}
+                            <span class="muted">Seen</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty"><svg class="icon"><use href="#i-check"/></svg><b>No forwarded leave messages</b>Approved faculty leave requests will appear here.</div>
+            {% endif %}
+        </div>
+    </div>
+
+{# ============================== STUDENT LEAVES TAB ============================== #}
+{% elif tab == 'student_leaves' %}
+
+    <div class="stat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+            <div class="stat-ico" style="background: var(--brand-50); color: var(--brand); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+                <svg class="icon"><use href="#i-calendar"/></svg>
+            </div>
+            <div>
+                <div class="stat-val" style="font-size: 24px; font-weight: 800;">{{ student_leaves_total_count }}</div>
+                <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Total Applications</div>
+            </div>
+        </div>
+
+        <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+            <div class="stat-ico" style="background: var(--warn-50); color: var(--warn); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+                <svg class="icon"><use href="#i-clock"/></svg>
+            </div>
+            <div>
+                <div class="stat-val" style="font-size: 24px; font-weight: 800; color: var(--warn);">{{ student_leaves_pending_count }}</div>
+                <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Pending In Pipeline</div>
+            </div>
+        </div>
+
+        <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+            <div class="stat-ico" style="background: var(--success-50); color: var(--success); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+                <svg class="icon"><use href="#i-check"/></svg>
+            </div>
+            <div>
+                <div class="stat-val" style="font-size: 24px; font-weight: 800; color: var(--success);">{{ student_leaves_approved_count }}</div>
+                <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Admin Authorized</div>
+            </div>
+        </div>
+
+        <div class="stat-card card" style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+            <div class="stat-ico" style="background: var(--danger-50); color: var(--danger); width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;">
+                <svg class="icon"><use href="#i-trash"/></svg>
+            </div>
+            <div>
+                <div class="stat-val" style="font-size: 24px; font-weight: 800; color: var(--danger);">{{ student_leaves_rejected_count }}</div>
+                <div class="stat-label" style="font-size: 13px; color: var(--muted); font-weight: 600;">Rejected Requests</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Leaves Table Card -->
+    <div class="card">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="card-title"><svg class="icon"><use href="#i-calendar"/></svg> Student Leave Applications</div>
+            <a class="btn btn-primary btn-sm" href="{% url 'admin_leave_list' %}">
+                <svg class="icon icon-sm"><use href="#i-filter"/></svg>
+                <span>Full Ledger & Filter Portal</span>
+            </a>
+        </div>
+        <div class="card-body flush">
+            {% if student_leaves_page %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>School & Degree</th>
+                            <th>Type</th>
+                            <th>Duration</th>
+                            <th>Dates</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in student_leaves_page %}
+                        <tr>
+                            <td>
+                                <div class="strong">{{ l.student.name }}</div>
+                                <div class="p-sub muted">{{ l.student.roll_no }}</div>
+                            </td>
+                            <td>
+                                <div>{{ l.student.course.name|default:"General" }} - Yr {{ l.student.year }}</div>
+                                <div class="p-sub muted">{{ l.student.department.name }}</div>
+                            </td>
+                            <td><span class="strong">{{ l.leave_type }}</span></td>
+                            <td><span class="badge gray">{{ l.number_of_days }}d</span></td>
+                            <td>{{ l.from_date|date:"d M" }} &rarr; {{ l.to_date|date:"d M Y" }}</td>
+                            <td><span class="badge {{ l.status_badge_class }}">{{ l.status }}</span></td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'leave_detail' l.id %}" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 12px;">
+                                    Manage
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty">
+                <svg class="icon"><use href="#i-calendar"/></svg>
+                <b>No student leave requests found</b>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+{# ============================== CIRCULARS ============================== #}
+{% else %}
+
+    <div class="split">
+        <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-bell"/></svg> Posted circulars</div></div>
+            <div class="card-body">
+                {% for c in circulars %}
+                <div class="note">
+                    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+                        <div>
+                            <h3>{{ c.title }}</h3>
+                            <div class="meta">{{ c.posted_at|date:"d M Y, g:i A" }} · <span class="badge gray">{{ c.get_audience_display }}</span></div>
+                        </div>
+                        <form class="inline-form" method="post" action="/timetable/delete-circular/{{ c.id }}/" onsubmit="return confirm('Delete this circular?')">{% csrf_token %}
+                            <button class="btn btn-danger-soft btn-sm" type="submit" title="Delete"><svg class="icon icon-sm"><use href="#i-trash"/></svg></button>
+                        </form>
+                    </div>
+                    <p>{{ c.message }}</p>
+                </div>
+                {% empty %}
+                    <div class="empty"><svg class="icon"><use href="#i-bell"/></svg><b>No circulars yet</b>Post the first one using the form.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon"><use href="#i-plus"/></svg> New circular</div></div>
+            <div class="card-body">
+                <form method="post" action="/timetable/post-circular/" class="stack">
+                    {% csrf_token %}
+                    <div class="field"><label>Title</label><input class="input" name="title" required placeholder="e.g. Semester exam schedule"></div>
+                    <div class="field"><label>Message</label><textarea class="textarea" name="message" rows="5" required placeholder="Write the circular…"></textarea></div>
+                    <div class="field"><label>Send to</label>
+                        <select class="select" name="audience" id="cAudience">
+                            <option value="ALL">Everyone</option>
+                            <option value="STUDENT">Students only</option>
+                            <option value="FACULTY">Faculty only</option>
+                        </select>
+                    </div>
+                    <div class="form-grid">
+                        <div class="field"><label>Target school (optional)</label><select class="select" name="target_department"><option value="">All schools</option>{% for school in tree %}<option value="{{ school.id }}">{{ school.name }}</option>{% endfor %}</select></div>
+                        <div class="field"><label>Target degree (optional)</label><select class="select" name="target_course"><option value="">All degrees</option>{% for school in tree %}{% for course in school.courses %}<option value="{{ course.id }}">{{ course.name }}</option>{% endfor %}{% endfor %}</select></div>
+                    </div>
+                    <div class="field"><label>Target year (optional)</label><input class="input" type="number" min="1" max="5" name="target_year" placeholder="e.g. 1"></div>
+                    <button class="btn btn-primary btn-block" type="submit">Send circular</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block extra_js %}
+{% if tab == 'overview' or tab == 'students' or tab == 'faculty' %}
+<script>
+(function () {
+    var tree = JSON.parse(document.getElementById('tree-data').textContent);
+    var form = document.getElementById('filterForm');
+    var selSchool = document.getElementById('fSchool');
+    var selCourse = document.getElementById('fCourse');
+    var selYear = document.getElementById('fYear');
+
+    var current = {
+        school: '{{ keep.school|default_if_none:""|unlocalize }}',
+        course: '{{ keep.course|default_if_none:""|unlocalize }}',
+        year: '{{ keep.year|default_if_none:""|unlocalize }}'
+    };
+
+    function opt(value, label, selected) {
+        var o = document.createElement('option');
+        o.value = value; o.textContent = label;
+        if (selected) o.selected = true;
+        return o;
+    }
+
+    function fillSchools() {
+        selSchool.innerHTML = '';
+        selSchool.appendChild(opt('', 'All schools', !current.school));
+        tree.forEach(function (s) {
+            selSchool.appendChild(opt(s.id, s.name, String(s.id) === current.school));
+        });
+    }
+
+    function fillCourses() {
+        selCourse.innerHTML = '';
+        var school = tree.find(function (s) { return String(s.id) === current.school; });
+        selCourse.appendChild(opt('', school ? 'All degrees' : 'Select a school first', !current.course));
+        selCourse.disabled = !school;
+        if (school) {
+            school.courses.forEach(function (c) {
+                selCourse.appendChild(opt(c.id, c.name, String(c.id) === current.course));
+            });
+        }
+    }
+
+    function fillYears() {
+        if (!selYear) return;
+        selYear.innerHTML = '';
+        var school = tree.find(function (s) { return String(s.id) === current.school; });
+        var course = school && school.courses.find(function (c) { return String(c.id) === current.course; });
+        selYear.appendChild(opt('', course ? 'All classes' : 'Select a degree first', !current.year));
+        selYear.disabled = !course;
+        if (course) {
+            course.years.forEach(function (y) {
+                selYear.appendChild(opt(y, 'Year ' + y, String(y) === current.year));
+            });
+        }
+    }
+
+    fillSchools(); fillCourses(); fillYears();
+
+    selSchool.addEventListener('change', function () {
+        current.school = selSchool.value; current.course = ''; current.year = '';
+        fillCourses(); fillYears(); form.submit();
+    });
+    selCourse.addEventListener('change', function () {
+        current.course = selCourse.value; current.year = '';
+        fillYears(); form.submit();
+    });
+    if (selYear) selYear.addEventListener('change', function () { form.submit(); });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}Room Availability &amp; Search · Smart College ERP{% endblock %}
+{% block topbar_title %}Hostel Rooms{% endblock %}
+
+{% block page_title %}Hostel Room Availability &amp; Search{% endblock %}
+{% block page_sub %}
+    Explore real-time room capacity, filter by minimum available beds, and view allocatable vacancies.
+{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn btn-primary" href="{% url 'hostel:admin_allocation_create' %}">
+        <svg class="icon icon-sm"><use href="#i-plus"/></svg> Allocate Bed
+    </a>
+    <a class="btn btn-soft" href="{% url 'hostel:admin_dashboard' %}">
+        <svg class="icon icon-sm"><use href="#i-chart"/></svg> Capacity Dashboard
+    </a>
+    <a class="btn btn-soft" href="{% url 'hostel:admin_allocations' %}">
+        <svg class="icon icon-sm"><use href="#i-layers"/></svg> Active Allocations
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- ADVANCED ROOM FILTERS CARD (PHASE 12) -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-layers"/></svg> Search &amp; Availability Filters
+        </div>
+        {% if selected_hostel or selected_block or selected_floor or selected_room_type or selected_status or selected_min_available or search_query %}
+            <a href="{% url 'hostel:room_search' %}" class="btn btn-ghost btn-sm" style="color: var(--warn);">&times; Reset Filters</a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'hostel:room_search' %}">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; align-items: flex-end;">
+
+                <!-- 1. Hostel -->
+                <div>
+                    <label class="form-label" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Hostel</label>
+                    <select name="hostel" class="input">
+                        <option value="">All Hostels</option>
+                        {% for h in hostels_list %}
+                            <option value="{{ h.id }}" {% if selected_hostel == h.id|stringformat:"s" %}selected{% endif %}>
+                                {{ h.name }} ({{ h.code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 2. Block -->
+                <div>
+                    <label class="form-label" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Block</label>
+                    <select name="block" class="input">
+                        <option value="">All Blocks</option>
+                        {% for b in blocks_list %}
+                            <option value="{{ b.id }}" {% if selected_block == b.id|stringformat:"s" %}selected{% endif %}>
+                                {{ b.hostel.code }} · {{ b.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 3. Floor -->
+                <div>
+                    <label class="form-label" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Floor</label>
+                    <select name="floor" class="input">
+                        <option value="">All Floors</option>
+                        {% for f in floors_list %}
+                            <option value="{{ f.id }}" {% if selected_floor == f.id|stringformat:"s" %}selected{% endif %}>
+                                {{ f.block.name }} · {{ f.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 4. Room Type -->
+                <div>
+                    <label class="form-label" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Room Type</label>
+                    <select name="room_type" class="input">
+                        <option value="">All Types</option>
+                        {% for code, label in room_types %}
+                            <option value="{{ code }}" {% if selected_room_type == code %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 5. Minimum Available Beds -->
+                <div>
+                    <label class="form-label" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Min Available Beds</label>
+                    <input type="number" name="min_available" min="0" max="20" class="input" placeholder="e.g. 1" value="{{ selected_min_available }}">
+                </div>
+
+                <!-- 6. Status -->
+                <div>
+                    <label class="form-label" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Room Status</label>
+                    <select name="status" class="input">
+                        <option value="">All Statuses</option>
+                        {% for code, label in room_statuses %}
+                            <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 7. Search keyword -->
+                <div>
+                    <label class="form-label" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Room / Search</label>
+                    <input type="text" name="q" class="input" placeholder="Room # or code..." value="{{ search_query }}">
+                </div>
+
+                <!-- Submit Button -->
+                <div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <svg class="icon icon-sm"><use href="#i-check"/></svg> Filter Rooms
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- STATS SUMMARY PILLS -->
+<div class="grid-4 mb">
+    <div class="stat">
+        <div class="stat-ico" style="background: #e0f2fe; color: #0284c7;"><svg class="icon icon-lg"><use href="#i-layers"/></svg></div>
+        <div>
+            <div class="stat-val">{{ total_rooms_count }}</div>
+            <div class="stat-label">Matching Rooms</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico" style="background: #dcfce7; color: #15803d;"><svg class="icon icon-lg"><use href="#i-check"/></svg></div>
+        <div>
+            <div class="stat-val" style="color: #15803d;">{{ total_avail_beds_count }}</div>
+            <div class="stat-label">Available Beds for Allocation</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico" style="background: #fee2e2; color: #b91c1c;"><svg class="icon icon-lg"><use href="#i-user"/></svg></div>
+        <div>
+            <div class="stat-val" style="color: #b91c1c;">{{ total_occ_beds_count }}</div>
+            <div class="stat-label">Occupied Beds</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico" style="background: #f1f5f9; color: #475569;"><svg class="icon icon-lg"><use href="#i-home"/></svg></div>
+        <div>
+            <div class="stat-val">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+            <div class="stat-label">Showing {{ rooms|length }} rooms</div>
+        </div>
+    </div>
+</div>
+
+<!-- ROOMS TABLE (PHASE 12 DISPLAY REQUIREMENTS) -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-home"/></svg> Room Vacancies &amp; Bed Allocations
+        </div>
+        <span class="muted" style="font-size: 13px;">Displaying beds eligible for immediate student allocation</span>
+    </div>
+    <div class="card-body flush">
+        {% if rooms %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Room</th>
+                        <th>Hostel &amp; Location</th>
+                        <th>Type</th>
+                        <th style="text-align: right;">Capacity</th>
+                        <th style="text-align: right;">Occupied</th>
+                        <th style="text-align: right;">Available</th>
+                        <th>Status</th>
+                        <th>Allocatable Beds</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in rooms %}
+                    <tr>
+                        <!-- Room Number -->
+                        <td>
+                            <div style="font-weight: 800; font-size: 15px; color: var(--brand);">Room {{ room.room_number }}</div>
+                            {% if room.monthly_rent > 0 %}
+                                <div class="muted" style="font-size: 11.5px;">₹{{ room.monthly_rent|floatformat:0 }}/mo</div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Hostel / Location -->
+                        <td>
+                            <div style="font-weight: 700;">{{ room.hostel.name }}</div>
+                            <div class="muted" style="font-size: 12px;">{{ room.block.name }} &middot; {{ room.floor.name }}</div>
+                        </td>
+
+                        <!-- Room Type -->
+                        <td>
+                            <span class="badge slate">{{ room.get_room_type_display }}</span>
+                        </td>
+
+                        <!-- Capacity -->
+                        <td style="text-align: right; font-weight: 600;">
+                            {{ room.capacity }}
+                        </td>
+
+                        <!-- Occupied Beds -->
+                        {% if room.num_occupied_beds > 0 %}
+                        <td style="text-align: right; font-weight: 700; color: #b91c1c;">
+                        {% else %}
+                        <td style="text-align: right; font-weight: 700; color: var(--muted);">
+                        {% endif %}
+                            {{ room.num_occupied_beds }}
+                        </td>
+
+                        <!-- Available Beds -->
+                        {% if room.num_available_beds > 0 %}
+                        <td style="text-align: right; font-weight: 800; color: #15803d;">
+                        {% else %}
+                        <td style="text-align: right; font-weight: 800; color: var(--muted);">
+                        {% endif %}
+                            {{ room.num_available_beds }}
+                        </td>
+
+                        <!-- Status Badge -->
+                        <td>
+                            {% if room.status == "AVAILABLE" %}
+                                <span class="badge green">Available</span>
+                            {% elif room.status == "PARTIALLY_OCCUPIED" %}
+                                <span class="badge blue">Partial</span>
+                            {% elif room.status == "FULL" %}
+                                <span class="badge red">Full</span>
+                            {% elif room.status == "MAINTENANCE" %}
+                                <span class="badge amber">Maintenance</span>
+                            {% else %}
+                                <span class="badge slate">{{ room.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- ONLY SHOW BEDS THAT CAN ACTUALLY BE ALLOCATED -->
+                        <td>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                {% for bed in room.allocatable_beds %}
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 2px 7px; border-radius: 4px; font-size: 11.5px; font-weight: 700;">
+                                        <span style="width: 5px; height: 5px; background: #22c55e; border-radius: 50%;"></span>
+                                        Bed {{ bed.bed_number }}
+                                    </span>
+                                {% empty %}
+                                    <span class="muted" style="font-size: 11.5px; font-style: italic;">No vacant beds</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <!-- Action -->
+                        <td style="text-align: right;">
+                            {% if room.num_available_beds > 0 and room.status != "MAINTENANCE" and room.is_active %}
+                                <a href="{% url 'hostel:admin_allocation_create' %}?room_id={{ room.id }}" class="btn btn-primary btn-sm">
+                                    Allocate ›
+                                </a>
+                            {% else %}
+                                <span class="btn btn-ghost btn-sm disabled" style="opacity: 0.5; pointer-events: none;">Unavailable</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINATION (PHASE 12) -->
+        {% if page_obj.has_other_pages %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
+            <div class="muted" style="font-size: 13px;">
+                Showing rooms {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+            </div>
+            <div style="display: flex; gap: 6px;">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if query_string %}&{{ query_string }}{% endif %}" class="btn btn-ghost btn-sm">&laquo; First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="btn btn-ghost btn-sm">&lsaquo; Prev</a>
+                {% endif %}
+
+                <span class="btn btn-soft btn-sm disabled" style="font-weight: 700;">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="btn btn-ghost btn-sm">Next &rsaquo;</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}" class="btn btn-ghost btn-sm">Last &raquo;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty" style="padding: 36px 20px;">
+            <svg class="icon"><use href="#i-home"/></svg>
+            <b>No Matching Rooms Found</b>
+            <span>No hostel rooms matched your search filters. Try loosening the filter criteria or resetting.</span>
+            <div style="margin-top: 14px;">
+                <a href="{% url 'hostel:room_search' %}" class="btn btn-soft btn-sm">Clear All Filters</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

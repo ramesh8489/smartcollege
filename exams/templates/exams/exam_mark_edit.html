@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Exam Mark · {{ mark.student.name }}{% endblock %}
+{% block topbar_title %}Edit Exam Mark{% endblock %}
+
+{% block page_title %}Edit Examination Mark{% endblock %}
+{% block page_sub %}{{ mark.student.name }} ({{ mark.student.roll_no }}) · {{ mark.exam.name }} · {{ mark.subject.name }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'exam_marks_dashboard' %}" class="btn btn-ghost">
+        ← Back to Marks Dashboard
+    </a>
+{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 680px; margin: 20px auto;">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">
+                <svg class="icon"><use href="#i-edit"/></svg>
+                <span>Update Student Marks</span>
+            </div>
+            <span class="badge {% if mark.result_status == 'Pass' %}green{% else %}red{% endif %}">
+                Current: {{ mark.result_status }} ({{ mark.marks_obtained }}/{{ mark.max_marks }})
+            </span>
+        </div>
+
+        <div class="card-body">
+            {% if form.errors %}
+                <div class="card" style="padding: 12px 18px; border-left: 4px solid var(--danger); margin-bottom: 20px; background: var(--danger-50);">
+                    <div style="font-weight: 700; color: var(--danger); margin-bottom: 6px;">Please correct errors:</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--danger);">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="field mb">
+                    <label>Student</label>
+                    <div style="font-weight: 700; font-size: 14.5px; padding: 10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                        {{ mark.student.name }} ({{ mark.student.roll_no }})
+                    </div>
+                    <input type="hidden" name="student" value="{{ mark.student.id }}">
+                </div>
+
+                <div class="grid grid-2 mb" style="gap: 16px;">
+                    <div class="field">
+                        <label>Examination</label>
+                        <div style="font-weight: 600; padding: 10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                            {{ mark.exam.name }}
+                        </div>
+                        <input type="hidden" name="exam" value="{{ mark.exam.id }}">
+                    </div>
+
+                    <div class="field">
+                        <label>Subject</label>
+                        <div style="font-weight: 600; padding: 10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px solid var(--line);">
+                            {{ mark.subject.name }} ({{ mark.subject.code }})
+                        </div>
+                        <input type="hidden" name="subject" value="{{ mark.subject.id }}">
+                    </div>
+                </div>
+
+                <div class="grid grid-2 mb" style="gap: 16px;">
+                    <div class="field">
+                        <label for="{{ form.max_marks.id_for_label }}">Maximum Marks <span style="color:var(--danger)">*</span></label>
+                        {{ form.max_marks }}
+                    </div>
+
+                    <div class="field">
+                        <label for="{{ form.marks_obtained.id_for_label }}">Marks Obtained <span style="color:var(--danger)">*</span></label>
+                        {{ form.marks_obtained }}
+                    </div>
+                </div>
+
+                <div class="grid grid-2 mb" style="gap: 16px;">
+                    <div class="field">
+                        <label for="{{ form.result_status.id_for_label }}">Result Status</label>
+                        {{ form.result_status }}
+                    </div>
+
+                    <div class="field">
+                        <label for="{{ form.remarks.id_for_label }}">Remarks</label>
+                        {{ form.remarks }}
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--line);">
+                    <a href="{% url 'exam_marks_dashboard' %}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+                        <svg class="icon"><use href="#i-check"/></svg>
+                        <span>Update Marks</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
