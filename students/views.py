@@ -334,6 +334,39 @@ def dashboard(request):
     hostel_summary = get_student_hostel_summary(student)
 
     # ========================================================
+    # FEES & ONLINE PAYMENTS INTEGRATION
+    # ========================================================
+    from decimal import Decimal
+    from fees.models import FeeRecord, FeePayment
+
+    student_fee_records = list(
+        FeeRecord.objects.filter(student=student)
+        .prefetch_related("payments")
+        .order_by("-created_at")
+    )
+    fee_total_amount = sum((r.amount for r in student_fee_records), Decimal("0.00"))
+    fee_total_paid = sum((r.paid_amount for r in student_fee_records), Decimal("0.00"))
+    fee_total_balance = max(fee_total_amount - fee_total_paid, Decimal("0.00"))
+
+    student_recent_payments = list(
+        FeePayment.objects.filter(fee_record__student=student)
+        .select_related("fee_record")
+        .order_by("-payment_date", "-created_at")[:5]
+    )
+
+    fee_summary = {
+        "records": student_fee_records,
+        "total_amount": fee_total_amount,
+        "total_paid": fee_total_paid,
+        "total_balance": fee_total_balance,
+        "pending_records": [r for r in student_fee_records if r.balance_amount > 0],
+        "paid_records": [r for r in student_fee_records if r.balance_amount == 0],
+        "recent_payments": student_recent_payments,
+        "record_count": len(student_fee_records),
+        "has_pending": fee_total_balance > 0,
+    }
+
+    # ========================================================
     # DASHBOARD
     # ========================================================
 
@@ -416,6 +449,9 @@ def dashboard(request):
 
             "hostel_summary":
                 hostel_summary,
+
+            "fee_summary":
+                fee_summary,
 
             "recent_circulars":
                 Circular.objects.filter(

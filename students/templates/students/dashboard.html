@@ -428,6 +428,125 @@
             </div>
         </div>
 
+        <!-- FEES & ONLINE PAYMENT CENTER -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="card-title">
+                    <svg class="icon"><use href="#i-file"/></svg>
+                    <span>Fees &amp; Online Payments</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a class="btn btn-ghost btn-sm" href="/fees/">
+                        <span>All Fees &amp; History ›</span>
+                    </a>
+                    {% if fee_summary.has_pending %}
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openStudentDashQuickPay()">
+                        <svg class="icon icon-sm"><use href="#i-check"/></svg>
+                        <span>Pay Due Balance (₹{{ fee_summary.total_balance|floatformat:0 }})</span>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Financial Metrics Strip -->
+            <div style="padding: 14px 20px; background: var(--surface-2); border-bottom: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px;">
+                <div style="background: #ffffff; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line);">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Total College Fees</div>
+                    <div style="font-size: 18px; font-weight: 800; color: var(--ink); margin-top: 3px;">₹{{ fee_summary.total_amount|floatformat:2 }}</div>
+                </div>
+                <div style="background: #ffffff; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); border-left: 3px solid #16a34a;">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Amount Paid</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-top: 3px;">₹{{ fee_summary.total_paid|floatformat:2 }}</div>
+                </div>
+                <div style="background: #ffffff; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); border-left: 3px solid {% if fee_summary.has_pending %}#dc2626{% else %}#16a34a{% endif %};">
+                    <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Outstanding Balance</div>
+                    <div style="font-size: 18px; font-weight: 800; color: {% if fee_summary.has_pending %}#dc2626{% else %}#16a34a{% endif %}; margin-top: 3px;">
+                        ₹{{ fee_summary.total_balance|floatformat:2 }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body flush">
+                {% if fee_summary.records %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fee Particulars</th>
+                                <th>Academic Session</th>
+                                <th>Due Date</th>
+                                <th class="num">Amount</th>
+                                <th class="num">Paid</th>
+                                <th class="num">Balance Due</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rec in fee_summary.records %}
+                            <tr>
+                                <td>
+                                    <div class="strong">{{ rec.title }}</div>
+                                    <div class="muted" style="font-size: 11px;">{{ rec.get_fee_type_display }}</div>
+                                </td>
+                                <td>
+                                    {{ rec.academic_year }}
+                                    {% if rec.semester %}<span class="muted" style="font-size: 11px;"> · Sem {{ rec.semester }}</span>{% endif %}
+                                </td>
+                                <td class="nowrap">{{ rec.due_date|date:"d M Y"|default:"—" }}</td>
+                                <td class="num font-bold">₹{{ rec.amount|floatformat:2 }}</td>
+                                <td class="num" style="color: #16a34a; font-weight: 600;">₹{{ rec.paid_amount|floatformat:2 }}</td>
+                                <td class="num" style="color: {% if rec.balance_amount > 0 %}#dc2626{% else %}#16a34a{% endif %}; font-weight: 700;">
+                                    ₹{{ rec.balance_amount|floatformat:2 }}
+                                </td>
+                                <td>
+                                    {% if rec.computed_status == "PAID" %}
+                                        <span class="badge green">Paid</span>
+                                    {% elif rec.computed_status == "PARTIAL" %}
+                                        <span class="badge amber">Partial</span>
+                                    {% else %}
+                                        <span class="badge red">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right;" class="nowrap">
+                                    {% if rec.balance_amount > 0 %}
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="openStudentDashPaymentModal({{ rec.id }}, '{{ rec.title|escapejs }}', {{ rec.amount }}, {{ rec.balance_amount }})">
+                                        <svg class="icon icon-sm"><use href="#i-check"/></svg> Pay Online
+                                    </button>
+                                    {% else %}
+                                    <span class="badge green" style="padding: 4px 8px;">✓ Cleared</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if fee_summary.recent_payments %}
+                <div style="padding: 12px 18px; background: var(--surface-2); border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 12.5px; font-weight: 700; color: var(--ink);">
+                        <span>Recent Official Receipts:</span>
+                        {% for p in fee_summary.recent_payments|slice:":3" %}
+                        <a href="{% url 'payment_receipt' p.id %}" target="_blank" class="btn btn-outline btn-sm" style="margin-left: 6px; padding: 3px 8px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">
+                            <svg class="icon icon-sm"><use href="#i-file"/></svg>
+                            <span>{{ p.receipt_number }} (₹{{ p.amount|floatformat:0 }})</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <a href="/fees/" style="font-size: 12px; font-weight: 600;">View All Payment Receipts ›</a>
+                </div>
+                {% endif %}
+
+                {% else %}
+                <div class="empty" style="padding: 30px 20px;">
+                    <svg class="icon"><use href="#i-file"/></svg>
+                    <b>No fee records assigned</b>You do not currently have any fee records on file.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- HOSTEL ACCOMMODATION PORTAL CARD (PHASE 10) -->
         <div class="card" style="margin-top: 20px;">
             <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -645,5 +764,305 @@
     </div>
 
 </div>
+
+<!-- ========================================================================= -->
+<!-- STUDENT DASHBOARD ONLINE PAYMENT MODAL DIALOG                             -->
+<!-- ========================================================================= -->
+<div id="dashPaymentModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;place-items:center;padding:16px;">
+    <div id="dashPaymentModalBox" style="background:#ffffff;border-radius:18px;max-width:540px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);overflow:hidden;">
+        
+        <!-- Modal Top Banner -->
+        <div style="background:linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);color:#ffffff;padding:20px 24px;position:relative;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#bfdbfe;">Takshashila University ERP</div>
+                    <h2 style="font-size:19px;font-weight:800;color:#ffffff;margin-top:2px;">Online Fee Payment Gateway</h2>
+                </div>
+                <button type="button" onclick="closeStudentDashPaymentModal()" style="background:rgba(255,255,255,0.15);border:none;color:#ffffff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;display:grid;place-items:center;" title="Close">&times;</button>
+            </div>
+            
+            <!-- Fee Target Overview Card -->
+            <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px 16px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div id="dashModalFeeTitle" style="font-weight:700;font-size:14px;color:#ffffff;">Tuition Fee</div>
+                    <div style="font-size:11.5px;color:#bfdbfe;margin-top:2px;">
+                        Student: <strong>{{ student.name }}</strong> (SIF: {{ student.sif_number|default:"—" }})
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:11px;color:#bfdbfe;text-transform:uppercase;font-weight:600;">Outstanding Balance</div>
+                    <div style="font-size:18px;font-weight:800;color:#ffffff;">₹<span id="dashModalFeeBalance">0.00</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Body Content -->
+        <div id="dashModalFormContainer" style="padding:22px 24px;">
+            <form id="dashOnlinePaymentForm" onsubmit="submitDashOnlinePayment(event)">
+                {% csrf_token %}
+                <input type="hidden" id="dashModalRecordId" name="record_id" value="">
+                
+                <!-- Payment Mode Selector Tabs -->
+                <div style="margin-bottom:18px;">
+                    <label style="font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:0.03em;display:block;margin-bottom:8px;">Choose Payment Mode</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                        <button type="button" id="dashTabModeUPI" onclick="setDashPaymentMode('UPI')" class="dash-mode-tab active" style="padding:10px 8px;border-radius:10px;border:2px solid var(--brand);background:var(--brand-50);font-weight:700;font-size:12.5px;color:var(--brand);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all 0.15s;">
+                            <span>⚡ UPI / QR</span>
+                            <span style="font-size:10px;font-weight:normal;color:var(--muted);">GPay &middot; PhonePe</span>
+                        </button>
+                        <button type="button" id="dashTabModeCard" onclick="setDashPaymentMode('CARD')" class="dash-mode-tab" style="padding:10px 8px;border-radius:10px;border:2px solid var(--line);background:#ffffff;font-weight:700;font-size:12.5px;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all 0.15s;">
+                            <span>💳 Card</span>
+                            <span style="font-size:10px;font-weight:normal;color:var(--muted);">Debit &middot; Credit</span>
+                        </button>
+                        <button type="button" id="dashTabModeBank" onclick="setDashPaymentMode('BANK')" class="dash-mode-tab" style="padding:10px 8px;border-radius:10px;border:2px solid var(--line);background:#ffffff;font-weight:700;font-size:12.5px;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all 0.15s;">
+                            <span>🏦 Net Banking</span>
+                            <span style="font-size:10px;font-weight:normal;color:var(--muted);">All Major Banks</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="dashSelectedPaymentMode" name="payment_mode" value="UPI">
+                </div>
+
+                <!-- UPI Details View -->
+                <div id="dashViewModeUPI" style="background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:18px;">
+                    <div style="display:flex;align-items:center;gap:16px;">
+                        <!-- QR Code visual -->
+                        <div style="background:#ffffff;border:2px solid #cbd5e1;border-radius:10px;padding:8px;text-align:center;flex-shrink:0;">
+                            <svg width="78" height="78" viewBox="0 0 100 100" style="display:block;">
+                                <rect width="100" height="100" fill="#ffffff"/>
+                                <rect x="10" y="10" width="28" height="28" fill="#1e293b"/>
+                                <rect x="16" y="16" width="16" height="16" fill="#ffffff"/>
+                                <rect x="20" y="20" width="8" height="8" fill="#1e293b"/>
+                                <rect x="62" y="10" width="28" height="28" fill="#1e293b"/>
+                                <rect x="68" y="16" width="16" height="16" fill="#ffffff"/>
+                                <rect x="72" y="20" width="8" height="8" fill="#1e293b"/>
+                                <rect x="10" y="62" width="28" height="28" fill="#1e293b"/>
+                                <rect x="16" y="68" width="16" height="16" fill="#ffffff"/>
+                                <rect x="20" y="72" width="8" height="8" fill="#1e293b"/>
+                                <rect x="46" y="12" width="8" height="8" fill="#1e293b"/>
+                                <rect x="46" y="28" width="8" height="18" fill="#1e293b"/>
+                                <rect x="46" y="52" width="8" height="14" fill="#1e293b"/>
+                                <rect x="62" y="52" width="16" height="8" fill="#1e293b"/>
+                                <rect x="82" y="52" width="8" height="18" fill="#1e293b"/>
+                                <rect x="62" y="76" width="18" height="14" fill="#1e293b"/>
+                            </svg>
+                            <span style="font-size:9.5px;color:var(--muted);font-weight:600;display:block;margin-top:2px;">Scan &amp; Pay</span>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:12px;font-weight:700;color:var(--ink);">College Virtual UPI ID:</div>
+                            <div style="font-family:monospace;font-size:13px;font-weight:700;color:var(--brand);background:#ffffff;padding:4px 8px;border-radius:6px;border:1px solid var(--line);margin:4px 0 8px;display:inline-block;">smartcollege@okaxis</div>
+                            <div style="font-size:11.5px;color:var(--muted);">Supports GPay, PhonePe, Paytm, BHIM. Instant verified PDF receipt.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Details View (Hidden by default) -->
+                <div id="dashViewModeCard" style="display:none;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:18px;">
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:11.5px;font-weight:600;color:var(--ink);display:block;margin-bottom:4px;">Card Number</label>
+                        <input class="input" type="text" placeholder="4532 •••• •••• 8921" maxlength="19" style="background:#ffffff;font-family:monospace;" value="4532 8812 9043 8921">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <label style="font-size:11.5px;font-weight:600;color:var(--ink);display:block;margin-bottom:4px;">Expiry</label>
+                            <input class="input" type="text" placeholder="MM/YY" maxlength="5" style="background:#ffffff;font-family:monospace;" value="08/29">
+                        </div>
+                        <div>
+                            <label style="font-size:11.5px;font-weight:600;color:var(--ink);display:block;margin-bottom:4px;">CVV</label>
+                            <input class="input" type="password" placeholder="123" maxlength="3" style="background:#ffffff;font-family:monospace;" value="821">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Banking View (Hidden by default) -->
+                <div id="dashViewModeBank" style="display:none;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:18px;">
+                    <label style="font-size:11.5px;font-weight:600;color:var(--ink);display:block;margin-bottom:6px;">Select Bank</label>
+                    <select class="select" style="background:#ffffff;">
+                        <option>State Bank of India (SBI)</option>
+                        <option>HDFC Bank</option>
+                        <option>ICICI Bank</option>
+                        <option>Axis Bank</option>
+                        <option>Punjab National Bank</option>
+                    </select>
+                </div>
+
+                <!-- Amount to Pay -->
+                <div style="margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                        <label for="dashInputPaymentAmount" style="font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:0.03em;">Amount to Pay (₹)</label>
+                        <button type="button" onclick="setDashFullAmount()" style="font-size:11.5px;color:var(--brand);background:none;border:none;cursor:pointer;font-weight:700;text-decoration:underline;">Pay Full Balance</button>
+                    </div>
+                    <div style="position:relative;">
+                        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-weight:800;color:var(--muted);font-size:16px;">₹</span>
+                        <input type="number" id="dashInputPaymentAmount" name="amount" step="0.01" min="1" required class="input" style="padding-left:32px;font-size:16px;font-weight:800;color:var(--ink);height:44px;" value="0.00">
+                    </div>
+                    <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Supports full balance clearance or partial instalments.</div>
+                </div>
+
+                <!-- Pay Button -->
+                <div style="display:flex;gap:10px;margin-top:20px;">
+                    <button type="button" class="btn btn-ghost" style="flex:1;" onclick="closeStudentDashPaymentModal()">Cancel</button>
+                    <button type="submit" id="dashBtnSubmitPayment" class="btn btn-primary" style="flex:2;padding:12px;font-size:14.5px;font-weight:700;justify-content:center;background:#16a34a;border-color:#16a34a;">
+                        <svg class="icon icon-sm"><use href="#i-check"/></svg>
+                        <span id="dashBtnSubmitText">Confirm &amp; Pay Securely</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Result View -->
+        <div id="dashModalSuccessContainer" style="display:none;padding:36px 28px;text-align:center;">
+            <div style="width:68px;height:68px;background:#dcfce7;color:#16a34a;border-radius:50%;display:grid;place-items:center;margin:0 auto 16px;font-size:32px;box-shadow:0 8px 16px rgba(22,163,74,0.25);">
+                ✓
+            </div>
+            <h3 style="font-size:21px;font-weight:800;color:var(--ink);">Payment Successful!</h3>
+            <p style="color:var(--muted);font-size:13.5px;margin-top:6px;">Your fee payment was confirmed and your official university receipt is ready.</p>
+            
+            <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:16px;margin:20px 0;text-align:left;">
+                <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
+                    <span class="muted">Official Receipt No:</span>
+                    <strong style="color:var(--brand);font-family:monospace;" id="dashSuccessReceiptNo">REC-2026-XXXXX</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
+                    <span class="muted">Amount Paid:</span>
+                    <strong style="color:#16a34a;" id="dashSuccessAmountPaid">₹0.00</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
+                    <span class="muted">Remaining Balance:</span>
+                    <strong id="dashSuccessRemainingBalance">₹0.00</strong>
+                </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <a id="dashBtnDownloadReceiptPdf" href="#" target="_blank" class="btn btn-primary" style="padding:12px;font-size:14px;font-weight:700;justify-content:center;background:#1e3a8a;border-color:#1e3a8a;">
+                    <svg class="icon icon-sm"><use href="#i-file"/></svg>
+                    <span>Download Official PDF Receipt</span>
+                </a>
+                <button type="button" class="btn btn-ghost" onclick="window.location.reload()">Done &amp; Refresh Dashboard</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+var dashCurrentMaxBalance = 0;
+var dashCurrentRecordId = null;
+
+function openStudentDashPaymentModal(recordId, title, totalAmount, balanceAmount) {
+    dashCurrentRecordId = recordId;
+    dashCurrentMaxBalance = parseFloat(balanceAmount);
+    
+    document.getElementById('dashModalRecordId').value = recordId;
+    document.getElementById('dashModalFeeTitle').textContent = title;
+    document.getElementById('dashModalFeeBalance').textContent = dashCurrentMaxBalance.toFixed(2);
+    document.getElementById('dashInputPaymentAmount').value = dashCurrentMaxBalance.toFixed(2);
+    document.getElementById('dashInputPaymentAmount').max = dashCurrentMaxBalance;
+    
+    document.getElementById('dashModalFormContainer').style.display = 'block';
+    document.getElementById('dashModalSuccessContainer').style.display = 'none';
+    setDashPaymentMode('UPI');
+    
+    document.getElementById('dashPaymentModalOverlay').style.display = 'grid';
+}
+
+function openStudentDashQuickPay() {
+    {% if fee_summary.records %}
+        {% for r in fee_summary.records %}
+            {% if r.balance_amount > 0 %}
+                openStudentDashPaymentModal({{ r.id }}, '{{ r.title|escapejs }}', {{ r.amount }}, {{ r.balance_amount }});
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+}
+
+function closeStudentDashPaymentModal() {
+    document.getElementById('dashPaymentModalOverlay').style.display = 'none';
+}
+
+function setDashFullAmount() {
+    document.getElementById('dashInputPaymentAmount').value = dashCurrentMaxBalance.toFixed(2);
+}
+
+function setDashPaymentMode(mode) {
+    document.getElementById('dashSelectedPaymentMode').value = mode;
+    
+    ['UPI', 'Card', 'Bank'].forEach(function(m) {
+        var tab = document.getElementById('dashTabMode' + m);
+        if (tab) {
+            if (m.toUpperCase() === mode) {
+                tab.classList.add('active');
+                tab.style.borderColor = 'var(--brand)';
+                tab.style.background = 'var(--brand-50)';
+                tab.style.color = 'var(--brand)';
+            } else {
+                tab.classList.remove('active');
+                tab.style.borderColor = 'var(--line)';
+                tab.style.background = '#ffffff';
+                tab.style.color = 'var(--ink)';
+            }
+        }
+        var view = document.getElementById('dashViewMode' + m);
+        if (view) {
+            view.style.display = (m.toUpperCase() === mode) ? 'block' : 'none';
+        }
+    });
+}
+
+function submitDashOnlinePayment(event) {
+    event.preventDefault();
+    if (!dashCurrentRecordId) return;
+
+    var amtVal = parseFloat(document.getElementById('dashInputPaymentAmount').value);
+    if (isNaN(amtVal) || amtVal <= 0) {
+        alert('Please enter a valid payment amount greater than zero.');
+        return;
+    }
+    if (amtVal > dashCurrentMaxBalance) {
+        alert('Amount cannot exceed the remaining balance of ₹' + dashCurrentMaxBalance.toFixed(2));
+        return;
+    }
+
+    var btn = document.getElementById('dashBtnSubmitPayment');
+    var btnText = document.getElementById('dashBtnSubmitText');
+    btn.disabled = true;
+    btnText.textContent = 'Processing Payment...';
+
+    var formData = new FormData(document.getElementById('dashOnlinePaymentForm'));
+
+    fetch('/fees/pay/' + dashCurrentRecordId + '/', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(function(res) {
+        return res.json().then(function(data) {
+            return { ok: res.ok, data: data };
+        });
+    })
+    .then(function(result) {
+        btn.disabled = false;
+        btnText.textContent = 'Confirm & Pay Securely';
+
+        if (result.ok && result.data.success) {
+            document.getElementById('dashModalFormContainer').style.display = 'none';
+            document.getElementById('dashModalSuccessContainer').style.display = 'block';
+            
+            document.getElementById('dashSuccessReceiptNo').textContent = result.data.receipt_number;
+            document.getElementById('dashSuccessAmountPaid').textContent = '₹' + result.data.amount_paid.toFixed(2);
+            document.getElementById('dashSuccessRemainingBalance').textContent = '₹' + result.data.remaining_balance.toFixed(2);
+            document.getElementById('dashBtnDownloadReceiptPdf').href = result.data.receipt_url;
+        } else {
+            alert(result.data.error || 'Payment failed. Please try again.');
+        }
+    })
+    .catch(function(err) {
+        btn.disabled = false;
+        btnText.textContent = 'Confirm & Pay Securely';
+        alert('A network error occurred. Please try again.');
+    });
+}
+</script>
 
 {% endblock %}
