@@ -26,7 +26,7 @@
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
 
-    <form method="post" autocomplete="off">
+    <form method="post" autocomplete="off" style="display:flex; flex-direction:column; gap:16px;">
         {% csrf_token %}
 
         <div class="field">
@@ -39,7 +39,9 @@
             <input class="input" id="password" name="password" type="password" autocomplete="new-password" required placeholder="Enter your password" value="">
         </div>
 
-        <button class="btn btn-primary btn-block" type="submit" style="margin-top:20px;padding:12px">Sign in</button>
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:8px; padding:12px; font-size:14px; box-shadow:0 4px 14px rgba(29, 78, 216, 0.25);">
+            Sign In &rarr;
+        </button>
     </form>
 
     <div class="auth-foot">

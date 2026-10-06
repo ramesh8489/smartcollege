@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib import messages
 
 from students.models import Student, Department, Course
 from faculty.models import Faculty, Subject
@@ -10,6 +11,7 @@ from marks.models import Marks
 from timetable.models import Circular, SchoolIncharge, Timetable, FacultyLeaveRequest
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.db import transaction
 from urllib.parse import urlencode
 from . import scope as sc
 
@@ -189,6 +191,8 @@ def register_view(request):
         for d in Department.objects.order_by("name").prefetch_related("courses")
     ]
 
+    preview_sif = Student.generate_unique_sif_number()
+
     if request.method == "POST":
 
         role = request.POST.get("role")
@@ -230,9 +234,6 @@ def register_view(request):
         elif role == "student" and Student.objects.filter(roll_no=roll_no).exists():
             error = "That roll number is already registered."
 
-        elif role == "student" and sif_number and Student.objects.filter(sif_number=sif_number).exists():
-            error = "That SIF number is already registered."
-
         elif role == "faculty" and not faculty_id:
             error = "Please fill in your faculty ID."
 
@@ -248,6 +249,7 @@ def register_view(request):
                     "error": error,
                     "tree": tree,
                     "values": request.POST,
+                    "preview_sif": sif_number or preview_sif,
                 }
             )
 
@@ -263,50 +265,57 @@ def register_view(request):
                     "error": "Selected course does not belong to the selected school.",
                     "tree": tree,
                     "values": request.POST,
+                    "preview_sif": sif_number or preview_sif,
                 }
             )
 
-        user = User.objects.create(
-            username=username,
-            email=email,
-        )
-        user.set_password(password)
-        user.save()
-
+        # Ensure unique 7-digit SIF number
         if role == "student":
+            if not sif_number or len(sif_number) != 7 or not sif_number.isdigit() or Student.objects.filter(sif_number=sif_number).exists():
+                sif_number = Student.generate_unique_sif_number()
 
-            student = Student.objects.create(
-                user=user,
-                name=name,
-                roll_no=roll_no,
-                sif_number=sif_number or None,
+        with transaction.atomic():
+            user = User.objects.create(
+                username=username,
                 email=email,
-                department=department,
-                course=course,
-                year=int(year),
-                is_approved=False,
             )
+            user.set_password(password)
+            user.save()
 
-            success_msg = (
-                f"Registration submitted! Your auto-generated University SIF number is {student.sif_number}. "
-                "An admin needs to approve your account before you can log in."
-            )
+            if role == "student":
 
-        else:
+                student = Student.objects.create(
+                    user=user,
+                    name=name,
+                    roll_no=roll_no,
+                    sif_number=sif_number,
+                    email=email,
+                    department=department,
+                    course=course,
+                    year=int(year),
+                    is_approved=False,
+                )
 
-            Faculty.objects.create(
-                user=user,
-                name=name,
-                faculty_id=faculty_id,
-                email=email,
-                department=department,
-                is_approved=False,
-            )
+                success_msg = (
+                    f"Registration submitted! Your auto-generated 7-Digit University SIF number is {student.sif_number}. "
+                    "An admin will review and approve your account before you can sign in."
+                )
 
-            success_msg = (
-                "Registration submitted! An admin needs to "
-                "approve your account before you can log in."
-            )
+            else:
+
+                Faculty.objects.create(
+                    user=user,
+                    name=name,
+                    faculty_id=faculty_id,
+                    email=email,
+                    department=department,
+                    is_approved=False,
+                )
+
+                success_msg = (
+                    "Registration submitted! An admin needs to "
+                    "approve your account before you can log in."
+                )
 
         return render(
             request,
@@ -322,6 +331,8 @@ def register_view(request):
         "accounts/register.html",
         {
             "tree": tree,
+            "preview_sif": preview_sif,
+            "values": {},
         }
     )
 
@@ -357,6 +368,10 @@ def approve_student(request, student_id):
     if student is not None:
         student.is_approved = True
         student.save()
+        messages.success(
+            request,
+            f"Student '{student.name}' (SIF: {student.sif_number}) has been approved! They can now log in and appear in the active Students tab."
+        )
 
     return redirect("/accounts/admin-dashboard/?tab=approvals")
 
@@ -370,10 +385,12 @@ def reject_student(request, student_id):
     student = Student.objects.filter(id=student_id).first()
 
     if student is not None:
+        name = student.name
         user = student.user
         student.delete()
         if user is not None:
             user.delete()
+        messages.info(request, f"Registration for '{name}' was rejected and removed.")
 
     return redirect("/accounts/admin-dashboard/?tab=approvals")
 
@@ -389,6 +406,10 @@ def approve_faculty(request, faculty_id):
     if faculty is not None:
         faculty.is_approved = True
         faculty.save()
+        messages.success(
+            request,
+            f"Faculty member '{faculty.name}' (ID: {faculty.faculty_id}) has been approved! They can now log in."
+        )
 
     return redirect("/accounts/admin-dashboard/?tab=approvals")
 
@@ -402,10 +423,12 @@ def reject_faculty(request, faculty_id):
     faculty = Faculty.objects.filter(id=faculty_id).first()
 
     if faculty is not None:
+        name = faculty.name
         user = faculty.user
         faculty.delete()
         if user is not None:
             user.delete()
+        messages.info(request, f"Registration for faculty member '{name}' was rejected and removed.")
 
     return redirect("/accounts/admin-dashboard/?tab=approvals")
 

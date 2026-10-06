@@ -1,77 +1,145 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Create account{% endblock %}
+{% block title %}Create Account · Smart College{% endblock %}
 
 {% block card %}
-    <h1>Create your account</h1>
-    <p class="lead">Register as a student or faculty member. An administrator will approve your account before you can sign in.</p>
+    <h1 style="font-size:24px; font-weight:800; letter-spacing:-0.02em;">Create your account</h1>
+    <p class="lead" style="margin:4px 0 18px; font-size:13.5px; color:var(--muted);">
+        Register as a student or faculty member. An administrator will review your account before approval.
+    </p>
 
     {% if error %}
-        <div class="alert alert-error">{{ error }}</div>
+        <div class="alert alert-error" style="margin-bottom:16px; padding:12px 14px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; font-size:13px; font-weight:600;">
+            {{ error }}
+        </div>
     {% endif %}
 
     {% if success %}
-
-        <div class="alert alert-success">{{ success }}</div>
-        <a class="btn btn-primary btn-block" href="/accounts/login/" style="padding:12px">Back to sign in</a>
+        <div style="padding:22px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <div style="width:36px; height:36px; border-radius:10px; background:#16a34a; color:#fff; display:grid; place-items:center;">
+                    <svg class="icon"><use href="#i-check"/></svg>
+                </div>
+                <div>
+                    <h3 style="font-size:16px; font-weight:800; color:#15803d;">Registration Submitted!</h3>
+                    <div style="font-size:12px; color:#166534;">Pending administrator approval</div>
+                </div>
+            </div>
+            <p style="font-size:13.5px; color:#166534; line-height:1.5;">{{ success }}</p>
+        </div>
+        <a class="btn btn-primary btn-block" href="/accounts/login/" style="padding:12px; font-size:14px; text-decoration:none;">Go to Sign In &rarr;</a>
 
     {% else %}
 
-    <form method="post" id="regForm">
+    <form method="post" id="regForm" autocomplete="off">
         {% csrf_token %}
         <input type="hidden" name="role" id="roleInput" value="{{ values.role|default:'student' }}">
 
-        <div class="seg" role="tablist">
+        <!-- Role Selector Segment -->
+        <div class="seg" role="tablist" style="margin-bottom:18px;">
             <button type="button" id="segStudent" onclick="setRole('student')">🎓 Student</button>
             <button type="button" id="segFaculty" onclick="setRole('faculty')">👨‍🏫 Faculty</button>
         </div>
 
-        <div class="stack">
-            <div class="field"><label for="name">Full name</label>
-                <input class="input" id="name" name="name" required value="{{ values.name|default:'' }}" placeholder="Your full name"></div>
+        <div class="stack" style="display:flex; flex-direction:column; gap:14px;">
 
-            <div class="field"><label for="email">Email</label>
-                <input class="input" id="email" name="email" type="email" required value="{{ values.email|default:'' }}" placeholder="you@example.com"></div>
+            <!-- Full Name & Email -->
+            <div class="field">
+                <label for="name">Full Name</label>
+                <input class="input" id="name" name="name" required value="{{ values.name|default:'' }}" placeholder="e.g. John Doe">
+            </div>
 
-            <div class="field"><label for="department">School</label>
-                <select class="select" id="department" name="department" required></select></div>
+            <div class="field">
+                <label for="email">Email Address</label>
+                <input class="input" id="email" name="email" type="email" required value="{{ values.email|default:'' }}" placeholder="name@smartcollege.edu">
+            </div>
 
-            <div class="field" id="courseField"><label for="course">Degree</label>
-                <select class="select" id="course" name="course"></select></div>
+            <!-- School / Department -->
+            <div class="field">
+                <label for="department">School / Department</label>
+                <select class="select" id="department" name="department" required></select>
+            </div>
 
-            <div id="studentFields" class="stack">
-                <div class="form-grid" style="grid-template-columns:1fr 1fr">
-                    <div class="field"><label for="roll_no">Roll number</label>
-                        <input class="input" id="roll_no" name="roll_no" value="{{ values.roll_no|default:'' }}" placeholder="e.g. CS0010"></div>
-                    <div class="field"><label for="year">Year</label>
-                        <input class="input" id="year" name="year" type="number" min="1" max="5" value="{{ values.year|default:'' }}" placeholder="1–5"></div>
+            <!-- Degree / Course (Student Only) -->
+            <div class="field" id="courseField">
+                <label for="course">Degree Program</label>
+                <select class="select" id="course" name="course"></select>
+            </div>
+
+            <!-- STUDENT FIELDS -->
+            <div id="studentFields" style="display:flex; flex-direction:column; gap:14px;">
+                
+                <!-- Roll Number & Year Grid -->
+                <div class="form-grid-2">
+                    <div class="field">
+                        <label for="roll_no">Roll Number</label>
+                        <input class="input" id="roll_no" name="roll_no" value="{{ values.roll_no|default:'' }}" placeholder="e.g. CS0015">
+                    </div>
+                    <div class="field">
+                        <label for="year">Academic Year</label>
+                        <input class="input" id="year" name="year" type="number" min="1" max="5" value="{{ values.year|default:'' }}" placeholder="1 – 5">
+                    </div>
                 </div>
-                <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px dashed var(--border);border-radius:6px;">
-                    <svg class="icon" style="width:14px;height:14px;color:var(--brand);flex-shrink:0;"><use href="#i-check"/></svg>
-                    <span>University <strong>SIF Number</strong> is auto-generated by the system upon registration.</span>
+
+                <!-- 7-DIGIT AUTO-GENERATED SIF NUMBER BLOCK -->
+                <div class="field">
+                    <label for="sif_number" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>University SIF Number (7-Digit)</span>
+                        <span class="badge green" style="font-size:10.5px; padding:2px 8px; text-transform:none; font-weight:700;">
+                            <svg class="icon icon-sm" style="width:12px;height:12px;"><use href="#i-check"/></svg> Auto-Generated &amp; Unique
+                        </span>
+                    </label>
+                    <div style="position:relative; display:flex; align-items:center;">
+                        <input class="input" id="sif_number" name="sif_number" type="text"
+                               value="{% if values.sif_number %}{{ values.sif_number }}{% else %}{{ preview_sif }}{% endif %}" readonly
+                               style="background:#f8faff; font-weight:800; font-family:monospace; font-size:15px; letter-spacing:0.08em; color:var(--brand-700); padding-left:36px; border:1px solid #bfdbfe; box-shadow:0 1px 2px rgba(37,99,235,0.06); cursor:default;">
+                        <span style="position:absolute; left:12px; color:var(--brand); display:grid; place-items:center; pointer-events:none;">
+                            <svg class="icon" style="width:16px;height:16px;"><use href="#i-shield"/></svg>
+                        </span>
+                    </div>
+                    <div class="muted" style="font-size:11.5px; margin-top:2px; display:flex; align-items:center; gap:6px;">
+                        <span>Your 7-digit permanent admission number issued by Takshashila University.</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FACULTY FIELDS -->
+            <div id="facultyFields" style="display:none;">
+                <div class="field">
+                    <label for="faculty_id">Faculty ID</label>
+                    <input class="input" id="faculty_id" name="faculty_id" value="{{ values.faculty_id|default:'' }}" placeholder="e.g. FAC010">
                 </div>
             </div>
 
-            <div id="facultyFields">
-                <div class="field"><label for="faculty_id">Faculty ID</label>
-                    <input class="input" id="faculty_id" name="faculty_id" value="{{ values.faculty_id|default:'' }}" placeholder="e.g. F003"></div>
+            <!-- Username -->
+            <div class="field">
+                <label for="username">Login Username</label>
+                <input class="input" id="username" name="username" autocomplete="username" required value="{{ values.username|default:'' }}" placeholder="Choose a unique username">
             </div>
 
-            <div class="field"><label for="username">Username</label>
-                <input class="input" id="username" name="username" autocomplete="username" required value="{{ values.username|default:'' }}" placeholder="Choose a login username"></div>
-
-            <div class="form-grid" style="grid-template-columns:1fr 1fr">
-                <div class="field"><label for="password">Password</label>
-                    <input class="input" id="password" name="password" type="password" autocomplete="new-password" required placeholder="Min. 6 characters"></div>
-                <div class="field"><label for="confirm_password">Confirm</label>
-                    <input class="input" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required placeholder="Repeat password"></div>
+            <!-- Password & Confirm Password Grid -->
+            <div class="form-grid-2">
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input class="input" id="password" name="password" type="password" autocomplete="new-password" required placeholder="Min. 6 chars">
+                </div>
+                <div class="field">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input class="input" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required placeholder="Repeat password">
+                </div>
             </div>
+
         </div>
 
-        <button class="btn btn-primary btn-block" type="submit" style="margin-top:20px;padding:12px">Submit for approval</button>
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:20px; padding:12px; font-size:14px; box-shadow:0 4px 14px rgba(29, 78, 216, 0.25);">
+            Submit Registration &rarr;
+        </button>
     </form>
 
-    <div class="auth-foot">Already registered? <a href="/accounts/login/"><b>Sign in</b></a></div>
+    <div class="auth-foot" style="margin-top:18px; text-align:center; font-size:13px; color:var(--muted);">
+        Already have an approved account? <a href="/accounts/login/" style="font-weight:700; color:var(--brand);">Sign In &rarr;</a>
+    </div>
 
     {% endif %}
 {% endblock %}
@@ -110,11 +178,15 @@
         var stu = role === 'student';
         document.getElementById('segStudent').classList.toggle('on', stu);
         document.getElementById('segFaculty').classList.toggle('on', !stu);
-        document.getElementById('studentFields').style.display = stu ? '' : 'none';
+        document.getElementById('studentFields').style.display = stu ? 'flex' : 'none';
         document.getElementById('courseField').style.display = stu ? '' : 'none';
         document.getElementById('facultyFields').style.display = stu ? 'none' : '';
-        ['roll_no', 'year', 'course'].forEach(function (id) { document.getElementById(id).required = stu; });
-        document.getElementById('faculty_id').required = !stu;
+        ['roll_no', 'year', 'course'].forEach(function (id) { 
+            var el = document.getElementById(id);
+            if (el) el.required = stu; 
+        });
+        var fid = document.getElementById('faculty_id');
+        if (fid) fid.required = !stu;
     };
 
     fillDepts();

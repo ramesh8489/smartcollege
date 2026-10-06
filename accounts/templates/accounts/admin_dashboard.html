@@ -418,7 +418,7 @@
                         <tbody>
                         {% for r in class_students %}
                             <tr>
-                                <td><div class="person"><div class="avatar">{{ r.obj.name|slice:":1" }}</div><div><div class="p-name">{{ r.obj.name }}</div><div class="p-sub">SIF {{ r.obj.sif_number|default:"—" }}</div></div></div></td>
+                                <td><div class="person"><div class="avatar">{{ r.obj.name|slice:":1" }}</div><div><div class="p-name">{{ r.obj.name }}</div><div class="p-sub" style="font-family:monospace; font-weight:700; color:var(--brand-700);">SIF: {{ r.obj.sif_number|default:"—" }}</div></div></div></td>
                                 <td>{{ r.obj.roll_no }}</td>
                                 <td>{% include "_meter.html" with pct=r.attendance_pct cls=r.attendance_cls %}</td>
                                 <td>{% include "_meter.html" with pct=r.marks_pct cls=r.marks_cls %}</td>
@@ -491,7 +491,7 @@
                     <tbody>
                     {% for r in student_rows %}
                         <tr>
-                            <td><div class="person"><div class="avatar">{{ r.obj.name|slice:":1" }}</div><div><div class="p-name">{{ r.obj.name }}</div><div class="p-sub">SIF {{ r.obj.sif_number|default:"—" }}</div></div></div></td>
+                            <td><div class="person"><div class="avatar">{{ r.obj.name|slice:":1" }}</div><div><div class="p-name">{{ r.obj.name }}</div><div class="p-sub" style="font-family:monospace; font-weight:700; color:var(--brand-700);">SIF: {{ r.obj.sif_number|default:"—" }}</div></div></div></td>
                             <td>{{ r.obj.roll_no }}</td>
                             <td><div class="strong">{{ r.obj.course.name|default:"—" }}</div><div class="p-sub muted">{{ r.obj.department.name }}</div></td>
                             <td><span class="badge">Year {{ r.obj.year }}</span></td>
@@ -555,7 +555,7 @@
                         <tr>
                             <td><div class="person"><div class="avatar">{{ s.name|slice:":1" }}</div><div><div class="p-name">{{ s.name }}</div><div class="p-sub">{{ s.email }}</div></div></div></td>
                             <td><span class="badge">Student</span></td>
-                            <td>{{ s.roll_no }}<div class="p-sub muted">SIF {{ s.sif_number|default:"—" }}</div></td>
+                            <td>{{ s.roll_no }}<div class="p-sub" style="font-family:monospace; font-weight:700; color:var(--brand-700);">SIF: {{ s.sif_number|default:"—" }}</div></td>
                             <td><div class="strong">{{ s.course.name|default:"—" }}</div><div class="p-sub muted">{{ s.department.name }} · Year {{ s.year }}</div></td>
                             <td class="right nowrap">
                                 <form class="inline-form" method="post" action="/accounts/approve-student/{{ s.id }}/">{% csrf_token %}<button class="btn btn-success btn-sm" type="submit">Approve</button></form>

@@ -250,13 +250,18 @@ p { margin: 0; }
     width: 100%; padding: 10px 12px; font: inherit; color: var(--ink);
     background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px;
     outline: none; transition: border-color .15s, box-shadow .15s;
+    box-sizing: border-box;
+}
+.input, .select {
+    height: 42px;
 }
 .textarea { resize: vertical; min-height: 90px; }
 .input:focus, .select:focus, .textarea:focus {
     border-color: var(--brand-600); box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
 }
 .select:disabled { background: var(--surface-2); color: var(--muted); cursor: not-allowed; }
-.form-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
+.form-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: start; }
+.form-grid-2 { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; align-items: start; }
 .form-actions { display: flex; gap: 10px; align-items: end; }
 
 /* Filter bar */
@@ -404,7 +409,7 @@ p { margin: 0; }
 .auth-points li { display: flex; gap: 11px; align-items: center; color: #e3ebff; }
 .auth-points .dot { width: 30px; height: 30px; border-radius: 9px; background: rgba(255, 255, 255, .14); display: grid; place-items: center; }
 .auth-form-wrap { display: grid; place-items: center; padding: 40px 24px; background: var(--bg); }
-.auth-card { width: 100%; max-width: 440px; }
+.auth-card { width: 100%; max-width: 480px; }
 .auth-card h1 { font-size: 26px; }
 .auth-card .lead { color: var(--muted); margin: 6px 0 22px; }
 .auth-card .field + .field { margin-top: 14px; }

@@ -15,7 +15,7 @@
     <div class="card-body">
         <div class="kv">
             <div class="kv-item"><div class="kv-k">Roll number</div><div class="kv-v">{{ student.roll_no }}</div></div>
-            <div class="kv-item"><div class="kv-k">SIF number</div><div class="kv-v">{{ student.sif_number|default:"—" }}</div></div>
+            <div class="kv-item"><div class="kv-k">University SIF number</div><div class="kv-v" style="font-family:monospace; color:var(--brand-700); letter-spacing:0.05em; font-weight:800;">{{ student.sif_number|default:"—" }}</div></div>
             <div class="kv-item"><div class="kv-k">Email</div><div class="kv-v">{{ student.email }}</div></div>
             <div class="kv-item"><div class="kv-k">School</div><div class="kv-v">{{ student.department.name }}</div></div>
             <div class="kv-item"><div class="kv-k">Degree / Course</div><div class="kv-v">{{ student.course.name|default:"—" }}</div></div>
