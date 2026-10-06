@@ -27,3 +27,6 @@ staticfiles/
 # Uploaded media files
 media/
 
+# Database local safety backups
+database_backups/
+
