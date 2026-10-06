@@ -20,6 +20,19 @@ from . import scope as sc
 
 def login_view(request):
 
+    dashboard_url = "/"
+    role_label = ""
+    if request.user.is_authenticated:
+        if Student.objects.filter(user=request.user).exists():
+            dashboard_url = "/students/"
+            role_label = "Student"
+        elif Faculty.objects.filter(user=request.user).exists() or Faculty.objects.filter(email=request.user.email).exists():
+            dashboard_url = "/faculty/"
+            role_label = "Faculty"
+        elif request.user.is_superuser:
+            dashboard_url = "/accounts/admin-dashboard/"
+            role_label = "Administrator"
+
     if request.method == "POST":
 
         username = request.POST.get("username")
@@ -32,6 +45,9 @@ def login_view(request):
         )
 
         if user is not None:
+            # If already logged in as a different user, clear previous session cleanly
+            if request.user.is_authenticated and request.user != user:
+                logout(request)
 
             # ====================================================
             # STUDENT
@@ -125,15 +141,20 @@ def login_view(request):
             request,
             "accounts/login.html",
             {
-                "error":
-                    "Invalid username or password"
+                "error": "Invalid username or password",
+                "dashboard_url": dashboard_url,
+                "role_label": role_label,
             }
         )
 
 
     return render(
         request,
-        "accounts/login.html"
+        "accounts/login.html",
+        {
+            "dashboard_url": dashboard_url,
+            "role_label": role_label,
+        }
     )
 
 

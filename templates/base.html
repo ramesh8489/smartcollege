@@ -52,6 +52,14 @@
                 <svg class="icon"><use href="#i-menu"/></svg>
             </button>
             <div class="topbar-title">{% block topbar_title %}Smart College{% endblock %}</div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+                {% if request.user.is_authenticated %}
+                <span class="muted" style="font-size: 13px;">Logged in as: <strong style="color: var(--ink);">{{ nav_display|default:request.user.username }}</strong></span>
+                <a href="/accounts/logout/" class="btn btn-ghost btn-sm" style="color: #dc2626; border: 1px solid #fecaca; background: #fff; padding: 4px 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" title="Log out">
+                    <svg class="icon icon-sm"><use href="#i-logout"/></svg> Log out
+                </a>
+                {% endif %}
+            </div>
         </div>
 
         <main class="page">

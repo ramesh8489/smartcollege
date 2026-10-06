@@ -6,21 +6,37 @@
     <h1>Welcome back</h1>
     <p class="lead">Sign in to your Smart College account.</p>
 
+    {% if request.user.is_authenticated %}
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+            <div style="font-size: 13px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">
+                You are currently signed in as <strong>{{ request.user.username }}</strong>
+                {% if role_label %}({{ role_label }}){% endif %}
+            </div>
+            <div style="font-size: 12px; color: #3b82f6; margin-bottom: 12px;">
+                To log in as a Student or Faculty, please log out first:
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="{{ dashboard_url }}" class="btn btn-primary btn-sm" style="text-decoration:none; padding: 6px 14px; font-size: 12px;">Go to Dashboard</a>
+                <a href="/accounts/logout/" class="btn btn-ghost btn-sm" style="text-decoration:none; padding: 6px 14px; font-size: 12px; color: #dc2626; border: 1px solid #fecaca; background: #fff;">Log Out & Switch Account</a>
+            </div>
+        </div>
+    {% endif %}
+
     {% if error %}
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
 
-    <form method="post" autocomplete="on">
+    <form method="post" autocomplete="off">
         {% csrf_token %}
 
         <div class="field">
             <label for="username">Username</label>
-            <input class="input" id="username" name="username" type="text" autocomplete="username" autofocus required placeholder="Enter your username">
+            <input class="input" id="username" name="username" type="text" autocomplete="off" autofocus required placeholder="Enter your username" value="">
         </div>
 
         <div class="field">
             <label for="password">Password</label>
-            <input class="input" id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password">
+            <input class="input" id="password" name="password" type="password" autocomplete="new-password" required placeholder="Enter your password" value="">
         </div>
 
         <button class="btn btn-primary btn-block" type="submit" style="margin-top:20px;padding:12px">Sign in</button>
@@ -29,4 +45,16 @@
     <div class="auth-foot">
         New student or faculty? <a href="/accounts/register/"><b>Create an account</b></a>
     </div>
+
+    <script>
+        // Prevent aggressive browser password manager autofill from overriding inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            var u = document.getElementById('username');
+            var p = document.getElementById('password');
+            setTimeout(function() {
+                if (u && !u.value.trim()) { u.value = ''; }
+                if (p && !p.value.trim()) { p.value = ''; }
+            }, 100);
+        });
+    </script>
 {% endblock %}
