@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
     <title>{% block title %}Smart College{% endblock %} · Smart College</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/theme.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
@@ -52,11 +55,11 @@
                 <svg class="icon"><use href="#i-menu"/></svg>
             </button>
             <div class="topbar-title">{% block topbar_title %}Smart College{% endblock %}</div>
-            <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+            <div class="topbar-user-wrap" style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
                 {% if request.user.is_authenticated %}
-                <span class="muted" style="font-size: 13px;">Logged in as: <strong style="color: var(--ink);">{{ nav_display|default:request.user.username }}</strong></span>
-                <a href="/accounts/logout/" class="btn btn-ghost btn-sm" style="color: #dc2626; border: 1px solid #fecaca; background: #fff; padding: 4px 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" title="Log out">
-                    <svg class="icon icon-sm"><use href="#i-logout"/></svg> Log out
+                <span class="muted topbar-user-text" style="font-size: 13px;"><span class="desktop-only">Logged in as: </span><strong style="color: var(--ink);">{{ nav_display|default:request.user.username }}</strong></span>
+                <a href="/accounts/logout/" class="btn btn-ghost btn-sm topbar-logout-btn" style="color: #dc2626; border: 1px solid #fecaca; background: #fff; padding: 5px 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none;" title="Log out">
+                    <svg class="icon icon-sm"><use href="#i-logout"/></svg> <span class="desktop-only">Log out</span>
                 </a>
                 {% endif %}
             </div>
