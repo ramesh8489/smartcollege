@@ -92,12 +92,13 @@ class Student(models.Model):
                 return candidate
 
     def save(self, *args, **kwargs):
-        # Auto-generate 7-digit SIF for new students if left blank
-        if not self.pk:
-            if not self.sif_number or not str(self.sif_number).strip():
-                self.sif_number = self.generate_unique_sif_number()
-            else:
-                self.sif_number = str(self.sif_number).strip()
+        # Auto-generate unique 7-digit SIF number if blank or not set
+        if not self.sif_number or not str(self.sif_number).strip():
+            self.sif_number = self.generate_unique_sif_number()
+            if "update_fields" in kwargs and kwargs["update_fields"] is not None:
+                kwargs["update_fields"] = set(kwargs["update_fields"]) | {"sif_number"}
+        else:
+            self.sif_number = str(self.sif_number).strip()
         super().save(*args, **kwargs)
 
     def __str__(self):

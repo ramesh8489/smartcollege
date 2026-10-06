@@ -275,7 +275,7 @@ def register_view(request):
 
         if role == "student":
 
-            Student.objects.create(
+            student = Student.objects.create(
                 user=user,
                 name=name,
                 roll_no=roll_no,
@@ -285,6 +285,11 @@ def register_view(request):
                 course=course,
                 year=int(year),
                 is_approved=False,
+            )
+
+            success_msg = (
+                f"Registration submitted! Your auto-generated University SIF number is {student.sif_number}. "
+                "An admin needs to approve your account before you can log in."
             )
 
         else:
@@ -298,13 +303,16 @@ def register_view(request):
                 is_approved=False,
             )
 
+            success_msg = (
+                "Registration submitted! An admin needs to "
+                "approve your account before you can log in."
+            )
+
         return render(
             request,
             "accounts/register.html",
             {
-                "success":
-                    "Registration submitted! An admin needs to "
-                    "approve your account before you can log in.",
+                "success": success_msg,
                 "tree": tree,
             }
         )

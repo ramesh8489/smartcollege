@@ -24,6 +24,6 @@ Thumbs.db
 # Staticfiles collected during build
 staticfiles/
 
-# Keep db.sqlite3 if you want pre-populated demo data in your deployment!
-# To ignore sqlite database, uncomment below:
-# db.sqlite3
+# Uploaded media files
+media/
+
