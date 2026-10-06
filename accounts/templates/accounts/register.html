@@ -40,8 +40,8 @@
                 <select class="select" id="course" name="course"></select></div>
 
             <div id="studentFields" class="stack">
-                <div class="field"><label for="sif_number">SIF number</label>
-                    <input class="input" id="sif_number" name="sif_number" value="{{ values.sif_number|default:'' }}" placeholder="University SIF number"></div>
+                <div class="field"><label for="sif_number">SIF number <span class="muted" style="font-weight:normal;font-size:12px;">(Optional — auto-generated if blank)</span></label>
+                    <input class="input" id="sif_number" name="sif_number" value="{{ values.sif_number|default:'' }}" placeholder="Leave blank to auto-generate 7-digit SIF"></div>
                 <div class="form-grid" style="grid-template-columns:1fr 1fr">
                     <div class="field"><label for="roll_no">Roll number</label>
                         <input class="input" id="roll_no" name="roll_no" value="{{ values.roll_no|default:'' }}" placeholder="e.g. CS0010"></div>
@@ -111,7 +111,8 @@
         document.getElementById('studentFields').style.display = stu ? '' : 'none';
         document.getElementById('courseField').style.display = stu ? '' : 'none';
         document.getElementById('facultyFields').style.display = stu ? 'none' : '';
-        ['sif_number', 'roll_no', 'year', 'course'].forEach(function (id) { document.getElementById(id).required = stu; });
+        ['roll_no', 'year', 'course'].forEach(function (id) { document.getElementById(id).required = stu; });
+        document.getElementById('sif_number').required = false;
         document.getElementById('faculty_id').required = !stu;
     };
 

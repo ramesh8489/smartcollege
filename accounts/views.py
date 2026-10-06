@@ -221,8 +221,8 @@ def register_view(request):
         elif User.objects.filter(username=username).exists():
             error = "That username is already taken."
 
-        elif role == "student" and not (roll_no and year and sif_number):
-            error = "Please fill in your SIF number, roll number and year."
+        elif role == "student" and not (roll_no and year):
+            error = "Please fill in your roll number and year."
 
         elif role == "student" and not course_id:
             error = "Please select your course."
@@ -230,7 +230,7 @@ def register_view(request):
         elif role == "student" and Student.objects.filter(roll_no=roll_no).exists():
             error = "That roll number is already registered."
 
-        elif role == "student" and Student.objects.filter(sif_number=sif_number).exists():
+        elif role == "student" and sif_number and Student.objects.filter(sif_number=sif_number).exists():
             error = "That SIF number is already registered."
 
         elif role == "faculty" and not faculty_id:
@@ -279,7 +279,7 @@ def register_view(request):
                 user=user,
                 name=name,
                 roll_no=roll_no,
-                sif_number=sif_number,
+                sif_number=sif_number or None,
                 email=email,
                 department=department,
                 course=course,

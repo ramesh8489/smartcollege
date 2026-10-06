@@ -53,7 +53,8 @@ class Student(models.Model):
         max_length=30,
         unique=True,
         null=True,
-        blank=True
+        blank=True,
+        help_text="7-digit unique University SIF number (auto-generated if left blank)"
     )
 
     email = models.EmailField()
@@ -76,6 +77,28 @@ class Student(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     admission_date = models.DateField(default=timezone.now)
     is_active = models.BooleanField(default=True)
+
+    @classmethod
+    def generate_unique_sif_number(cls):
+        """
+        Generates a unique 7-digit SIF number (e.g. 5839201).
+        Ensures the generated number is exactly 7 digits (1000000 to 9999999)
+        and does not already exist in the database.
+        """
+        import random
+        while True:
+            candidate = str(random.randint(1000000, 9999999))
+            if not cls.objects.filter(sif_number=candidate).exists():
+                return candidate
+
+    def save(self, *args, **kwargs):
+        # Auto-generate 7-digit SIF for new students if left blank
+        if not self.pk:
+            if not self.sif_number or not str(self.sif_number).strip():
+                self.sif_number = self.generate_unique_sif_number()
+            else:
+                self.sif_number = str(self.sif_number).strip()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
