@@ -6,6 +6,7 @@ databases:
 services:
   - type: web
     name: smartcollege-erp
+    autoDeploy: true
     runtime: python
     region: singapore
     plan: free
