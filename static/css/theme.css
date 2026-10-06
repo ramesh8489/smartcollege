@@ -442,6 +442,55 @@ p { margin: 0; }
     .grid-2, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr; }
     .page-title { font-size: 21px; }
     .stat-val { font-size: 21px; }
+    
+    /* Mobile phone enhancements for Auth & Forms */
+    .auth-form-wrap {
+        padding: 24px 16px;
+        align-items: start;
+    }
+    .auth-card {
+        width: 100%;
+        max-width: 100%;
+    }
+    .auth-card h1 {
+        font-size: 22px;
+    }
+    .auth-card .lead {
+        font-size: 13px;
+        margin: 4px 0 16px;
+    }
+    .form-grid-2 {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+    .input, .select {
+        height: 44px;
+        font-size: 15px;
+        border-radius: 10px;
+    }
+    .btn {
+        min-height: 44px;
+        font-size: 14px;
+    }
+    .seg {
+        margin-bottom: 16px;
+    }
+    .seg button {
+        padding: 10px 8px;
+        font-size: 13.5px;
+    }
+}
+
+@media (max-width: 380px) {
+    .auth-form-wrap {
+        padding: 16px 12px;
+    }
+    .auth-card h1 {
+        font-size: 20px;
+    }
+    .input, .select {
+        font-size: 14px;
+    }
 }
 
 @media print {

@@ -191,8 +191,6 @@ def register_view(request):
         for d in Department.objects.order_by("name").prefetch_related("courses")
     ]
 
-    preview_sif = Student.generate_unique_sif_number()
-
     if request.method == "POST":
 
         role = request.POST.get("role")
@@ -204,7 +202,6 @@ def register_view(request):
         department_id = request.POST.get("department")
         course_id = request.POST.get("course", "").strip()
         roll_no = request.POST.get("roll_no", "").strip()
-        sif_number = request.POST.get("sif_number", "").strip()
         year = request.POST.get("year", "").strip()
         faculty_id = request.POST.get("faculty_id", "").strip()
 
@@ -249,7 +246,6 @@ def register_view(request):
                     "error": error,
                     "tree": tree,
                     "values": request.POST,
-                    "preview_sif": sif_number or preview_sif,
                 }
             )
 
@@ -265,14 +261,12 @@ def register_view(request):
                     "error": "Selected course does not belong to the selected school.",
                     "tree": tree,
                     "values": request.POST,
-                    "preview_sif": sif_number or preview_sif,
                 }
             )
 
-        # Ensure unique 7-digit SIF number
+        # Ensure unique 7-digit SIF number auto-generated for student
         if role == "student":
-            if not sif_number or len(sif_number) != 7 or not sif_number.isdigit() or Student.objects.filter(sif_number=sif_number).exists():
-                sif_number = Student.generate_unique_sif_number()
+            sif_number = Student.generate_unique_sif_number()
 
         with transaction.atomic():
             user = User.objects.create(
@@ -331,7 +325,6 @@ def register_view(request):
         "accounts/register.html",
         {
             "tree": tree,
-            "preview_sif": preview_sif,
             "values": {},
         }
     )

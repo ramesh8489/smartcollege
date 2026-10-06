@@ -81,27 +81,6 @@
                     </div>
                 </div>
 
-                <!-- 7-DIGIT AUTO-GENERATED SIF NUMBER BLOCK -->
-                <div class="field">
-                    <label for="sif_number" style="display:flex; justify-content:space-between; align-items:center;">
-                        <span>University SIF Number (7-Digit)</span>
-                        <span class="badge green" style="font-size:10.5px; padding:2px 8px; text-transform:none; font-weight:700;">
-                            <svg class="icon icon-sm" style="width:12px;height:12px;"><use href="#i-check"/></svg> Auto-Generated &amp; Unique
-                        </span>
-                    </label>
-                    <div style="position:relative; display:flex; align-items:center;">
-                        <input class="input" id="sif_number" name="sif_number" type="text"
-                               value="{% if values.sif_number %}{{ values.sif_number }}{% else %}{{ preview_sif }}{% endif %}" readonly
-                               style="background:#f8faff; font-weight:800; font-family:monospace; font-size:15px; letter-spacing:0.08em; color:var(--brand-700); padding-left:36px; border:1px solid #bfdbfe; box-shadow:0 1px 2px rgba(37,99,235,0.06); cursor:default;">
-                        <span style="position:absolute; left:12px; color:var(--brand); display:grid; place-items:center; pointer-events:none;">
-                            <svg class="icon" style="width:16px;height:16px;"><use href="#i-shield"/></svg>
-                        </span>
-                    </div>
-                    <div class="muted" style="font-size:11.5px; margin-top:2px; display:flex; align-items:center; gap:6px;">
-                        <span>Your 7-digit permanent admission number issued by Takshashila University.</span>
-                    </div>
-                </div>
-
             </div>
 
             <!-- FACULTY FIELDS -->
