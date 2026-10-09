@@ -2,15 +2,13 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
-from django.shortcuts import redirect
-
-
-def home(request):
-    return redirect("/accounts/login/")
+from .seo_views import landing_home, robots_txt, sitemap_xml
 
 
 urlpatterns = [
-    path("", home, name="home"),
+    path("", landing_home, name="home"),
+    path("robots.txt", robots_txt, name="robots_txt"),
+    path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
 
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),

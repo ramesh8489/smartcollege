@@ -1,0 +1,722 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+    <title>Takshashila University - Smart College Portal | Student & Faculty ERP</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    
+    <!-- SEO & Metadata -->
+    {% include "_seo_meta.html" %}
+
+    <style>
+        :root {
+            --hero-gradient: linear-gradient(135deg, #0f1d4d 0%, #1e3a8a 50%, #2563eb 100%);
+        }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+        }
+        /* Top Navigation */
+        .landing-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--line);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .landing-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--ink);
+        }
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-size: 22px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .brand-text h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--brand-900);
+            letter-spacing: -0.3px;
+        }
+        .brand-text span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .nav-link-item {
+            text-decoration: none;
+            color: var(--ink-2);
+            font-size: 14px;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .nav-link-item:hover {
+            color: var(--brand);
+        }
+        .btn-landing-primary {
+            background: var(--brand);
+            color: #fff;
+            padding: 9px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 13.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+        }
+        .btn-landing-primary:hover {
+            background: var(--brand-600);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+        }
+        .btn-landing-ghost {
+            background: transparent;
+            color: var(--brand-700);
+            border: 1px solid var(--brand-200);
+            padding: 8px 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13.5px;
+            transition: all 0.2s;
+        }
+        .btn-landing-ghost:hover {
+            background: var(--brand-50);
+            border-color: var(--brand);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: var(--hero-gradient);
+            color: #fff;
+            padding: 80px 24px 90px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 24px;
+            color: #dbeafe;
+        }
+        .hero-badge span {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+        }
+        .hero h1 {
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 800;
+            line-height: 1.15;
+            margin: 0 auto 20px;
+            max-width: 900px;
+            letter-spacing: -1px;
+        }
+        .hero p {
+            font-size: clamp(16px, 2vw, 19px);
+            color: #e0e7ff;
+            max-width: 720px;
+            margin: 0 auto 36px;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+        .hero-cta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .btn-hero-white {
+            background: #ffffff;
+            color: var(--brand-900);
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-hero-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+            background: #f8fafc;
+        }
+        .btn-hero-outline {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+        }
+        .btn-hero-outline:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ffffff;
+        }
+
+        /* Stats Strip */
+        .stats-strip {
+            max-width: 1100px;
+            margin: -40px auto 60px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+        .stats-grid {
+            background: #fff;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+            border: 1px solid var(--line);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            padding: 28px 20px;
+            text-align: center;
+            gap: 20px;
+        }
+        .stat-item h3 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--brand);
+            margin: 0 0 4px;
+        }
+        .stat-item p {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Section Headers */
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .section-subtitle {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--brand);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .section-header h2 {
+            font-size: clamp(26px, 3.5vw, 38px);
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+            margin: 0 0 14px;
+        }
+        .section-header p {
+            font-size: 16px;
+            color: var(--muted);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 90px;
+        }
+        .feature-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            transition: all 0.25s ease;
+            box-shadow: var(--shadow-xs);
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(37, 99, 235, 0.1);
+            border-color: var(--brand-200);
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--brand-50);
+            color: var(--brand);
+            font-size: 24px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 18px;
+        }
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 0 0 10px;
+        }
+        .feature-card p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* Portals Section */
+        .portal-access-section {
+            background: #f1f5f9;
+            border-radius: var(--radius-xl);
+            padding: 50px 36px;
+            margin-bottom: 90px;
+            border: 1px solid var(--line);
+        }
+        .portal-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 36px;
+        }
+        .portal-box {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            border: 1px solid var(--line);
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .portal-box h3 {
+            font-size: 20px;
+            font-weight: 800;
+            margin: 12px 0 8px;
+            color: var(--ink);
+        }
+        .portal-box p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            max-width: 860px;
+            margin: 0 auto 90px;
+        }
+        .faq-item {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            margin-bottom: 14px;
+            padding: 20px 24px;
+        }
+        .faq-item h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin: 0 0 8px;
+            color: var(--ink);
+        }
+        .faq-item p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Footer */
+        .landing-footer {
+            background: var(--ink);
+            color: #94a3b8;
+            padding: 60px 24px 30px;
+            font-size: 13.5px;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 36px;
+            max-width: 1200px;
+            margin: 0 auto 40px;
+        }
+        .footer-col h4 {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0 0 16px;
+        }
+        .footer-col ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-col ul li {
+            margin-bottom: 10px;
+        }
+        .footer-col ul li a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-col ul li a:hover {
+            color: #fff;
+        }
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 24px;
+            border-top: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .landing-nav { padding: 12px 18px; }
+            .hero { padding: 60px 18px 70px; }
+            .stats-strip { margin-top: -20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="landing-nav">
+        <a href="/" class="landing-brand">
+            <div class="brand-icon">🎓</div>
+            <div class="brand-text">
+                <h1>Takshashila University</h1>
+                <span>Smart College ERP</span>
+            </div>
+        </a>
+
+        <nav class="nav-links">
+            <a href="#features" class="nav-link-item">Features</a>
+            <a href="#portals" class="nav-link-item">Portals</a>
+            <a href="#about" class="nav-link-item">About</a>
+            <a href="#faq" class="nav-link-item">FAQ</a>
+        </nav>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+            {% if is_logged_in %}
+                <a href="{{ dashboard_url }}" class="btn-landing-primary">
+                    Dashboard ({{ role_label }}) &rarr;
+                </a>
+            {% else %}
+                <a href="/accounts/register/" class="btn-landing-ghost">Register</a>
+                <a href="/accounts/login/" class="btn-landing-primary">Sign In</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-badge">
+            <span></span> Official University Academic Portal
+        </div>
+        <h1>Takshashila University<br><span style="color:#93c5fd;">Smart College Portal</span></h1>
+        <p>
+            The centralized campus ERP for Takshashila University. Empowering students, faculty, and administrators with real-time attendance, digital examinations, dynamic timetables, fee tracking, hostel, and placements.
+        </p>
+
+        <div class="hero-cta">
+            {% if is_logged_in %}
+                <a href="{{ dashboard_url }}" class="btn-hero-white">
+                    Access My {{ role_label }} Dashboard &rarr;
+                </a>
+            {% else %}
+                <a href="/accounts/login/" class="btn-hero-white">
+                    Sign In to Portal &rarr;
+                </a>
+                <a href="/accounts/register/" class="btn-hero-outline">
+                    New Student Admission
+                </a>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Live Statistics Counter -->
+    <div class="stats-strip">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>{{ student_count }}+</h3>
+                <p>Enrolled Students</p>
+            </div>
+            <div class="stat-item">
+                <h3>{{ faculty_count }}+</h3>
+                <p>Professors & Mentors</p>
+            </div>
+            <div class="stat-item">
+                <h3>{{ dept_count }}+</h3>
+                <p>Academic Departments</p>
+            </div>
+            <div class="stat-item">
+                <h3>100%</h3>
+                <p>Paperless Campus</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Features Grid -->
+    <main class="container" id="features">
+        <div class="section-header">
+            <span class="section-subtitle">Academic Excellence</span>
+            <h2>Integrated University Management Modules</h2>
+            <p>Everything required for a world-class higher education ecosystem in one modern, unified portal.</p>
+        </div>
+
+        <div class="features-grid">
+            <article class="feature-card">
+                <div class="feature-icon">📅</div>
+                <h3>Period-Wise Attendance</h3>
+                <p>Real-time hour-by-hour classroom attendance marked by faculty with automated SMS/email alerts and percentage tracking for students.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Exams & Marksheets</h3>
+                <p>Continuous internal assessments, semester exams, hall ticket generations, and instant grade sheet publishing with GPA calculation.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">🗓️</div>
+                <h3>Automated Timetables</h3>
+                <p>School-incharge schedule planners, day-wise subject distribution, substitute allocation, and real-time room clash prevention.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">💳</div>
+                <h3>Digital Fee Management</h3>
+                <p>Transparent fee structures, online fee receipt generation, payment status verification, and automated due notifications.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">💼</div>
+                <h3>Placements & Career Cell</h3>
+                <p>On-campus interview drives, student resume matching, placement eligibility filters, and company offer letter records.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">📖</div>
+                <h3>Digital Library System</h3>
+                <p>Online catalog search, book issue and return tracking, barcode verification, and access to research papers & e-books.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">🛏️</div>
+                <h3>Hostel & Mess Administration</h3>
+                <p>Hostel room allocation, mess menu schedules, warden leave gate passes, and student grievance resolution.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">🚌</div>
+                <h3>Campus Transport & Fleet</h3>
+                <p>Bus route tracking, stop management, transport passes, and student driver contact directory.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon">📜</div>
+                <h3>Tamper-proof Certificates</h3>
+                <p>Digitally signed Bonafide, Transfer, Course Completion, and Character certificates with instant QR verification.</p>
+            </article>
+        </div>
+
+        <!-- Portals Section -->
+        <section class="portal-access-section" id="portals">
+            <div class="section-header" style="margin-bottom: 20px;">
+                <span class="section-subtitle">Dedicated Roles</span>
+                <h2>One System. Three Unified Experiences.</h2>
+                <p>Custom-built interfaces tailored specifically for students, faculty members, and institutional administrators.</p>
+            </div>
+
+            <div class="portal-cards">
+                <div class="portal-box">
+                    <div>
+                        <span style="font-size:32px;">🎓</span>
+                        <h3>Student Portal</h3>
+                        <p>Track your semester attendance, view daily class timetable, check exam scores, download fee receipts, and apply for on-duty leave.</p>
+                    </div>
+                    <a href="/accounts/login/" class="btn-landing-primary">Student Sign In &rarr;</a>
+                </div>
+
+                <div class="portal-box">
+                    <div>
+                        <span style="font-size:32px;">👨‍🏫</span>
+                        <h3>Faculty Portal</h3>
+                        <p>Mark period attendance in 30 seconds, enter CIA marks, manage assigned subjects, approve student leaves, and share study materials.</p>
+                    </div>
+                    <a href="/accounts/login/" class="btn-landing-primary">Faculty Sign In &rarr;</a>
+                </div>
+
+                <div class="portal-box">
+                    <div>
+                        <span style="font-size:32px;">🏛️</span>
+                        <h3>Administration & Dean</h3>
+                        <p>Institution-wide analytics, department reporting, fee collection summaries, circular announcements, and comprehensive student directories.</p>
+                    </div>
+                    <a href="/accounts/login/" class="btn-landing-primary">Admin Sign In &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section class="section-header" id="about" style="max-width: 820px; margin: 0 auto 90px;">
+            <span class="section-subtitle">About Takshashila</span>
+            <h2>Rooted in Heritage. Powered by Innovation.</h2>
+            <p>
+                Inspired by the world’s most venerable seat of higher learning, Takshashila University delivers multidisciplinary education across Engineering, Arts, Science, and Management. The Smart College ERP platform digitizes every aspect of student life for flawless academic delivery.
+            </p>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq-section" id="faq">
+            <div class="section-header">
+                <span class="section-subtitle">Got Questions?</span>
+                <h2>Frequently Asked Questions</h2>
+                <p>Quick answers about the Takshashila University Smart College Portal.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>How do students log in to the Takshashila University Smart College portal?</h3>
+                <p>Students can sign in using their registered Register Number or Username and their confidential password at the <a href="/accounts/login/">Takshashila Sign In</a> page. If you are a new enrollee, register via the <a href="/accounts/register/">Student Registration</a> portal.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can parents and students check attendance and exam results online?</h3>
+                <p>Yes, all period-wise attendance records and CIA/Semester exam results are updated immediately upon faculty grading and can be reviewed inside the student dashboard.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>How does the university verify academic certificates?</h3>
+                <p>All bonafide and course completion documents issued through the Smart College portal feature unique cryptographic verification hashes and QR codes for instant external verification.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>What should I do if I forget my login credentials?</h3>
+                <p>Please contact your department School Incharge or the university IT Helpdesk at the campus administrative block with your Student ID card.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>Takshashila University</h4>
+                <p>Smart College Management System &amp; Campus Portal.<br>Empowering tomorrow's leaders through digitized education.</p>
+                <p style="color:#cbd5e1; margin-top:12px;">📍 Takshashila University Main Campus</p>
+            </div>
+
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/accounts/login/">Student &amp; Faculty Login</a></li>
+                    <li><a href="/accounts/register/">New Student Registration</a></li>
+                    <li><a href="/sitemap.xml">XML Sitemap</a></li>
+                    <li><a href="/robots.txt">Robots.txt</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Key Portals</h4>
+                <ul>
+                    <li><a href="/accounts/login/">Attendance Tracking</a></li>
+                    <li><a href="/accounts/login/">Examinations &amp; Results</a></li>
+                    <li><a href="/accounts/login/">Digital Library</a></li>
+                    <li><a href="/accounts/login/">Campus Placement Cell</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Support</h4>
+                <p>Email: <b>helpdesk@takshashilauniv.ac.in</b></p>
+                <p>Portal Support: Available Mon - Sat, 9:00 AM - 5:00 PM</p>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div>&copy; 2026 Takshashila University. All rights reserved. Smart College Management Portal.</div>
+            <div style="display:flex; gap:16px;">
+                <a href="/" style="color:#94a3b8; text-decoration:none;">Home</a>
+                <a href="/accounts/login/" style="color:#94a3b8; text-decoration:none;">Login</a>
+                <a href="/sitemap.xml" style="color:#94a3b8; text-decoration:none;">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

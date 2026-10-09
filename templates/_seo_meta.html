@@ -1,0 +1,64 @@
+<!-- SEO & Social Meta Tags -->
+<meta name="description" content="{% block meta_description %}Official Takshashila University Smart College Portal. Comprehensive academic management system for students and faculty featuring attendance, exams, timetables, placements, fees, hostel, and digital library.{% endblock %}">
+<meta name="keywords" content="{% block meta_keywords %}Takshashila University, Smart College, Takshashila ERP, Takshashila student portal, Takshashila college login, college management system, Takshashila exams, student attendance, university ERP{% endblock %}">
+<meta name="author" content="Takshashila University">
+<meta name="robots" content="{% block meta_robots %}index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1{% endblock %}">
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+<!-- Google Search Console Verification Meta Tag -->
+{% block google_verification %}
+<!-- Replace with your Google Search Console verification code from search.google.com/search-console -->
+<meta name="google-site-verification" content="google-site-verification-token-placeholder">
+{% endblock %}
+
+<!-- Open Graph / Facebook / WhatsApp Preview -->
+<meta property="og:locale" content="en_US">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Takshashila University · Smart College">
+<meta property="og:title" content="{% block og_title %}{% block title_plain %}Takshashila University - Smart College Portal{% endblock %}{% endblock %}">
+<meta property="og:description" content="{% block og_description %}Official Takshashila University Smart College Portal for attendance, timetables, exams, placements, and campus services.{% endblock %}">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}/static/images/takshashila-og.png">
+
+<!-- Twitter Cards -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Takshashila University · Smart College Portal">
+<meta name="twitter:description" content="Official Takshashila University Smart College ERP Portal for student and faculty academic management.">
+
+<!-- Schema.org JSON-LD Structured Data for Google Knowledge Graph & Rich Results -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CollegeOrUniversity",
+      "@id": "{{ request.scheme }}://{{ request.get_host }}/#university",
+      "name": "Takshashila University",
+      "alternateName": "Smart College - Takshashila University",
+      "url": "{{ request.scheme }}://{{ request.get_host }}/",
+      "logo": "{{ request.scheme }}://{{ request.get_host }}/static/images/logo.png",
+      "description": "Takshashila University Smart College is a premier higher education institution providing state-of-the-art academic management, digital learning, and campus automation.",
+      "sameAs": [
+        "https://takshashilauniv.ac.in",
+        "https://www.facebook.com/takshashilauniv",
+        "https://twitter.com/takshashilauniv",
+        "https://www.linkedin.com/school/takshashila-university"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.scheme }}://{{ request.get_host }}/#website",
+      "url": "{{ request.scheme }}://{{ request.get_host }}/",
+      "name": "Takshashila University Smart College Portal",
+      "publisher": {
+        "@id": "{{ request.scheme }}://{{ request.get_host }}/#university"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ request.scheme }}://{{ request.get_host }}/accounts/login/",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
+</script>
