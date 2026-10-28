@@ -6,11 +6,41 @@ from django.utils import timezone
 from django.http import HttpResponseForbidden, JsonResponse
 from decimal import Decimal
 
+from django.urls import reverse
+from urllib.parse import urlencode
+
 from .models import Exam, ExamSchedule, StudentExamMark, compute_grade_and_points
 from .forms import ExamForm, ExamScheduleForm, StudentExamMarkForm
 from students.models import Student, Course
 from faculty.models import Faculty, Subject
 from timetable.models import Notification, Timetable
+from accounts import scope as sc
+
+
+def _build_crumbs(base_url_name, scope, extra_params=None):
+    school = scope.get("school")
+    course = scope.get("course")
+    year = scope.get("year")
+
+    def _url(**kwargs):
+        p = {}
+        if extra_params:
+            for k, v in extra_params.items():
+                if v:
+                    p[k] = v
+        p.update(kwargs)
+        if not p:
+            return reverse(base_url_name)
+        return reverse(base_url_name) + "?" + urlencode(p)
+
+    crumbs = [{"label": "All Schools", "url": _url()}]
+    if school:
+        crumbs.append({"label": school.name, "url": _url(school=school.id)})
+    if course:
+        crumbs.append({"label": course.name, "url": _url(school=school.id, course=course.id)})
+    if year:
+        crumbs.append({"label": f"Year {year}", "url": None})
+    return crumbs
 
 
 def _get_faculty(user):
@@ -38,7 +68,7 @@ def _get_faculty_assigned_subjects(faculty):
 def exam_list(request):
     """
     Exams Dashboard / List:
-    - Admin: Full management with filtering, stats, creation and control.
+    - Admin: Full management with School -> Degree -> Class scoping, stats, creation and control.
     - Faculty: All exams with focus on department/courses.
     - Student: Filtered to student's enrolled course and academic year.
     """
@@ -47,6 +77,10 @@ def exam_list(request):
     is_admin = user.is_superuser or user.is_staff
     faculty = _get_faculty(user)
     is_faculty = faculty is not None
+
+    scope = sc.parse_scope(request.GET)
+    tree = sc.filter_tree()
+    crumbs = _build_crumbs("exam_list", scope)
 
     queryset = Exam.objects.select_related("course", "course__department", "created_by").prefetch_related("schedules")
 
@@ -58,12 +92,18 @@ def exam_list(request):
             is_active=True
         )
 
+    # Scoping filters
+    if scope["school"]:
+        queryset = queryset.filter(course__department=scope["school"])
+    if scope["course"]:
+        queryset = queryset.filter(course=scope["course"])
+    if scope["year"]:
+        queryset = queryset.filter(year=scope["year"])
+
     # Filter parameters
     q = request.GET.get("q", "").strip()
     exam_type = request.GET.get("exam_type", "").strip()
     academic_year = request.GET.get("academic_year", "").strip()
-    course_id = request.GET.get("course", "").strip()
-    year = request.GET.get("year", "").strip()
     semester = request.GET.get("semester", "").strip()
     status = request.GET.get("status", "").strip()
 
@@ -80,12 +120,6 @@ def exam_list(request):
 
     if academic_year:
         queryset = queryset.filter(academic_year=academic_year)
-
-    if course_id:
-        queryset = queryset.filter(course_id=course_id)
-
-    if year:
-        queryset = queryset.filter(year=year)
 
     if semester:
         queryset = queryset.filter(semester=semester)
@@ -105,17 +139,21 @@ def exam_list(request):
 
     exams = list(queryset)
 
-    # Calculate statistics across all relevant exams
-    base_exams = Exam.objects.all() if (is_admin or is_faculty) else Exam.objects.filter(course=student.course if student else None)
-    total_count = base_exams.count()
-    active_count = base_exams.filter(is_active=True).count()
-    upcoming_count = base_exams.filter(is_active=True, start_date__gt=today).count()
-    ongoing_count = base_exams.filter(is_active=True, start_date__lte=today, end_date__gte=today).count()
-    completed_count = base_exams.filter(end_date__lt=today).count()
+    # Calculate statistics dynamically across filtered exams
+    total_count = queryset.count()
+    active_count = queryset.filter(is_active=True).count()
+    upcoming_count = queryset.filter(is_active=True, start_date__gt=today).count()
+    ongoing_count = queryset.filter(is_active=True, start_date__lte=today, end_date__gte=today).count()
+    completed_count = queryset.filter(end_date__lt=today).count()
 
     courses = Course.objects.all().select_related("department")
     exam_types = [choice[0] for choice in Exam.EXAM_TYPE_CHOICES]
     academic_years = Exam.objects.values_list("academic_year", flat=True).distinct().order_by("-academic_year")
+
+    has_active_filters = bool(
+        scope["school"] or scope["course"] or scope["year"] or
+        q or exam_type or academic_year or semester or status
+    )
 
     context = {
         "exams": exams,
@@ -131,12 +169,17 @@ def exam_list(request):
         "courses": courses,
         "exam_types": exam_types,
         "academic_years": academic_years,
+        "scope": scope,
+        "tree": tree,
+        "crumbs": crumbs,
+        "has_active_filters": has_active_filters,
         "filters": {
+            "school": str(scope["school"].id) if scope["school"] else "",
+            "course": str(scope["course"].id) if scope["course"] else "",
+            "year": str(scope["year"]) if scope["year"] is not None else "",
             "q": q,
             "exam_type": exam_type,
             "academic_year": academic_year,
-            "course": course_id,
-            "year": year,
             "semester": semester,
             "status": status,
         }
@@ -467,7 +510,7 @@ def exam_schedule_marks_entry(request, schedule_id):
 def exam_marks_dashboard(request):
     """
     Central marks overview:
-    - Admin: All marks across all exams/subjects.
+    - Admin: All marks across all exams/subjects with School -> Degree -> Class scoping.
     - Faculty: Only marks for their assigned subjects.
     - Student: Redirected to student results portal.
     """
@@ -481,10 +524,40 @@ def exam_marks_dashboard(request):
 
     assigned_subjects = _get_faculty_assigned_subjects(faculty) if faculty else Subject.objects.all()
 
-    marks_qs = StudentExamMark.objects.select_related("student", "exam", "subject", "exam__course")
+    # Scope hierarchy (School -> Degree -> Class)
+    scope = sc.parse_scope(request.GET)
+    tree = sc.filter_tree()
+    crumbs = _build_crumbs("exam_marks_dashboard", scope)
+
+    marks_qs = StudentExamMark.objects.select_related(
+        "student",
+        "student__department",
+        "student__course",
+        "exam",
+        "exam__course",
+        "subject",
+        "subject__course"
+    )
 
     if not is_admin:
         marks_qs = marks_qs.filter(subject__in=assigned_subjects)
+
+    # Scoping filters (School -> Degree -> Class)
+    if scope["school"]:
+        marks_qs = marks_qs.filter(
+            Q(student__department=scope["school"]) |
+            Q(exam__course__department=scope["school"])
+        )
+    if scope["course"]:
+        marks_qs = marks_qs.filter(
+            Q(student__course=scope["course"]) |
+            Q(exam__course=scope["course"])
+        )
+    if scope["year"]:
+        marks_qs = marks_qs.filter(
+            Q(student__year=scope["year"]) |
+            Q(exam__year=scope["year"])
+        )
 
     # Filter parameters
     exam_id = request.GET.get("exam", "").strip()
@@ -503,19 +576,49 @@ def exam_marks_dashboard(request):
             Q(student__name__icontains=q) |
             Q(student__roll_no__icontains=q) |
             Q(subject__name__icontains=q) |
+            Q(subject__code__icontains=q) |
             Q(exam__name__icontains=q)
         )
 
-    marks = list(marks_qs.order_by("-updated_at")[:100])
-
-    exams = Exam.objects.filter(is_active=True).order_by("-start_date")
-    subjects = assigned_subjects if not is_admin else Subject.objects.all().select_related("course")
-
-    # Summary numbers
+    # Statistics dynamically recalculated on the filtered queryset
     total_marks = marks_qs.count()
     pass_marks = marks_qs.filter(result_status="Pass").count()
     fail_marks = marks_qs.filter(result_status="Fail").count()
     absent_marks = marks_qs.filter(result_status="Absent").count()
+    pass_rate = round((pass_marks * 100.0 / total_marks), 1) if total_marks > 0 else 0.0
+
+    avg_marks = None
+    present_marks_qs = marks_qs.exclude(result_status="Absent")
+    if present_marks_qs.exists():
+        avg_val = present_marks_qs.aggregate(avg=Avg("marks_obtained"))["avg"]
+        if avg_val is not None:
+            avg_marks = round(float(avg_val), 2)
+
+    marks = list(marks_qs.order_by("-updated_at")[:150])
+
+    # Contextual dropdown choices aligned with active scope
+    exams_qs = Exam.objects.filter(is_active=True)
+    if scope["course"]:
+        exams_qs = exams_qs.filter(course=scope["course"])
+    elif scope["school"]:
+        exams_qs = exams_qs.filter(course__department=scope["school"])
+    if scope["year"]:
+        exams_qs = exams_qs.filter(year=scope["year"])
+    exams = exams_qs.order_by("-start_date")
+
+    subjects_qs = assigned_subjects if not is_admin else Subject.objects.all().select_related("course")
+    if scope["course"]:
+        subjects_qs = subjects_qs.filter(course=scope["course"])
+    elif scope["school"]:
+        subjects_qs = subjects_qs.filter(course__department=scope["school"])
+    if scope["year"]:
+        subjects_qs = subjects_qs.filter(year=scope["year"])
+    subjects = subjects_qs.order_by("name")
+
+    has_active_filters = bool(
+        scope["school"] or scope["course"] or scope["year"] or
+        exam_id or subject_id or result_filter or q
+    )
 
     context = {
         "marks": marks,
@@ -527,7 +630,16 @@ def exam_marks_dashboard(request):
         "pass_marks": pass_marks,
         "fail_marks": fail_marks,
         "absent_marks": absent_marks,
+        "pass_rate": pass_rate,
+        "avg_marks": avg_marks,
+        "has_active_filters": has_active_filters,
+        "scope": scope,
+        "tree": tree,
+        "crumbs": crumbs,
         "filters": {
+            "school": str(scope["school"].id) if scope["school"] else "",
+            "course": str(scope["course"].id) if scope["course"] else "",
+            "year": str(scope["year"]) if scope["year"] is not None else "",
             "exam": exam_id,
             "subject": subject_id,
             "result": result_filter,

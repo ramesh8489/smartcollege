@@ -7,15 +7,15 @@
     {% if is_faculty and not is_admin %}
         My Assigned Exam Marks
     {% else %}
-        Examination Marks & Results
+        Examination Marks &amp; Results
     {% endif %}
 {% endblock %}
 
 {% block page_sub %}
     {% if is_faculty and not is_admin %}
-        View and manage examination marks for your assigned subjects and courses.
+        View and manage examination marks for your assigned subjects, degrees and classes.
     {% else %}
-        Comprehensive examination marks repository, student scores, grades, and result evaluation.
+        Comprehensive examination marks repository, student scores, grades, and automated result evaluation.
     {% endif %}
 {% endblock %}
 
@@ -43,7 +43,7 @@
 {% endif %}
 
 <!-- Quick Statistics Bar -->
-<div class="grid grid-4 mb">
+<div class="grid grid-5 mb" style="gap: 16px;">
     <div class="stat">
         <div class="stat-ico">
             <svg class="icon"><use href="#i-award"/></svg>
@@ -51,6 +51,9 @@
         <div>
             <div class="stat-val">{{ total_marks }}</div>
             <div class="stat-label">Marks Evaluated</div>
+            <div class="muted" style="font-size: 11.5px; margin-top: 2px;">
+                {% if has_active_filters %}Filtered records{% else %}Across all exams{% endif %}
+            </div>
         </div>
     </div>
     <div class="stat">
@@ -60,6 +63,9 @@
         <div>
             <div class="stat-val">{{ pass_marks }}</div>
             <div class="stat-label">Passed</div>
+            <div class="muted" style="font-size: 11.5px; margin-top: 2px; color: var(--success); font-weight: 600;">
+                {{ pass_rate }}% Pass Rate
+            </div>
         </div>
     </div>
     <div class="stat">
@@ -69,6 +75,7 @@
         <div>
             <div class="stat-val">{{ fail_marks }}</div>
             <div class="stat-label">Failed</div>
+            <div class="muted" style="font-size: 11.5px; margin-top: 2px;">Requires re-assessment</div>
         </div>
     </div>
     <div class="stat">
@@ -78,31 +85,78 @@
         <div>
             <div class="stat-val">{{ absent_marks }}</div>
             <div class="stat-label">Absent</div>
+            <div class="muted" style="font-size: 11.5px; margin-top: 2px;">Not appeared</div>
+        </div>
+    </div>
+    <div class="stat">
+        <div class="stat-ico violet">
+            <svg class="icon"><use href="#i-chart"/></svg>
+        </div>
+        <div>
+            <div class="stat-val">{% if avg_marks %}{{ avg_marks }}{% else %}—{% endif %}</div>
+            <div class="stat-label">Average Score</div>
+            <div class="muted" style="font-size: 11.5px; margin-top: 2px;">Attended students</div>
         </div>
     </div>
 </div>
 
-<!-- Filters Card -->
-<div class="card mb">
-    <div class="card-head">
-        <div class="card-title">
-            <svg class="icon"><use href="#i-filter"/></svg>
+<!-- Filters Card with Cascading Dropdowns: School -> Degree -> Class -->
+<div class="card mb" style="padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--ink);">
+            <svg class="icon" style="color: var(--brand);"><use href="#i-filter"/></svg>
             <span>Filter Examination Marks</span>
         </div>
-        {% if filters.q or filters.exam or filters.subject or filters.result %}
-            <a href="{% url 'exam_marks_dashboard' %}" class="btn btn-ghost btn-sm">Clear Filters</a>
+        {% if has_active_filters %}
+            <a href="{% url 'exam_marks_dashboard' %}" class="btn btn-ghost btn-sm" style="color: var(--muted); font-size: 12px;">
+                Reset All Filters
+            </a>
         {% endif %}
     </div>
-    <div class="card-body">
-        <form method="get" action="{% url 'exam_marks_dashboard' %}" class="grid grid-4" style="gap: 14px; align-items: flex-end;">
+
+    <form method="get" action="{% url 'exam_marks_dashboard' %}" id="exam-marks-filter-form">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: flex-end;">
+            <!-- School / Department -->
             <div class="field">
-                <label for="q">Search Student / Subject</label>
-                <input type="text" id="q" name="q" value="{{ filters.q }}" class="input" placeholder="Roll No, name, code...">
+                <label for="fSchool" style="font-size: 12px; font-weight: 700; color: var(--ink-light); margin-bottom: 4px; display: block;">
+                    School / Dept
+                </label>
+                <select class="select" id="fSchool" name="school" style="width: 100%; height: 38px;">
+                    <option value="">All Schools</option>
+                    {% for s in tree %}
+                        <option value="{{ s.id }}" {% if filters.school == s.id|stringformat:"s" %}selected{% endif %}>
+                            {{ s.name }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
 
+            <!-- Degree / Course -->
             <div class="field">
-                <label for="exam">Examination Session</label>
-                <select id="exam" name="exam" class="select">
+                <label for="fCourse" style="font-size: 12px; font-weight: 700; color: var(--ink-light); margin-bottom: 4px; display: block;">
+                    Degree / Course
+                </label>
+                <select class="select" id="fCourse" name="course" style="width: 100%; height: 38px;">
+                    <option value="">All Degrees</option>
+                </select>
+            </div>
+
+            <!-- Class / Year -->
+            <div class="field">
+                <label for="fYear" style="font-size: 12px; font-weight: 700; color: var(--ink-light); margin-bottom: 4px; display: block;">
+                    Class / Year
+                </label>
+                <select class="select" id="fYear" name="year" style="width: 100%; height: 38px;">
+                    <option value="">All Classes</option>
+                </select>
+            </div>
+
+            <!-- Exam Session -->
+            <div class="field">
+                <label for="fExam" style="font-size: 12px; font-weight: 700; color: var(--ink-light); margin-bottom: 4px; display: block;">
+                    Exam Session
+                </label>
+                <select id="fExam" name="exam" class="select" style="width: 100%; height: 38px;">
                     <option value="">All Exams</option>
                     {% for e in exams %}
                         <option value="{{ e.id }}" {% if filters.exam == e.id|stringformat:"s" %}selected{% endif %}>
@@ -112,9 +166,12 @@
                 </select>
             </div>
 
+            <!-- Subject -->
             <div class="field">
-                <label for="subject">Subject</label>
-                <select id="subject" name="subject" class="select">
+                <label for="fSubject" style="font-size: 12px; font-weight: 700; color: var(--ink-light); margin-bottom: 4px; display: block;">
+                    Subject
+                </label>
+                <select id="fSubject" name="subject" class="select" style="width: 100%; height: 38px;">
                     <option value="">All Subjects</option>
                     {% for sub in subjects %}
                         <option value="{{ sub.id }}" {% if filters.subject == sub.id|stringformat:"s" %}selected{% endif %}>
@@ -124,9 +181,12 @@
                 </select>
             </div>
 
+            <!-- Result Status -->
             <div class="field">
-                <label for="result">Result Status</label>
-                <select id="result" name="result" class="select">
+                <label for="fResult" style="font-size: 12px; font-weight: 700; color: var(--ink-light); margin-bottom: 4px; display: block;">
+                    Result Status
+                </label>
+                <select id="fResult" name="result" class="select" style="width: 100%; height: 38px;">
                     <option value="">All Results</option>
                     <option value="Pass" {% if filters.result == 'Pass' %}selected{% endif %}>Pass Only</option>
                     <option value="Fail" {% if filters.result == 'Fail' %}selected{% endif %}>Fail Only</option>
@@ -134,24 +194,58 @@
                 </select>
             </div>
 
-            <div style="grid-column: span 4; display: flex; justify-content: flex-end;">
-                <button type="submit" class="btn btn-primary" style="padding: 9px 20px;">
-                    <svg class="icon"><use href="#i-filter"/></svg>
-                    <span>Apply Filters</span>
-                </button>
+            <!-- Search Query -->
+            <div class="field" style="min-width: 200px;">
+                <label for="fQ" style="font-size: 12px; font-weight: 700; color: var(--ink-light); margin-bottom: 4px; display: block;">
+                    Search
+                </label>
+                <input type="search" id="fQ" name="q" value="{{ filters.q }}" class="input" placeholder="Roll No, name, subject..." style="width: 100%; height: 38px;">
             </div>
-        </form>
-    </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 8px; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg class="icon icon-sm"><use href="#i-filter"/></svg>
+                    <span>Apply</span>
+                </button>
+                <a href="{% url 'exam_marks_dashboard' %}" class="btn btn-ghost" style="height: 38px; padding: 0 12px; display: inline-flex; align-items: center;">
+                    Reset
+                </a>
+            </div>
+        </div>
+
+        {% if crumbs %}
+        <div class="crumbs" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12.5px;">
+            <svg class="icon icon-sm" style="color: var(--brand);"><use href="#i-layers"/></svg>
+            {% for c in crumbs %}
+                {% if not forloop.first %}<span class="sep" style="color: var(--muted);">›</span>{% endif %}
+                {% if c.url and not forloop.last %}
+                    <a href="{{ c.url }}" style="color: var(--brand); text-decoration: none; font-weight: 600;">{{ c.label }}</a>
+                {% else %}
+                    <b>{{ c.label }}</b>
+                {% endif %}
+            {% endfor %}
+            {% if has_active_filters %}
+                <span class="badge gray" style="margin-left: auto; font-size: 11px;">
+                    Filtered View &bull; {{ marks|length }} shown of {{ total_marks }} total
+                </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </form>
 </div>
 
+<!-- Tree JSON for cascading dropdown logic -->
+{{ tree|json_script:"tree-data" }}
+
 <!-- Marks Records Table -->
-<div class="card">
-    <div class="card-head">
-        <div class="card-title">
+<div class="card" style="padding: 24px;">
+    <div class="card-head" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
             <svg class="icon"><use href="#i-award"/></svg>
-            <span>Student Marks Records</span>
+            <span style="font-size: 18px; font-weight: 700;">Student Examination Marks Ledger</span>
         </div>
-        <span class="badge">{{ marks|length }} Record{{ marks|length|pluralize }} Shown</span>
+        <span class="badge" style="font-size: 12px;">{{ marks|length }} Record{{ marks|length|pluralize }} Listed</span>
     </div>
 
     <div class="card-body flush">
@@ -160,7 +254,8 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Roll No & Student</th>
+                        <th>Roll No &amp; Student</th>
+                        <th>School &amp; Degree</th>
                         <th>Exam Session</th>
                         <th>Subject</th>
                         <th style="text-align: right;">Marks Obtained</th>
@@ -180,10 +275,18 @@
                     <tr>
                         <td>
                             <strong style="color: var(--ink);">{{ m.student.name }}</strong>
-                            <div class="muted" style="font-size: 11.5px;">{{ m.student.roll_no }} · {{ m.student.course.name }}</div>
+                            <div class="muted" style="font-size: 11.5px;">{{ m.student.roll_no }}</div>
                         </td>
                         <td>
-                            <a href="{% url 'exam_detail' m.exam.pk %}" style="font-weight: 600; text-decoration: none;">
+                            <div style="font-weight: 600; color: var(--ink); font-size: 12.5px;">
+                                {{ m.student.course.name|default:m.exam.course.name }}
+                            </div>
+                            <div class="muted" style="font-size: 11px;">
+                                {{ m.student.department.name|default:m.exam.course.department.name }} · Yr {{ m.student.year|default:m.exam.year }}
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{% url 'exam_detail' m.exam.pk %}" style="font-weight: 600; text-decoration: none; color: var(--brand);">
                                 {{ m.exam.name }}
                             </a>
                             <div class="muted" style="font-size: 11px;">{{ m.exam.exam_type }} · {{ m.exam.academic_year }}</div>
@@ -196,7 +299,7 @@
                             {% if m.result_status == "Absent" %}
                                 <span class="muted" style="font-style: italic;">Absent</span>
                             {% else %}
-                                <strong style="font-size: 14px;">{{ m.marks_obtained }}</strong>
+                                <strong style="font-size: 14px; color: var(--ink);">{{ m.marks_obtained }}</strong>
                             {% endif %}
                         </td>
                         <td style="text-align: right;" class="muted">
@@ -218,7 +321,7 @@
                             {{ m.grade_point }}
                         </td>
                         <td style="text-align: center;">
-                            <span class="badge {% if m.result_status == 'Pass' %}green{% else %}red{% endif %}">
+                            <span class="badge {% if m.result_status == 'Pass' %}green{% elif m.result_status == 'Absent' %}amber{% else %}red{% endif %}">
                                 {{ m.result_status }}
                             </span>
                         </td>
@@ -245,7 +348,7 @@
                 <div style="font-size: 38px; margin-bottom: 10px;">📊</div>
                 <div style="font-size: 15px; font-weight: 700; color: var(--ink);">No Examination Marks Found</div>
                 <div class="muted" style="max-width: 440px; margin: 4px auto 16px; font-size: 13px;">
-                    No student marks match the selected filters. To enter marks, visit any scheduled exam and click "Enter Marks".
+                    No student marks match the selected School, Degree, Class, or filter criteria. To record marks, visit any scheduled exam and click "Enter Marks".
                 </div>
                 <a href="{% url 'exam_list' %}" class="btn btn-primary">
                     <svg class="icon"><use href="#i-calendar"/></svg>
@@ -255,5 +358,88 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var treeEl = document.getElementById("tree-data");
+    if (!treeEl) return;
+
+    var tree = JSON.parse(treeEl.textContent || "[]");
+    var schoolSel = document.getElementById("fSchool");
+    var courseSel = document.getElementById("fCourse");
+    var yearSel = document.getElementById("fYear");
+
+    var initialCourse = "{{ filters.course }}";
+    var initialYear = "{{ filters.year }}";
+
+    function populateCourses(selectedSchoolId, preserveVal) {
+        courseSel.innerHTML = '<option value="">All Degrees</option>';
+        yearSel.innerHTML = '<option value="">All Classes</option>';
+
+        if (!selectedSchoolId) {
+            tree.forEach(function(s) {
+                s.courses.forEach(function(c) {
+                    var opt = document.createElement("option");
+                    opt.value = c.id;
+                    opt.textContent = c.name + " (" + s.name + ")";
+                    if (String(c.id) === String(preserveVal)) opt.selected = true;
+                    courseSel.appendChild(opt);
+                });
+            });
+            return;
+        }
+
+        var school = tree.find(function(s) { return String(s.id) === String(selectedSchoolId); });
+        if (school && school.courses) {
+            school.courses.forEach(function(c) {
+                var opt = document.createElement("option");
+                opt.value = c.id;
+                opt.textContent = c.name;
+                if (String(c.id) === String(preserveVal)) opt.selected = true;
+                courseSel.appendChild(opt);
+            });
+        }
+    }
+
+    function populateYears(selectedCourseId, preserveVal) {
+        yearSel.innerHTML = '<option value="">All Classes</option>';
+        if (!selectedCourseId) return;
+
+        var foundCourse = null;
+        for (var i = 0; i < tree.length; i++) {
+            var c = tree[i].courses.find(function(item) { return String(item.id) === String(selectedCourseId); });
+            if (c) { foundCourse = c; break; }
+        }
+
+        if (foundCourse && foundCourse.years) {
+            foundCourse.years.forEach(function(y) {
+                var opt = document.createElement("option");
+                opt.value = y;
+                opt.textContent = (y === 1 ? "1st Year" : y === 2 ? "2nd Year" : y === 3 ? "3rd Year" : y + "th Year");
+                if (String(y) === String(preserveVal)) opt.selected = true;
+                yearSel.appendChild(opt);
+            });
+        }
+    }
+
+    if (schoolSel) {
+        populateCourses(schoolSel.value, initialCourse);
+        if (courseSel.value) {
+            populateYears(courseSel.value, initialYear);
+        }
+
+        schoolSel.addEventListener("change", function() {
+            populateCourses(this.value, "");
+            populateYears("", "");
+        });
+    }
+
+    if (courseSel) {
+        courseSel.addEventListener("change", function() {
+            populateYears(this.value, "");
+        });
+    }
+});
+</script>
 
 {% endblock %}

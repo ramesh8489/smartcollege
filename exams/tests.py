@@ -331,3 +331,115 @@ class ExamManagementTestCase(TestCase):
         self.assertContains(response, "My Examination Results")
         self.assertContains(response, self.exam.name)
         self.assertContains(response, "Overall:")
+
+    def test_exam_marks_dashboard_scoping_and_metrics(self):
+        """Verify exam marks dashboard filters by School, Degree, and Class with dynamic metrics."""
+        # Create second department, course and student
+        dept2 = Department.objects.create(name="School of Mechanical Sciences")
+        course2 = Course.objects.create(name="B.Tech Mechanical", department=dept2)
+        student2_user = User.objects.create_user(username="mech_st", password="password123")
+        student2 = Student.objects.create(
+            user=student2_user,
+            name="Bob Mech",
+            roll_no="MECH001",
+            course=course2,
+            department=dept2,
+            year=1,
+            is_approved=True,
+        )
+        exam2 = Exam.objects.create(
+            name="CAT 1 Mechanical",
+            exam_type="CAT 1",
+            academic_year="2026-2027",
+            semester=1,
+            course=course2,
+            year=1,
+            start_date=datetime.date(2026, 10, 10),
+            end_date=datetime.date(2026, 10, 20),
+            is_active=True,
+        )
+        subject2 = Subject.objects.create(name="Thermodynamics", code="ME101", course=course2, department=dept2, year=1, semester=1, faculty=self.faculty)
+
+        # Mark 1: Pass
+        StudentExamMark.objects.create(
+            student=self.student,
+            exam=self.exam,
+            subject=self.subject,
+            max_marks=100,
+            marks_obtained=Decimal("75.00"),
+            result_status="Pass"
+        )
+        # Mark 2: Fail
+        StudentExamMark.objects.create(
+            student=self.student2,
+            exam=self.exam,
+            subject=self.subject,
+            max_marks=100,
+            marks_obtained=Decimal("30.00"),
+            result_status="Fail"
+        )
+        # Mark 3 for dept2: Absent
+        StudentExamMark.objects.create(
+            student=student2,
+            exam=exam2,
+            subject=subject2,
+            max_marks=100,
+            marks_obtained=Decimal("0.00"),
+            result_status="Absent"
+        )
+
+        self.client.force_login(self.admin_user)
+
+        # 1. Unfiltered request -> all 3 marks
+        res = self.client.get(reverse("exam_marks_dashboard"))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context["total_marks"], 3)
+        self.assertEqual(res.context["pass_marks"], 1)
+        self.assertEqual(res.context["fail_marks"], 1)
+        self.assertEqual(res.context["absent_marks"], 1)
+
+        # 2. Scoped by School 1 -> 2 marks (Pass & Fail)
+        res_school1 = self.client.get(reverse("exam_marks_dashboard") + f"?school={self.dept.id}")
+        self.assertEqual(res_school1.status_code, 200)
+        self.assertEqual(res_school1.context["total_marks"], 2)
+        self.assertEqual(res_school1.context["pass_marks"], 1)
+        self.assertEqual(res_school1.context["fail_marks"], 1)
+        self.assertEqual(res_school1.context["absent_marks"], 0)
+        self.assertEqual(res_school1.context["pass_rate"], 50.0)
+
+        # 3. Scoped by School 2 -> 1 mark (Absent)
+        res_school2 = self.client.get(reverse("exam_marks_dashboard") + f"?school={dept2.id}&course={course2.id}&year=1")
+        self.assertEqual(res_school2.status_code, 200)
+        self.assertEqual(res_school2.context["total_marks"], 1)
+        self.assertEqual(res_school2.context["pass_marks"], 0)
+        self.assertEqual(res_school2.context["fail_marks"], 0)
+        self.assertEqual(res_school2.context["absent_marks"], 1)
+        self.assertEqual(res_school2.context["pass_rate"], 0.0)
+
+    def test_exam_list_scoping(self):
+        """Verify exam_list filters by School, Degree, and Class."""
+        dept2 = Department.objects.create(name="School of Commerce")
+        course2 = Course.objects.create(name="B.Com General", department=dept2)
+        Exam.objects.create(
+            name="Commerce CAT",
+            exam_type="CAT 2",
+            academic_year="2026-2027",
+            semester=2,
+            course=course2,
+            year=1,
+            start_date=datetime.date(2026, 11, 1),
+            end_date=datetime.date(2026, 11, 10),
+            is_active=True,
+        )
+
+        self.client.force_login(self.admin_user)
+        res_all = self.client.get(reverse("exam_list"))
+        self.assertEqual(res_all.status_code, 200)
+        self.assertEqual(res_all.context["total_count"], 2)
+
+        res_school = self.client.get(reverse("exam_list") + f"?school={dept2.id}")
+        self.assertEqual(res_school.status_code, 200)
+        self.assertEqual(res_school.context["total_count"], 1)
+        self.assertEqual(len(res_school.context["exams"]), 1)
+        self.assertEqual(res_school.context["exams"][0].name, "Commerce CAT")
+
