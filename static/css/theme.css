@@ -71,6 +71,13 @@
 *::before,
 *::after {
     box-sizing: border-box;
+    min-width: 0;
+}
+
+html, body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
 }
 
 html {
@@ -87,6 +94,14 @@ body {
     background: var(--bg);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+/* Global text overflow protection */
+h1, h2, h3, h4, h5, h6, p, span, div, a, label, strong, th, td, b {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 a {
@@ -103,6 +118,8 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.25;
     letter-spacing: -0.025em;
     color: var(--ink);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 p {
     margin: 0;
@@ -663,12 +680,17 @@ p {
     padding: 18px 20px;
     margin-bottom: 22px;
     box-shadow: var(--shadow-sm);
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 .filters-row {
     display: grid;
-    gap: 14px;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     align-items: end;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 .crumbs {
     display: flex;
@@ -678,6 +700,9 @@ p {
     margin-top: 14px;
     font-size: 12.5px;
     color: var(--muted);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-width: 100%;
 }
 .crumbs b {
     color: var(--ink);
@@ -693,14 +718,17 @@ p {
 
 .table-wrap {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border-radius: var(--radius-lg);
     border: 1px solid var(--line);
     background: var(--surface);
+    box-sizing: border-box;
 }
 .table {
     width: 100%;
+    min-width: 600px;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 13.5px;
@@ -1253,22 +1281,24 @@ p {
 }
 
 /* ==========================================================
-   MULTI-DEVICE RESPONSIVE BREAKPOINTS
+   MULTI-DEVICE RESPONSIVE BREAKPOINTS & OVERFLOW PREVENTION
    ========================================================== */
 
-/* LAPTOPS & DESKTOPS (<= 1250px) */
+/* 1. LARGE DESKTOPS & LAPTOPS (<= 1250px) */
 @media (max-width: 1250px) {
     .grid-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
-/* SMALL LAPTOPS & TABLETS (<= 1100px) */
-@media (max-width: 1100px) {
-    .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .grid-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .split { grid-template-columns: 1fr; }
 }
 
-/* TABLETS IN PORTRAIT & LARGE PHONES (<= 900px) */
+/* 2. LAPTOPS & TABLET LANDSCAPE (<= 1024px) */
+@media (max-width: 1024px) {
+    .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .split { grid-template-columns: 1fr; }
+    .page { padding: 24px 24px 50px; }
+}
+
+/* 3. TABLETS PORTRAIT & COMPACT LAPTOPS (<= 900px) */
 @media (max-width: 900px) {
     .sidebar {
         position: fixed;
@@ -1295,7 +1325,7 @@ p {
         display: flex;
     }
     .page {
-        padding: 22px 20px 48px;
+        padding: 20px 18px 48px;
     }
     .auth {
         grid-template-columns: 1fr;
@@ -1309,215 +1339,378 @@ p {
     }
 }
 
-/* MOBILE PHONES (<= 640px) */
+/* 4. LARGE PHONES & SMALL TABLETS (<= 768px) */
+@media (max-width: 768px) {
+    .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    /* Auto-fit form filters reduce min column to prevent overflow */
+    div[style*="grid-template-columns: repeat(auto-fit"] {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    }
+}
+
+/* 5. MOBILE PHONES (<= 640px) — CRITICAL VIEWPORT FIXES */
 @media (max-width: 640px) {
-    .page {
-        padding: 16px 14px 44px;
-    }
-    .page-head {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 18px;
-    }
-    .page-title {
-        font-size: 22px;
-    }
-    .page-sub {
-        font-size: 13px;
-    }
-    .head-actions {
+    html, body {
         width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
     }
+
+    .app {
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    .main {
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    .page {
+        padding: 14px 12px 44px !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    .page-head {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .page-title {
+        font-size: 21px !important;
+        line-height: 1.3 !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+
+    .page-sub {
+        font-size: 13px !important;
+        line-height: 1.45 !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+
+    .head-actions {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+
     .head-actions .btn {
-        flex: 1 1 auto;
+        flex: 1 1 auto !important;
+        justify-content: center !important;
     }
 
     /* Grids collapse cleanly to single-column */
-    .grid-2, .grid-3, .grid-4, .grid-5 {
-        grid-template-columns: 1fr;
-        gap: 12px;
+    .grid-2, .grid-3, .grid-4, .grid-5, .grid-6 {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
     }
-    .grid-6 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+
+    /* All form filter grids collapse to 1 column on mobile to eliminate overflow */
+    div[style*="grid-template-columns"],
+    .filters-row,
+    .filters-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
     }
-    .grid-6 .stat {
-        padding: 12px 14px;
+
+    /* Form actions inside filter rows */
+    .form-actions,
+    form div[style*="align-items: flex-end"] > div:last-child {
+        width: 100% !important;
+        display: flex !important;
+        gap: 8px !important;
     }
-    .grid-6 .stat-ico {
-        width: 38px;
-        height: 38px;
-    }
-    .grid-6 .stat-val {
-        font-size: 20px;
+    .form-actions .btn,
+    form div[style*="align-items: flex-end"] > div:last-child .btn {
+        flex: 1 1 50% !important;
+        justify-content: center !important;
+        height: 42px !important;
     }
 
     /* Stat cards */
     .stat {
-        padding: 16px 18px;
-        gap: 14px;
+        padding: 14px 16px !important;
+        gap: 12px !important;
+        border-radius: var(--radius) !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
     }
     .stat-val {
-        font-size: 22px;
+        font-size: clamp(20px, 6vw, 24px) !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        line-height: 1.2 !important;
     }
     .stat-ico {
-        width: 42px;
-        height: 42px;
+        width: 38px !important;
+        height: 38px !important;
+        flex-shrink: 0 !important;
+    }
+    .stat-label {
+        font-size: 12.5px !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
     }
 
     /* Form Grids collapse to single-column */
     .form-grid-2 {
-        grid-template-columns: 1fr;
-        gap: 14px;
-    }
-    .filters-row {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
     }
 
-    /* Touch-friendly Inputs & Buttons (min 44px for iOS & Android) */
-    .input, .select {
-        height: 44px;
-        font-size: 15px; /* Prevents auto-zoom on iOS Safari */
-        border-radius: 10px;
+    /* Touch-friendly Inputs & Buttons */
+    .input, .select, textarea {
+        height: 44px !important;
+        font-size: 15px !important; /* Prevents auto-zoom on iOS Safari */
+        border-radius: 10px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    textarea {
+        height: auto !important;
+        min-height: 80px !important;
     }
     .btn {
-        min-height: 44px;
-        font-size: 13.5px;
-        padding: 10px 14px;
+        min-height: 42px !important;
+        font-size: 13.5px !important;
+        padding: 9px 14px !important;
+        box-sizing: border-box !important;
     }
     .btn-sm {
-        min-height: 36px;
-        padding: 6px 12px;
-        font-size: 12px;
+        min-height: 34px !important;
+        padding: 5px 10px !important;
+        font-size: 12px !important;
     }
 
     /* Topbar responsive adjustments */
     .topbar {
-        padding: 10px 14px;
+        padding: 8px 12px !important;
+        gap: 8px !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
     }
     .topbar-title {
-        font-size: 15px;
+        font-size: 14px !important;
+        max-width: 130px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        flex: 1 1 auto !important;
     }
     .desktop-only {
         display: none !important;
     }
-    .topbar-user-text strong {
-        font-size: 12px;
+    .topbar-user-wrap {
+        margin-left: auto !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+    }
+    .topbar-user-text {
+        max-width: 90px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: inline-block !important;
+        font-size: 11.5px !important;
     }
     .topbar-logout-btn {
-        padding: 6px 8px !important;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        min-height: 30px !important;
+        border-radius: 6px !important;
     }
 
     /* Cards */
     .card {
-        border-radius: var(--radius);
-        margin-bottom: 16px;
+        border-radius: var(--radius) !important;
+        margin-bottom: 14px !important;
+        padding: 16px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
     .card-head {
-        padding: 14px 16px;
+        padding: 0 0 12px !important;
+        margin-bottom: 12px !important;
+        border-bottom: 1px solid var(--line) !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+    .card-title {
+        font-size: 15.5px !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    .card-head .badge {
+        align-self: flex-start !important;
     }
     .card-body {
-        padding: 16px;
+        padding: 0 !important;
+    }
+    .card-body.flush {
+        margin: 0 -16px -16px !important;
     }
 
-    /* Auth Screens on Mobile */
-    .auth-form-wrap {
-        padding: 24px 16px;
-        align-items: start;
-        min-height: 100vh;
+    /* Breadcrumbs on Mobile */
+    .crumbs {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 4px 6px !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+        max-width: 100% !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
     }
-    .auth-card {
-        width: 100%;
-        max-width: 100%;
+    .crumbs a, .crumbs b, .crumbs span {
+        max-width: 100% !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
     }
-    .auth-card h1 {
-        font-size: 22px;
-    }
-    .auth-card .lead {
-        font-size: 13px;
-        margin: 4px 0 16px;
-    }
-    .seg {
-        margin-bottom: 16px;
-    }
-    .seg button {
-        padding: 10px 8px;
-        font-size: 13.5px;
-    }
-
-    /* Key/Value metrics */
-    .kv {
-        grid-template-columns: 1fr;
-        gap: 10px;
+    .crumbs .badge {
+        margin-left: 0 !important;
+        margin-top: 6px !important;
+        width: 100% !important;
+        justify-content: flex-start !important;
     }
 
     /* Tables on mobile */
     .table-wrap {
-        border-radius: var(--radius);
-        margin: 0 -2px;
+        border-radius: var(--radius) !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        box-sizing: border-box !important;
+    }
+    .table {
+        min-width: 600px !important;
     }
     .table th, .table td {
-        padding: 10px 12px;
-        font-size: 13px;
+        padding: 9px 10px !important;
+        font-size: 12.5px !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    .table td strong {
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    .table td .muted {
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+
+    /* Auth Screens on Mobile */
+    .auth-form-wrap {
+        padding: 24px 14px !important;
+        align-items: start !important;
+        min-height: 100vh !important;
+    }
+    .auth-card {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .auth-card h1 {
+        font-size: 21px !important;
+    }
+    .auth-card .lead {
+        font-size: 13px !important;
+        margin: 4px 0 16px !important;
+    }
+    .seg {
+        margin-bottom: 14px !important;
+    }
+    .seg button {
+        padding: 9px 6px !important;
+        font-size: 13px !important;
+    }
+
+    /* Key/Value metrics */
+    .kv {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
     }
 
     /* Hero */
     .hero {
-        padding: 20px 18px;
-        border-radius: var(--radius);
+        padding: 18px 16px !important;
+        border-radius: var(--radius) !important;
     }
     .hero h1 {
-        font-size: 20px;
+        font-size: 19px !important;
     }
 }
 
-/* EXTRA SMALL PHONES (<= 380px) */
+/* 6. EXTRA SMALL PHONES & COMPACT FOLDABLES (<= 380px) */
 @media (max-width: 380px) {
     .page {
-        padding: 12px 10px 36px;
+        padding: 10px 8px 32px !important;
     }
     .page-title {
-        font-size: 20px;
+        font-size: 18.5px !important;
+    }
+    .topbar-title {
+        max-width: 105px !important;
+        font-size: 13px !important;
+    }
+    .topbar-user-text {
+        max-width: 70px !important;
     }
     .auth-form-wrap {
-        padding: 16px 12px;
+        padding: 16px 10px !important;
     }
     .auth-card h1 {
-        font-size: 20px;
+        font-size: 19px !important;
     }
-    .grid-6 {
-        grid-template-columns: 1fr;
+    .card {
+        padding: 12px !important;
     }
-    .card-head {
-        padding: 12px 14px;
-    }
-    .card-body {
-        padding: 14px;
+    .card-body.flush {
+        margin: 0 -12px -12px !important;
     }
     .stat {
-        padding: 12px 14px;
+        padding: 12px 12px !important;
     }
     .stat-val {
-        font-size: 20px;
+        font-size: 19px !important;
+    }
+    .table th, .table td {
+        padding: 8px 8px !important;
+        font-size: 12px !important;
     }
 }
 
-/* PRINT STYLES */
+/* 7. PRINT STYLES */
 @media print {
-    .sidebar, .topbar, .head-actions, .filters, .scrim {
+    .sidebar, .topbar, .head-actions, .filters, .scrim, .form-actions {
         display: none !important;
     }
     .page {
-        padding: 0;
-        max-width: none;
+        padding: 0 !important;
+        max-width: none !important;
     }
     body {
-        background: #fff;
+        background: #fff !important;
     }
     .card {
-        box-shadow: none;
-        border: 1px solid #ccc;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
     }
 }
