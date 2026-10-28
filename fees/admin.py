@@ -29,7 +29,15 @@ class FeeRecordAdmin(admin.ModelAdmin):
         "display_status",
         "due_date",
     )
-    list_filter = ("fee_type", "status", "academic_year", "due_date")
+    list_filter = (
+        "student__department",
+        "student__course",
+        "student__year",
+        "fee_type",
+        "status",
+        "academic_year",
+        "due_date",
+    )
     search_fields = (
         "student__name",
         "student__roll_no",

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load l10n %}
 
 {% block title %}Fees & Online Payments{% endblock %}
 {% block topbar_title %}Fees & Online Payments{% endblock %}
@@ -24,12 +25,72 @@
 {% if messages %}
 <div style="margin-bottom: 18px;">
     {% for msg in messages %}
-    <div class="callout {% if msg.tags == 'error' %}callout-danger{% else %}callout-ok{% endif %}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;margin-bottom:8px;background:{% if msg.tags == 'error' %}#fef2f2;border:1px solid #fecaca;color:#991b1b{% else %}#f0fdf4;border:1px solid #bbf7d0;color:#166534{% endif %};">
-        <svg class="icon" style="width:18px;height:18px;flex-shrink:0;"><use href="{% if msg.tags == 'error' %}#i-x{% else %}#i-check{% endif %}"/></svg>
+    {% if msg.tags == 'error' %}
+    <div class="callout callout-danger" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;margin-bottom:8px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;">
+        <svg class="icon" style="width:18px;height:18px;flex-shrink:0;"><use href="#i-x"/></svg>
         <div style="font-weight:600;">{{ msg }}</div>
     </div>
+    {% else %}
+    <div class="callout callout-ok" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;margin-bottom:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;">
+        <svg class="icon" style="width:18px;height:18px;flex-shrink:0;"><use href="#i-check"/></svg>
+        <div style="font-weight:600;">{{ msg }}</div>
+    </div>
+    {% endif %}
     {% endfor %}
 </div>
+{% endif %}
+
+{% if is_admin %}
+<!-- Admin Fees Scoping Filters -->
+<form class="filters" method="get" id="filterForm" style="margin-bottom:22px;">
+    <div class="filters-row">
+        <div class="field">
+            <label for="fSchool" style="font-size:12px;font-weight:700;color:var(--ink-light);margin-bottom:4px;display:block;">School</label>
+            <select class="select" id="fSchool" name="school" style="width:100%;height:38px;"></select>
+        </div>
+        <div class="field">
+            <label for="fCourse" style="font-size:12px;font-weight:700;color:var(--ink-light);margin-bottom:4px;display:block;">Degree</label>
+            <select class="select" id="fCourse" name="course" style="width:100%;height:38px;"></select>
+        </div>
+        <div class="field">
+            <label for="fYear" style="font-size:12px;font-weight:700;color:var(--ink-light);margin-bottom:4px;display:block;">Class</label>
+            <select class="select" id="fYear" name="year" style="width:100%;height:38px;"></select>
+        </div>
+        <div class="field">
+            <label for="fStatus" style="font-size:12px;font-weight:700;color:var(--ink-light);margin-bottom:4px;display:block;">Fee Status</label>
+            <select class="select" id="fStatus" name="status" style="width:100%;height:38px;">
+                <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+                <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                <option value="PARTIAL" {% if status_filter == 'PARTIAL' %}selected{% endif %}>Partially Paid</option>
+                <option value="PAID" {% if status_filter == 'PAID' %}selected{% endif %}>Paid</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="fQ" style="font-size:12px;font-weight:700;color:var(--ink-light);margin-bottom:4px;display:block;">Search</label>
+            <input class="input" id="fQ" type="search" name="q" value="{{ q|default:'' }}" placeholder="Student name, roll, SIF, fee title" style="width:100%;height:38px;">
+        </div>
+        <div class="form-actions" style="display:flex;gap:8px;align-items:flex-end;">
+            <button class="btn btn-primary" type="submit" style="height:38px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;">
+                <svg class="icon icon-sm"><use href="#i-filter"/></svg> Apply
+            </button>
+            <a class="btn btn-ghost" href="{{ reset_url }}" style="height:38px;padding:0 14px;display:inline-flex;align-items:center;">Reset</a>
+        </div>
+    </div>
+
+    {% if crumbs %}
+    <div class="crumbs" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:12.5px;">
+        <svg class="icon icon-sm" style="color:var(--brand);"><use href="#i-layers"/></svg>
+        {% for c in crumbs %}
+            {% if not forloop.first %}<span class="sep" style="color:var(--muted);">›</span>{% endif %}
+            {% if c.url and not forloop.last %}<a href="{{ c.url }}" style="color:var(--brand);text-decoration:none;font-weight:600;">{{ c.label }}</a>{% else %}<b>{{ c.label }}</b>{% endif %}
+        {% endfor %}
+        {% if has_active_filters %}
+            <span class="badge gray" style="margin-left:auto;font-size:11px;">Filtered View &bull; {{ record_count }} record{{ record_count|pluralize }}</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</form>
+{{ tree|json_script:"tree-data" }}
 {% endif %}
 
 <div class="grid-3">
@@ -37,25 +98,41 @@
         <div class="card-body">
             <div class="muted" style="font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Total Fees</div>
             <div class="stat-val" style="font-size:26px;font-weight:800;color:var(--ink);margin-top:4px;">₹{{ total_fee|floatformat:2 }}</div>
-            <div class="muted" style="font-size:12px;margin-top:4px;">Academic session 2026-27</div>
+            <div class="muted" style="font-size:12px;margin-top:4px;">
+                {% if has_active_filters %}<span style="color:var(--brand);font-weight:600;">Filtered scope total</span>{% else %}Academic session 2026-27{% endif %}
+            </div>
         </div>
     </div>
     <div class="card" style="border-top: 4px solid #16a34a;">
         <div class="card-body">
             <div class="muted" style="font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Amount Paid</div>
             <div class="stat-val" style="font-size:26px;font-weight:800;color:#16a34a;margin-top:4px;">₹{{ total_paid|floatformat:2 }}</div>
-            <div class="muted" style="font-size:12px;margin-top:4px;">Verified receipts recorded</div>
-        </div>
-    </div>
-    <div class="card" style="border-top: 4px solid {% if total_balance > 0 %}#dc2626{% else %}#16a34a{% endif %};">
-        <div class="card-body">
-            <div class="muted" style="font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Outstanding Balance</div>
-            <div class="stat-val" style="font-size:26px;font-weight:800;color:{% if total_balance > 0 %}#dc2626{% else %}#16a34a{% endif %};margin-top:4px;">₹{{ total_balance|floatformat:2 }}</div>
             <div class="muted" style="font-size:12px;margin-top:4px;">
-                {% if total_balance > 0 %}<span style="color:#dc2626;font-weight:600;">Due for payment</span>{% else %}<span style="color:#16a34a;font-weight:600;">All fees cleared ✓</span>{% endif %}
+                {% if has_active_filters %}<span style="color:#16a34a;font-weight:600;">Filtered receipts collected</span>{% else %}Verified receipts recorded{% endif %}
             </div>
         </div>
     </div>
+    {% if total_balance > 0 %}
+    <div class="card" style="border-top: 4px solid #dc2626;">
+        <div class="card-body">
+            <div class="muted" style="font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Outstanding Balance</div>
+            <div class="stat-val" style="font-size:26px;font-weight:800;color:#dc2626;margin-top:4px;">₹{{ total_balance|floatformat:2 }}</div>
+            <div class="muted" style="font-size:12px;margin-top:4px;">
+                <span style="color:#dc2626;font-weight:600;">Due for payment</span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card" style="border-top: 4px solid #16a34a;">
+        <div class="card-body">
+            <div class="muted" style="font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Outstanding Balance</div>
+            <div class="stat-val" style="font-size:26px;font-weight:800;color:#16a34a;margin-top:4px;">₹{{ total_balance|floatformat:2 }}</div>
+            <div class="muted" style="font-size:12px;margin-top:4px;">
+                <span style="color:#16a34a;font-weight:600;">All fees cleared ✓</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Fee Records Table Card -->
@@ -73,7 +150,10 @@
             <table class="table">
                 <thead>
                     <tr>
-                        {% if not student %}<th>Student</th>{% endif %}
+                        {% if not student %}
+                        <th>Student</th>
+                        <th>School &amp; Degree</th>
+                        {% endif %}
                         <th>Fee Particulars</th>
                         <th>Academic Year</th>
                         <th>Due Date</th>
@@ -92,6 +172,10 @@
                             <div class="strong">{{ record.student.name }}</div>
                             <div class="muted" style="font-size:11.5px;">{{ record.student.roll_no }} &middot; SIF: {{ record.student.sif_number|default:"—" }}</div>
                         </td>
+                        <td>
+                            <div class="strong" style="font-size:12px;">{{ record.student.department.name }}</div>
+                            <div class="muted" style="font-size:11px;">{{ record.student.course.name|default:"—" }} &middot; Year {{ record.student.year }}</div>
+                        </td>
                         {% endif %}
                         <td>
                             <div class="strong">{{ record.title }}</div>
@@ -104,9 +188,11 @@
                         <td class="nowrap">{{ record.due_date|date:"d M Y"|default:"—" }}</td>
                         <td class="num font-bold">₹{{ record.amount|floatformat:2 }}</td>
                         <td class="num" style="color:#16a34a;font-weight:600;">₹{{ record.paid_amount|floatformat:2 }}</td>
-                        <td class="num" style="color:{% if record.balance_amount > 0 %}#dc2626{% else %}#16a34a{% endif %};font-weight:700;">
-                            ₹{{ record.balance_amount|floatformat:2 }}
-                        </td>
+                        {% if record.balance_amount > 0 %}
+                        <td class="num" style="color:#dc2626;font-weight:700;">₹{{ record.balance_amount|floatformat:2 }}</td>
+                        {% else %}
+                        <td class="num" style="color:#16a34a;font-weight:700;">₹{{ record.balance_amount|floatformat:2 }}</td>
+                        {% endif %}
                         <td>
                             {% if record.computed_status == "PAID" %}
                                 <span class="badge green">Paid</span>
@@ -118,7 +204,12 @@
                         </td>
                         <td style="text-align:right;" class="nowrap">
                             {% if record.balance_amount > 0 %}
-                                <button class="btn btn-primary btn-sm" onclick="openPaymentModal({{ record.id }}, '{{ record.title|escapejs }}', {{ record.amount }}, {{ record.balance_amount }})">
+                                <button type="button" class="btn btn-primary btn-sm btn-pay-action"
+                                    data-record-id="{{ record.id }}"
+                                    data-title="{{ record.title }}"
+                                    data-amount="{{ record.amount|unlocalize }}"
+                                    data-balance="{{ record.balance_amount|unlocalize }}"
+                                    onclick="handlePayButtonClick(this)">
                                     <svg class="icon icon-sm" style="margin-right:3px;"><use href="#i-check"/></svg> Pay Online
                                 </button>
                             {% else %}
@@ -133,8 +224,14 @@
         {% else %}
             <div class="empty" style="padding:40px 20px;text-align:center;">
                 <svg class="icon icon-lg" style="color:var(--muted);margin-bottom:8px;"><use href="#i-file"/></svg>
-                <div style="font-weight:600;">No Fee Records Assigned</div>
-                <div class="muted" style="font-size:12.5px;margin-top:4px;">No tuition or exam fee schedules have been registered for your account.</div>
+                <div style="font-weight:600;">No Fee Records Found</div>
+                <div class="muted" style="font-size:12.5px;margin-top:4px;">
+                    {% if has_active_filters %}
+                        No fee schedules match the selected School, Degree, Class, or search criteria. <a href="{{ reset_url }}" style="color:var(--brand);font-weight:600;">Reset filters</a> to view all.
+                    {% else %}
+                        No tuition or exam fee schedules have been registered in the system.
+                    {% endif %}
+                </div>
             </div>
         {% endif %}
     </div>
@@ -156,7 +253,10 @@
                 <thead>
                     <tr>
                         <th>Receipt No</th>
-                        {% if not student %}<th>Student</th>{% endif %}
+                        {% if not student %}
+                        <th>Student</th>
+                        <th>School &amp; Degree</th>
+                        {% endif %}
                         <th>Fee Particulars</th>
                         <th>Payment Date</th>
                         <th class="num">Amount Paid</th>
@@ -175,6 +275,10 @@
                         <td>
                             <div class="strong">{{ payment.fee_record.student.name }}</div>
                             <div class="muted" style="font-size:11px;">SIF: {{ payment.fee_record.student.sif_number|default:"—" }}</div>
+                        </td>
+                        <td>
+                            <div style="font-size:12px;font-weight:600;">{{ payment.fee_record.student.department.name }}</div>
+                            <div class="muted" style="font-size:11px;">{{ payment.fee_record.student.course.name|default:"—" }} &middot; Year {{ payment.fee_record.student.year }}</div>
                         </td>
                         {% endif %}
                         <td>
@@ -204,7 +308,13 @@
             <div class="empty" style="padding:36px 20px;text-align:center;">
                 <svg class="icon icon-lg" style="color:var(--muted);margin-bottom:8px;"><use href="#i-inbox"/></svg>
                 <div style="font-weight:600;">No Payment History Yet</div>
-                <div class="muted" style="font-size:12.5px;margin-top:4px;">Once you pay fees online, your official university payment receipts will appear here.</div>
+                <div class="muted" style="font-size:12.5px;margin-top:4px;">
+                    {% if has_active_filters %}
+                        No payments found for the selected filter scope.
+                    {% else %}
+                        Once fees are paid online, official university payment receipts will appear here.
+                    {% endif %}
+                </div>
             </div>
         {% endif %}
     </div>
@@ -425,14 +535,20 @@ function openPaymentModal(recordId, title, totalAmount, balanceAmount) {
     overlay.style.display = 'grid';
 }
 
+function handlePayButtonClick(btn) {
+    if (!btn) return;
+    var recordId = btn.getAttribute('data-record-id');
+    var title = btn.getAttribute('data-title');
+    var totalAmount = btn.getAttribute('data-amount');
+    var balanceAmount = btn.getAttribute('data-balance');
+    openPaymentModal(recordId, title, totalAmount, balanceAmount);
+}
+
 function openQuickPayModal() {
-    {% if records %}
-        {% for r in records %}
-            {% if r.balance_amount > 0 %}
-                openPaymentModal({{ r.id }}, '{{ r.title|escapejs }}', {{ r.amount }}, {{ r.balance_amount }});
-            {% endif %}
-        {% endfor %}
-    {% endif %}
+    var firstPayBtn = document.querySelector('.btn-pay-action');
+    if (firstPayBtn) {
+        handlePayButtonClick(firstPayBtn);
+    }
 }
 
 function closePaymentModal() {
@@ -526,5 +642,106 @@ function submitOnlinePayment(event) {
     });
 }
 </script>
+
+{% if is_admin %}
+<script>
+(function () {
+    var raw = document.getElementById('tree-data');
+    if (!raw) return;
+    var tree = JSON.parse(raw.textContent);
+    var form = document.getElementById('filterForm');
+    var selSchool = document.getElementById('fSchool');
+    var selCourse = document.getElementById('fCourse');
+    var selYear = document.getElementById('fYear');
+    var selStatus = document.getElementById('fStatus');
+
+    var current = {
+        school: '{{ keep.school|default_if_none:""|unlocalize }}',
+        course: '{{ keep.course|default_if_none:""|unlocalize }}',
+        year: '{{ keep.year|default_if_none:""|unlocalize }}'
+    };
+
+    function opt(value, label, selected) {
+        var o = document.createElement('option');
+        o.value = value;
+        o.textContent = label;
+        if (selected) o.selected = true;
+        return o;
+    }
+
+    function fillSchools() {
+        if (!selSchool) return;
+        selSchool.innerHTML = '';
+        selSchool.appendChild(opt('', 'All Schools', !current.school));
+        tree.forEach(function (s) {
+            selSchool.appendChild(opt(s.id, s.name, String(s.id) === String(current.school)));
+        });
+    }
+
+    function fillCourses() {
+        if (!selCourse) return;
+        selCourse.innerHTML = '';
+        var school = tree.find(function (s) { return String(s.id) === String(current.school); });
+        selCourse.appendChild(opt('', school ? 'All Degrees' : 'Select a School first', !current.course));
+        selCourse.disabled = !school;
+        if (school && school.courses) {
+            school.courses.forEach(function (c) {
+                selCourse.appendChild(opt(c.id, c.name, String(c.id) === String(current.course)));
+            });
+        }
+    }
+
+    function fillYears() {
+        if (!selYear) return;
+        selYear.innerHTML = '';
+        var school = tree.find(function (s) { return String(s.id) === String(current.school); });
+        var course = school && school.courses && school.courses.find(function (c) { return String(c.id) === String(current.course); });
+        selYear.appendChild(opt('', course ? 'All Classes' : 'Select a Degree first', !current.year));
+        selYear.disabled = !course;
+        if (course && course.years) {
+            course.years.forEach(function (y) {
+                selYear.appendChild(opt(y, 'Year ' + y, String(y) === String(current.year)));
+            });
+        }
+    }
+
+    fillSchools();
+    fillCourses();
+    fillYears();
+
+    if (selSchool) {
+        selSchool.addEventListener('change', function () {
+            current.school = selSchool.value;
+            current.course = '';
+            current.year = '';
+            fillCourses();
+            fillYears();
+            form.submit();
+        });
+    }
+
+    if (selCourse) {
+        selCourse.addEventListener('change', function () {
+            current.course = selCourse.value;
+            current.year = '';
+            fillYears();
+            form.submit();
+        });
+    }
+
+    if (selYear) {
+        selYear.addEventListener('change', function () {
+            form.submit();
+        });
+    }
+
+    if (selStatus) {
+        selStatus.addEventListener('change', function () {
+            form.submit();
+        });
+    }
+})();
+</script>
+{% endif %}
 
 {% endblock %}

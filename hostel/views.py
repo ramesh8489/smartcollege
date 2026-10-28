@@ -989,26 +989,67 @@ class AdminHostelFeeListView(LoginRequiredMixin, UserPassesTestMixin, View):
         return _is_hostel_admin(self.request.user)
 
     def get(self, request):
-        hostel_id = request.GET.get("hostel")
-        status_filter = request.GET.get("status")
-        search_query = request.GET.get("search", "").strip()
+        from urllib.parse import urlencode
+        from django.urls import reverse
+        from accounts import scope as sc
 
-        summary = get_admin_hostel_fees_summary(hostel_id=hostel_id if hostel_id else None)
+        scope = sc.parse_scope(request.GET)
+        school, course, year = scope["school"], scope["course"], scope["year"]
+        tree = sc.filter_tree()
+
+        hostel_id = request.GET.get("hostel")
+        status_filter = request.GET.get("status", "").strip().upper()
+        search_query = request.GET.get("search", "").strip() or request.GET.get("q", "").strip()
+
+        keep = {
+            "school": school.id if school else None,
+            "course": course.id if course else None,
+            "year": year,
+        }
+
+        summary = get_admin_hostel_fees_summary(
+            hostel_id=hostel_id if hostel_id else None,
+            school_id=school.id if school else None,
+            course_id=course.id if course else None,
+            year=year,
+            status_filter=status_filter,
+            search_query=search_query,
+        )
         records = summary["records"]
 
-        if status_filter in ["PENDING", "PARTIAL", "PAID"]:
-            records = [r for r in records if r.status == status_filter]
-
-        if search_query:
-            q_lower = search_query.lower()
-            records = [
-                r for r in records
-                if q_lower in r.student.name.lower()
-                or (r.student.roll_no and q_lower in r.student.roll_no.lower())
-                or q_lower in r.title.lower()
-            ]
-
         hostels = Hostel.objects.filter(is_active=True).order_by("name")
+
+        def _hostel_fee_url(**kwargs):
+            params = {}
+            for k, v in kwargs.items():
+                if v is not None:
+                    params[k] = v
+            if hostel_id:
+                params["hostel"] = hostel_id
+            if status_filter:
+                params["status"] = status_filter
+            if search_query:
+                params["search"] = search_query
+            if not params:
+                return reverse("hostel:admin_fees")
+            return reverse("hostel:admin_fees") + "?" + urlencode(params)
+
+        crumbs = [{"label": "All Schools", "url": _hostel_fee_url()}]
+        if school:
+            crumbs.append({"label": school.name, "url": _hostel_fee_url(school=school.id)})
+        if course:
+            crumbs.append({"label": course.name, "url": _hostel_fee_url(school=school.id, course=course.id)})
+        if year:
+            crumbs.append({"label": f"Year {year}", "url": None})
+
+        has_active_filters = bool(
+            keep.get("school")
+            or keep.get("course")
+            or keep.get("year")
+            or hostel_id
+            or status_filter
+            or search_query
+        )
 
         return render(
             request,
@@ -1020,6 +1061,12 @@ class AdminHostelFeeListView(LoginRequiredMixin, UserPassesTestMixin, View):
                 "selected_hostel": hostel_id,
                 "selected_status": status_filter,
                 "search_query": search_query,
+                "tree": tree,
+                "scope": scope,
+                "keep": keep,
+                "crumbs": crumbs,
+                "has_active_filters": has_active_filters,
+                "reset_url": reverse("hostel:admin_fees"),
             },
         )
 

@@ -516,6 +516,35 @@ class TransportFeesIntegrationTests(TransportBaseTestCase):
         self.assertEqual(admin_summary["total_outstanding"], Decimal("10000.00"))
         self.assertEqual(admin_summary["collection_rate"], 33.3)
 
+    def test_admin_transport_fees_view_and_scoping(self):
+        """Verify AdminTransportFeeListView renders and filters by school, degree, and class."""
+        FeeRecord.objects.create(
+            student=self.student,
+            fee_type="TRANSPORT",
+            title="Annual Bus Commute Fee",
+            academic_year="2026-27",
+            amount=Decimal("15000.00"),
+            status="PENDING",
+        )
+        self.client.login(username="trans_admin", password="adminpassword123")
+        response = self.client.get("/transport/admin/fees/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("fees_data", response.context)
+        self.assertIn("tree", response.context)
+        self.assertIn("crumbs", response.context)
+
+        # Filter by student's department/school
+        res_school = self.client.get(f"/transport/admin/fees/?school={self.dept.id}")
+        self.assertEqual(res_school.status_code, 200)
+        self.assertEqual(res_school.context["fees_data"]["total_billed"], Decimal("15000.00"))
+
+        # Filter by another school with no transport fees
+        dept2 = Department.objects.create(name="School of Management")
+        res_empty = self.client.get(f"/transport/admin/fees/?school={dept2.id}")
+        self.assertEqual(res_empty.status_code, 200)
+        self.assertEqual(res_empty.context["fees_data"]["total_billed"], Decimal("0.00"))
+        self.assertEqual(res_empty.context["fees_data"]["records"], [])
+
 
 class TransportMaintenanceAndIncidentsTests(TransportBaseTestCase):
     def test_maintenance_logging_and_overdue_alert(self):

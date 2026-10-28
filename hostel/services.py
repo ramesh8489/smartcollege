@@ -57,11 +57,20 @@ def get_student_hostel_fees(student):
     }
 
 
-def get_admin_hostel_fees_summary(hostel_id=None):
+def get_admin_hostel_fees_summary(
+    hostel_id=None,
+    school_id=None,
+    course_id=None,
+    year=None,
+    status_filter=None,
+    search_query=None,
+):
     """
     Institutional overview of hostel fees collected, outstanding, and defaulters.
     """
-    qs = FeeRecord.objects.filter(fee_type="HOSTEL").select_related("student", "student__course")
+    qs = FeeRecord.objects.filter(fee_type="HOSTEL").select_related(
+        "student", "student__course", "student__department"
+    )
 
     if hostel_id:
         # Filter to students allocated in that hostel
@@ -70,6 +79,26 @@ def get_admin_hostel_fees_summary(hostel_id=None):
             status="ACTIVE",
         ).values_list("student_id", flat=True)
         qs = qs.filter(student_id__in=student_ids)
+
+    if school_id:
+        qs = qs.filter(student__department_id=school_id)
+
+    if course_id:
+        qs = qs.filter(student__course_id=course_id)
+
+    if year:
+        qs = qs.filter(student__year=year)
+
+    if status_filter in ("PAID", "PARTIAL", "PENDING"):
+        qs = qs.filter(status=status_filter)
+
+    if search_query:
+        qs = qs.filter(
+            Q(student__name__icontains=search_query)
+            | Q(student__roll_no__icontains=search_query)
+            | Q(student__sif_number__icontains=search_query)
+            | Q(title__icontains=search_query)
+        )
 
     records = list(qs.prefetch_related("payments").order_by("-created_at"))
 

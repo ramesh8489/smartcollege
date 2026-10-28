@@ -1118,8 +1118,90 @@ class AdminTransportFeeListView(LoginRequiredMixin, View):
     def get(self, request):
         if not _is_transport_admin(request.user):
             raise PermissionDenied("Unauthorized.")
-        fees_data = get_admin_transport_fees_summary()
-        return render(request, "transport/admin_fees.html", {"fees_data": fees_data})
+
+        from urllib.parse import urlencode
+        from django.urls import reverse
+        from accounts import scope as sc
+
+        scope = sc.parse_scope(request.GET)
+        school, course, year = scope["school"], scope["course"], scope["year"]
+        tree = sc.filter_tree()
+
+        route_id = request.GET.get("route")
+        vehicle_id = request.GET.get("vehicle")
+        status_filter = request.GET.get("status", "").strip().upper()
+        search_query = request.GET.get("q", "").strip() or request.GET.get("search", "").strip()
+
+        keep = {
+            "school": school.id if school else None,
+            "course": course.id if course else None,
+            "year": year,
+        }
+
+        fees_data = get_admin_transport_fees_summary(
+            route_id=route_id if route_id else None,
+            vehicle_id=vehicle_id if vehicle_id else None,
+            school_id=school.id if school else None,
+            course_id=course.id if course else None,
+            year=year,
+            status_filter=status_filter,
+            search_query=search_query,
+        )
+
+        routes = Route.objects.filter(is_active=True).order_by("name")
+        vehicles = Vehicle.objects.filter(status="ACTIVE").order_by("registration_number")
+
+        def _transport_fee_url(**kwargs):
+            params = {}
+            for k, v in kwargs.items():
+                if v is not None:
+                    params[k] = v
+            if route_id:
+                params["route"] = route_id
+            if vehicle_id:
+                params["vehicle"] = vehicle_id
+            if status_filter:
+                params["status"] = status_filter
+            if search_query:
+                params["q"] = search_query
+            if not params:
+                return reverse("transport:admin_fees")
+            return reverse("transport:admin_fees") + "?" + urlencode(params)
+
+        crumbs = [{"label": "All Schools", "url": _transport_fee_url()}]
+        if school:
+            crumbs.append({"label": school.name, "url": _transport_fee_url(school=school.id)})
+        if course:
+            crumbs.append({"label": course.name, "url": _transport_fee_url(school=school.id, course=course.id)})
+        if year:
+            crumbs.append({"label": f"Year {year}", "url": None})
+
+        has_active_filters = bool(
+            keep.get("school")
+            or keep.get("course")
+            or keep.get("year")
+            or route_id
+            or vehicle_id
+            or status_filter
+            or search_query
+        )
+
+        context = {
+            "fees_data": fees_data,
+            "tree": tree,
+            "scope": scope,
+            "keep": keep,
+            "crumbs": crumbs,
+            "routes": routes,
+            "vehicles": vehicles,
+            "selected_route": route_id,
+            "selected_vehicle": vehicle_id,
+            "status_filter": status_filter,
+            "search_query": search_query,
+            "has_active_filters": has_active_filters,
+            "reset_url": reverse("transport:admin_fees"),
+        }
+        return render(request, "transport/admin_fees.html", context)
 
 
 class AdminCreateTransportFeeView(LoginRequiredMixin, View):

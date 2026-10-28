@@ -1,10 +1,12 @@
-from decimal import Decimal
 import secrets
 import string
+from decimal import Decimal
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -17,6 +19,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from faculty.models import Faculty
 from students.models import Student
+from accounts import scope as sc
 
 from .models import FeePayment, FeeRecord
 
@@ -30,13 +33,70 @@ def _student_for_request(request):
 @login_required(login_url="/accounts/login/")
 def fee_dashboard(request):
     student = _student_for_request(request)
+    is_admin = request.user.is_superuser or request.user.is_staff
 
-    if request.user.is_superuser:
-        records = list(
-            FeeRecord.objects.select_related("student", "student__course", "student__department")
-            .prefetch_related("payments")
-            .order_by("-created_at")
-        )
+    tree = []
+    scope = {"school": None, "course": None, "year": None, "level": "all"}
+    keep = {"school": None, "course": None, "year": None}
+    crumbs = []
+    q = request.GET.get("q", "").strip()
+    status_filter = request.GET.get("status", "").strip().upper()
+
+    if is_admin:
+        scope = sc.parse_scope(request.GET)
+        school, course, year = scope["school"], scope["course"], scope["year"]
+        tree = sc.filter_tree()
+
+        keep = {
+            "school": school.id if school else None,
+            "course": course.id if course else None,
+            "year": year,
+        }
+
+        qs = FeeRecord.objects.select_related(
+            "student", "student__course", "student__department"
+        ).prefetch_related("payments")
+
+        if school:
+            qs = qs.filter(student__department=school)
+        if course:
+            qs = qs.filter(student__course=course)
+        if year:
+            qs = qs.filter(student__year=year)
+        if status_filter in ("PAID", "PARTIAL", "PENDING"):
+            qs = qs.filter(status=status_filter)
+        if q:
+            qs = qs.filter(
+                Q(student__name__icontains=q)
+                | Q(student__roll_no__icontains=q)
+                | Q(student__sif_number__icontains=q)
+                | Q(title__icontains=q)
+            )
+
+        records = list(qs.order_by("-created_at"))
+
+        # Build breadcrumbs for active scope
+        def _fee_url(**kwargs):
+            params = {}
+            for k, v in kwargs.items():
+                if v is not None:
+                    params[k] = v
+            if status_filter:
+                params["status"] = status_filter
+            if q:
+                params["q"] = q
+            if not params:
+                return "/fees/"
+            return "/fees/?" + urlencode(params)
+
+        crumbs = [{"label": "All Schools", "url": _fee_url()}]
+        if school:
+            crumbs.append({"label": school.name, "url": _fee_url(school=school.id)})
+        if course:
+            crumbs.append({"label": course.name, "url": _fee_url(school=school.id, course=course.id)})
+        if year:
+            crumbs.append({"label": f"Year {year}", "url": None})
+
     elif student:
         records = list(
             FeeRecord.objects.filter(student=student)
@@ -60,14 +120,27 @@ def fee_dashboard(request):
             payments.append(payment)
     payments.sort(key=lambda payment: (payment.payment_date, payment.created_at), reverse=True)
 
+    has_active_filters = bool(
+        keep.get("school") or keep.get("course") or keep.get("year") or q or status_filter
+    )
+
     context = {
         "student": student,
+        "is_admin": is_admin,
         "records": records,
         "payments": payments[:20],
         "total_fee": total_fee,
         "total_paid": total_paid,
         "total_balance": total_balance,
         "record_count": len(records),
+        "tree": tree,
+        "scope": scope,
+        "keep": keep,
+        "crumbs": crumbs,
+        "q": q,
+        "status_filter": status_filter,
+        "has_active_filters": has_active_filters,
+        "reset_url": "/fees/",
     }
     return render(request, "fees/dashboard.html", context)
 
@@ -76,11 +149,12 @@ def fee_dashboard(request):
 @login_required(login_url="/accounts/login/")
 def pay_fee(request, record_id):
     student = _student_for_request(request)
-    if not student and not request.user.is_superuser:
+    is_admin = request.user.is_superuser or request.user.is_staff
+    if not student and not is_admin:
         raise PermissionDenied
 
     fee_record = get_object_or_404(FeeRecord, pk=record_id)
-    if not request.user.is_superuser and fee_record.student_id != student.id:
+    if not is_admin and fee_record.student_id != student.id:
         raise PermissionDenied
 
     amount_str = request.POST.get("amount", "").strip()
@@ -168,7 +242,7 @@ def payment_receipt(request, payment_id):
     )
 
     student = _student_for_request(request)
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or request.user.is_staff):
         if student is None or payment.fee_record.student_id != student.id:
             raise PermissionDenied
 
