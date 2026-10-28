@@ -2,13 +2,24 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
+from django.views.generic import RedirectView
 from .seo_views import landing_home, robots_txt, sitemap_xml
+from .pwa_views import manifest_json, service_worker_js, offline_view, app_download_view, download_app_shortcut
 
 
 urlpatterns = [
     path("", landing_home, name="home"),
+    path("favicon.ico", RedirectView.as_view(url="/static/images/pwa/favicon.png", permanent=True)),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
+
+    # PWA (Progressive Web Application) & Mobile App Installation
+    path("manifest.webmanifest", manifest_json, name="pwa_manifest"),
+    path("manifest.json", manifest_json, name="pwa_manifest_json"),
+    path("sw.js", service_worker_js, name="service_worker_js"),
+    path("offline/", offline_view, name="offline_view"),
+    path("app/download/", app_download_view, name="app_download"),
+    path("app/download-launcher/", download_app_shortcut, name="download_app_shortcut"),
 
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),

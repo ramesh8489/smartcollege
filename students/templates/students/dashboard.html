@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Dashboard{% endblock %}
 {% block topbar_title %}Dashboard{% endblock %}
@@ -6,7 +7,11 @@
 {% block page_sub %}{{ student.course.name|default:"—" }} · {{ student.department.name }} · Year {{ student.year }}{% endblock %}
 
 {% block page_actions %}
-    <a class="btn btn-primary" href="/analytics/my/"><svg class="icon icon-sm"><use href="#i-chart"/></svg> View My Analytics</a>
+    <button type="button" class="btn btn-primary" onclick="triggerPWAInstall()" style="box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);">
+        <svg class="icon icon-sm"><use href="#i-smartphone"/></svg>
+        <span>Install Mobile App</span>
+    </button>
+    <a class="btn btn-soft" href="/analytics/my/"><svg class="icon icon-sm"><use href="#i-chart"/></svg> My Analytics</a>
     <a class="btn btn-soft" href="/reports/student/attendance/excel/"><svg class="icon icon-sm"><use href="#i-download"/></svg> Attendance</a>
     <a class="btn btn-soft" href="/reports/student/marks/excel/"><svg class="icon icon-sm"><use href="#i-download"/></svg> Marks</a>
     <a class="btn btn-ghost" href="/reports/student/attendance/pdf/"><svg class="icon icon-sm"><use href="#i-file"/></svg> Attendance PDF</a>
@@ -24,7 +29,13 @@
             <div class="muted" style="font-size: 12px;">Comprehensive self-analytics across your attendance, exam results, fees, library, and placements.</div>
         </div>
     </div>
-    <a href="/analytics/my/" class="btn btn-primary btn-sm">View My Analytics &rarr;</a>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <button type="button" class="btn btn-soft btn-sm" onclick="triggerPWAInstall()" style="border: 1px solid #c7d2fe;">
+            <svg class="icon icon-sm" style="color: var(--brand);"><use href="#i-smartphone"/></svg>
+            <span>Install App</span>
+        </button>
+        <a href="/analytics/my/" class="btn btn-primary btn-sm">View My Analytics &rarr;</a>
+    </div>
 </div>
 
 <div class="grid-4 mb">

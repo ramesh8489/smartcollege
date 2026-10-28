@@ -8,6 +8,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Takshashila">
+    <link rel="apple-touch-icon" href="{% static 'images/pwa/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/pwa/favicon.png' %}">
     {% include "_seo_meta.html" %}
     {% block extra_head %}{% endblock %}
 </head>
@@ -44,6 +52,24 @@
     </section>
 
 </div>
+<!-- PWA Floating Mobile Install Banner -->
+<div id="pwa-mobile-install-banner" class="pwa-mobile-banner">
+    <div class="pwa-mobile-banner-inner">
+        <div class="pwa-mobile-banner-left">
+            <img src="{% static 'images/pwa/icon-192.png' %}" alt="Takshashila App" class="pwa-mobile-banner-icon">
+            <div>
+                <div class="pwa-mobile-banner-title">Takshashila University App</div>
+                <div class="pwa-mobile-banner-sub">Install on phone for instant fullscreen access</div>
+            </div>
+        </div>
+        <div class="pwa-mobile-banner-actions">
+            <button type="button" class="pwa-btn-install" onclick="triggerPWAInstall()">Install</button>
+            <button type="button" class="pwa-btn-dismiss" onclick="dismissPWABanner()" aria-label="Dismiss">&times;</button>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/pwa-installer.js' %}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

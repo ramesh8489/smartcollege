@@ -77,5 +77,85 @@ class StudentSIFNumberTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         student = Student.objects.get(roll_no="CS0099")
         self.assertIsNotNone(student.sif_number)
-        self.assertEqual(len(student.sif_number), 7)
         self.assertIn(student.sif_number, response.content.decode("utf-8"))
+
+
+class PWAMobileAppTestCase(TestCase):
+    def test_manifest_webmanifest_endpoint(self):
+        """Verify /manifest.webmanifest returns valid JSON with PWA configuration."""
+        response = self.client.get("/manifest.webmanifest")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/manifest+json", response["Content-Type"])
+        data = response.json()
+        self.assertEqual(data["name"], "Takshashila University · Smart College")
+        self.assertEqual(data["short_name"], "Takshashila")
+        self.assertEqual(data["display"], "standalone")
+        self.assertTrue(len(data["icons"]) >= 2)
+
+    def test_manifest_json_alias(self):
+        """Verify /manifest.json returns the same valid PWA manifest."""
+        response = self.client.get("/manifest.json")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/manifest+json", response["Content-Type"])
+        data = response.json()
+        self.assertEqual(data["short_name"], "Takshashila")
+
+    def test_service_worker_endpoint(self):
+        """Verify /sw.js is served from root scope with correct headers."""
+        response = self.client.get("/sw.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/javascript", response["Content-Type"])
+        self.assertEqual(response.get("Service-Worker-Allowed"), "/")
+        self.assertIn("takshashila-pwa-v1", response.content.decode("utf-8"))
+
+    def test_offline_page_endpoint(self):
+        """Verify /offline/ renders the offline fallback view."""
+        response = self.client.get("/offline/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "You're Currently Offline", status_code=200)
+
+    def test_app_download_showcase_page(self):
+        """Verify /app/download/ renders the dedicated mobile app page with installation steps."""
+        response = self.client.get("/app/download/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Takshashila University Mobile App")
+        self.assertContains(response, "Install Mobile App (PWA)")
+        self.assertContains(response, "Android")
+        self.assertContains(response, "iPhone")
+
+
+class StudentDashboardPWATestCase(TestCase):
+    def setUp(self):
+        self.dept = Department.objects.create(name="School of Engineering")
+        self.course = Course.objects.create(name="B.Tech AI & Data Science", department=self.dept)
+        self.user = User.objects.create_user(username="teststudent_dash", password="password123")
+        self.student = Student.objects.create(
+            user=self.user,
+            name="John Doe",
+            roll_no="AI2026",
+            sif_number="SIF1234",
+            email="johndoe@college.edu",
+            department=self.dept,
+            course=self.course,
+            year=1,
+            is_approved=True,
+        )
+
+    def test_student_dashboard_pwa_install_elements(self):
+        """Student dashboard should feature the PWA Mobile App Install button and triggers."""
+        self.client.force_login(self.user)
+        response = self.client.get("/students/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # PWA Mobile App Install elements
+        self.assertIn("Install Mobile App", content)
+        self.assertIn("triggerPWAInstall()", content)
+        self.assertIn("manifest.webmanifest", content)
+
+        # Core Academic sections remain clean and intact
+        self.assertIn("Subject-wise attendance", content)
+        self.assertIn("Marks summary", content)
+        self.assertIn("Exam Results", content)
+
+

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Download Mobile App · Takshashila University{% endblock %}
+{% block topbar_title %}Mobile App Download{% endblock %}
+{% block page_title %}Takshashila University Mobile App{% endblock %}
+{% block page_sub %}Install the official Progressive Web Application directly on your Android, iPhone, or Desktop device{% endblock %}
+
+{% block page_actions %}
+    <button type="button" class="btn btn-primary" onclick="triggerPWAInstall()">
+        <svg class="icon icon-sm"><use href="#i-smartphone"/></svg>
+        <span>Install App Now</span>
+    </button>
+    <a href="/students/" class="btn btn-soft">Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="card mb" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%); color: #ffffff; padding: 36px 30px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.12); position: relative; overflow: hidden; box-shadow: 0 20px 40px -15px rgba(30, 27, 75, 0.5);">
+    <div style="position: absolute; right: -40px; bottom: -40px; opacity: 0.1; pointer-events: none;">
+        <svg width="340" height="340" viewBox="0 0 24 24" fill="currentColor"><path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM5 11V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v5H5z"/></svg>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px; position: relative; z-index: 2;">
+        <div style="max-width: 620px;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;">
+                <span>✨</span> Official PWA Mobile Application
+            </div>
+            <h2 style="font-size: clamp(24px, 4vw, 34px); font-weight: 800; line-height: 1.2; margin: 0 0 14px 0; color: #ffffff;">
+                Carry Takshashila University in Your Pocket
+            </h2>
+            <p style="font-size: 15px; line-height: 1.6; color: #cbd5e1; margin: 0 0 24px 0;">
+                Enjoy lightning-fast access to your attendance, exam results, fee payments, hostel rooms, bus tracking, and campus circulars with an authentic native app feel. No app store download needed!
+            </p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-primary" onclick="triggerPWAInstall()" style="background: #ffffff; color: #1e1b4b; font-weight: 800; padding: 12px 24px; font-size: 14.5px; border: none; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
+                    <svg class="icon icon-sm" style="color: #4f46e5;"><use href="#i-smartphone"/></svg>
+                    <span>Install Mobile App (PWA)</span>
+                </button>
+                <button type="button" class="btn btn-ghost" onclick="openInstallGuideModal()" style="border-color: rgba(255, 255, 255, 0.3); color: #ffffff;">
+                    <span>View Setup Guide &rarr;</span>
+                </button>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.08); padding: 22px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+            <img src="{% static 'images/pwa/icon-192.png' %}" alt="Takshashila App Icon" style="width: 88px; height: 88px; border-radius: 20px; box-shadow: 0 12px 24px -6px rgba(0,0,0,0.4); border: 2px solid rgba(255, 255, 255, 0.2);">
+            <div style="font-size: 14px; font-weight: 800; color: #ffffff;">Takshashila App</div>
+            <div style="font-size: 12px; color: #94a3b8;">v2.0 · Progressive Web App</div>
+            <div style="font-size: 11px; padding: 2px 8px; background: #22c55e; color: #ffffff; border-radius: 6px; font-weight: 700;">Zero Storage &middot; Instant</div>
+        </div>
+    </div>
+</div>
+
+<!-- App Features Grid -->
+<div class="grid-4 mb" style="gap: 16px;">
+    <div class="card" style="padding: 20px;">
+        <div class="stat-ico" style="background: #e0e7ff; color: #4338ca; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 14px;">
+            <svg class="icon"><use href="#i-smartphone"/></svg>
+        </div>
+        <h3 style="font-size: 16px; font-weight: 800; margin: 0 0 6px 0; color: var(--ink);">Native Fullscreen Experience</h3>
+        <p class="muted" style="font-size: 13px; line-height: 1.5; margin: 0;">
+            No browser search bar or unnecessary tabs. Opens seamlessly in dedicated standalone app mode.
+        </p>
+    </div>
+
+    <div class="card" style="padding: 20px;">
+        <div class="stat-ico" style="background: #dcfce7; color: #15803d; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 14px;">
+            <svg class="icon"><use href="#i-check"/></svg>
+        </div>
+        <h3 style="font-size: 16px; font-weight: 800; margin: 0 0 6px 0; color: var(--ink);">Offline Caching &amp; Speed</h3>
+        <p class="muted" style="font-size: 13px; line-height: 1.5; margin: 0;">
+            Built-in Service Worker caches vital academic schedules and dashboard components for near-zero load times.
+        </p>
+    </div>
+
+    <div class="card" style="padding: 20px;">
+        <div class="stat-ico" style="background: #fef3c7; color: #b45309; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 14px;">
+            <svg class="icon"><use href="#i-bell"/></svg>
+        </div>
+        <h3 style="font-size: 16px; font-weight: 800; margin: 0 0 6px 0; color: var(--ink);">Instant Campus Updates</h3>
+        <p class="muted" style="font-size: 13px; line-height: 1.5; margin: 0;">
+            Stay ahead with live alerts for exam marks, fee due notices, hostel circulars, and placement drive deadlines.
+        </p>
+    </div>
+
+    <div class="card" style="padding: 20px;">
+        <div class="stat-ico" style="background: #ede9fe; color: #6d28d9; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 14px;">
+            <svg class="icon"><use href="#i-shield"/></svg>
+        </div>
+        <h3 style="font-size: 16px; font-weight: 800; margin: 0 0 6px 0; color: var(--ink);">Direct Home Screen Access</h3>
+        <p class="muted" style="font-size: 13px; line-height: 1.5; margin: 0;">
+            App icon sits directly on your mobile home screen with zero storage overhead (&lt; 2 MB).
+        </p>
+    </div>
+</div>
+
+<!-- Platform Installation Guides -->
+<div class="card mb">
+    <div class="card-head">
+        <div class="card-title">
+            <svg class="icon"><use href="#i-download"/></svg>
+            <span>Platform Installation Instructions</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <!-- Android -->
+            <div style="background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                    <span style="font-size: 26px;">🤖</span>
+                    <div>
+                        <div style="font-weight: 800; font-size: 15px; color: var(--ink);">Android (Chrome / Edge / Brave)</div>
+                        <div class="muted" style="font-size: 12px;">Google Chrome or standard mobile browser</div>
+                    </div>
+                </div>
+                <ol style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.6; color: var(--ink);">
+                    <li>Click the <b>"Install App Now"</b> button above or look for the banner at the bottom of the screen.</li>
+                    <li>If prompted, tap <b>Install</b> or <b>Add to Home Screen</b>.</li>
+                    <li>Alternatively, tap the browser menu (<b>⋮</b>) and select <b>"Install App"</b>.</li>
+                    <li>The Takshashila App icon will appear on your phone's home screen!</li>
+                </ol>
+            </div>
+
+            <!-- iOS -->
+            <div style="background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                    <span style="font-size: 26px;">🍎</span>
+                    <div>
+                        <div style="font-weight: 800; font-size: 15px; color: var(--ink);">iPhone &amp; iPad (Apple Safari)</div>
+                        <div class="muted" style="font-size: 12px;">Official Apple iOS instructions</div>
+                    </div>
+                </div>
+                <ol style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.6; color: var(--ink);">
+                    <li>Open this portal in <b>Safari</b> on your iPhone or iPad.</li>
+                    <li>Tap the <b>Share button</b> (<b>⎋</b> icon with an arrow pointing up).</li>
+                    <li>Scroll down the share sheet and tap <b>"Add to Home Screen"</b> (<b>⊞</b>).</li>
+                    <li>Tap <b>"Add"</b> in the top right corner. The app is now installed on your iOS device!</li>
+                </ol>
+            </div>
+
+            <!-- Desktop PC / Mac -->
+            <div style="background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                    <span style="font-size: 26px;">💻</span>
+                    <div>
+                        <div style="font-weight: 800; font-size: 15px; color: var(--ink);">Desktop (Windows / macOS / Linux)</div>
+                        <div class="muted" style="font-size: 12px;">Chrome, Microsoft Edge, or Brave</div>
+                    </div>
+                </div>
+                <ol style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.6; color: var(--ink);">
+                    <li>Click the <b>Install App</b> button in the top navigation bar or address bar icon.</li>
+                    <li>Click <b>"Install"</b> on the browser popup dialog.</li>
+                    <li>The Takshashila ERP desktop application launches immediately in its own sleek native window!</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
